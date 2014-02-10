@@ -1,4 +1,3 @@
-
 This is very early proof-of-concept work on the Commons Machinery metadata catalog. Nothing interesting here so far.
 
 Requirements
@@ -25,13 +24,19 @@ To enter virtualenv (set certain environment variables) use:
 
 Install the backend inside virtualenv:
 
-    python backend/setup.py install
+    cd backend
+    python setup.py install
+
+Run redis:
+
+    cd ..
+    build/backend/bin/redis-server
 
 Run the backend:
 
      celery -A cmc_backend worker --loglevel=info
 
-Run the frontend (in a separate window):
+Run the frontend (in a separate terminal window):
 
     cd frontend
     npm install node-celery (if required)
