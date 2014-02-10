@@ -19,6 +19,9 @@ Run the following command to setup virtualenv under build/backend with all the r
 
     sh ./bootstrap.sh
 
+Backend
+-------
+
 To enter virtualenv (set certain environment variables) use:
 
     source build/backend/bin/activate
@@ -27,17 +30,19 @@ Install the backend inside virtualenv:
 
     cd backend
     python setup.py install
-
-Run redis:
-
     cd ..
-    build/backend/bin/redis-server
 
-It's also possible to use Redis that has been previously installed in the system. The default configuration will dump the database every 15 mins into a file called `dump.rdb` in the current directory.
+Run `./run_local.sh` to simultaneously start Redis and Celery, or run them separately:
 
-Run the backend:
+    build/backend/bin/redis-server redis_local.conf
+    celery -A catalog_backend worker --loglevel=info --workdir=data
 
-     celery -A cmc_backend worker --loglevel=info
+Redis snapshot data as well as Redland storage data will be saved under `./data`.
+
+It's also possible to use Redis that has been previously installed in the system.
+
+Frontend
+--------
 
 Run the frontend (in a separate terminal window):
 
