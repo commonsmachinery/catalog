@@ -8,7 +8,7 @@
 
 from celery import Celery
 
-app = Celery('cmc_backend', broker='amqp://guest@localhost//')
+app = Celery('catalog_backend', broker='amqp://guest@localhost//')
 
 app.conf.update(
     CELERY_TASK_SERIALIZER='json',

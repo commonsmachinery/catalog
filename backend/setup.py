@@ -11,11 +11,11 @@
 from setuptools import setup
 
 setup(
-    name='cmc_backend',
+    name='catalog_backend',
     author='Commons Machinery',
     author_email='dev@commonsmachinery.se',
     version='0.1',
-    py_modules=['cmc_backend'],
+    py_modules=['catalog_backend'],
     include_package_data=True,
     license='AGPLv3',
 )
