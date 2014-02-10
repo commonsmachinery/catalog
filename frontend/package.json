@@ -1,21 +1,23 @@
 {
-    "name": "cmc-frontend",
-    "version": "0.1.0",
+    "name": "catalog-frontend",
+    "version": "0.0.1",
     "homepage": "https://github.com/commonsmachinery/catalog",
     "author": "Commons Machinery <dev@commonsmachinery.se>",
+    "description": "Web/REST frontend to the catalog.",
     "repository": {
         "type": "git",
         "url": "https://github.com/commonsmachinery/catalog.git"
     },
-    "scripts": {
-        "test": "echo Running test cases require the full repository"
-    },
-    "main": "server.js",
+    "bin": "server.js",
     "dependencies" : {
-        "node-celery" : "*"
+        "node-celery" : "*",
+        "express": "3.x",
+        "redis": "*",
+        "underscore": "*",
+        "debug": "*"
     },
     "devDependencies" : {
-        "node-celery" : "*"
+        "jslint": "*"
     },
     "license": "AGPLv3"
 }
