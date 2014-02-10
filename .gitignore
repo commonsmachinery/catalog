@@ -55,5 +55,8 @@ build
 
 node_modules
 
+# Catalog-specific directories
+data
+
 *~
 
