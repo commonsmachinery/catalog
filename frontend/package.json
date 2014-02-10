@@ -1,0 +1,21 @@
+{
+    "name": "cmc-frontend",
+    "version": "0.1.0",
+    "homepage": "https://github.com/commonsmachinery/catalog",
+    "author": "Commons Machinery <dev@commonsmachinery.se>",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/commonsmachinery/catalog.git"
+    },
+    "scripts": {
+        "test": "echo Running test cases require the full repository"
+    },
+    "main": "server.js",
+    "dependencies" : {
+        "node-celery" : "*"
+    },
+    "devDependencies" : {
+        "node-celery" : "*"
+    },
+    "license": "AGPLv3"
+}
