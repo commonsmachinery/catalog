@@ -12,6 +12,15 @@ Requirements
 
 The catalog uses celery and redis internally. Those are built and installed locally under build/backend
 
+Installing prerequisites
+------------------------
+
+On Ubuntu:
+
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python-librdf
+
+Make sure that Node.js is installed to run the frontend.
+
 Deploying locally
 =================
 
