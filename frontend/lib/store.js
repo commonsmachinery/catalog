@@ -48,7 +48,7 @@ var workCreated = function workCreated(redis, event, callback) {
 };
 
 var eventProcessors = {
-    'WorkCreated': workCreated,
+    'catalog.work.created': workCreated,
 };
 
 exports.addEvent = function addEvent(redis, event, callback) {
@@ -71,7 +71,7 @@ exports.addEvent = function addEvent(redis, event, callback) {
         event.id = eventID;
         debug('adding event: %j', event);
         
-        redis.rpush('events', JSON.stringify(event), function(err, result) {
+        redis.lpush('events', JSON.stringify(event), function(err, result) {
             if (err) {
                 callback('error storing event: ' + err, event);
                 return;
@@ -96,3 +96,31 @@ exports.getWork = function getWork(redis, workID, callback) {
         callback(null, _.object(workProperties, res));
     });
 };
+
+//
+// Send event queue to backend
+//
+
+var eventQueueSender = function eventQueueSender(redis, celery) {
+    debug('blocking on events list');
+    redis.brpop('events', 0, function(err, res) {
+        var event, result;
+
+        if (err) {
+            console.error('error reading events, sleeping a while: %s', err);
+            setTimeout(function() { eventQueueSender(redis, celery) }, 5000);
+            return;
+        }
+
+        event = JSON.parse(res[1]);
+
+        debug('sending event to backend: %j', event);
+        result = celery.call('catalog_backend.event', { event: event }, {}, function (result) {
+            debug('got response from backend: %j', result);
+        });
+
+        eventQueueSender(redis, celery);
+    });
+};
+
+exports.eventQueueSender = eventQueueSender;

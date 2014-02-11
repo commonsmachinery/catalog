@@ -82,8 +82,8 @@ var rest = function(app, redis, uriBase) {
 
             store.addEvent(
                 redis,
-                { type: 'WorkCreated',
-                  date: now,
+                { type: 'catalog.work.created',
+                  timestamp: now,
                   user: user,
                   
                   data: {

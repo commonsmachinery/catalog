@@ -13,9 +13,14 @@ app = Celery('catalog_backend', broker='amqp://guest@localhost//')
 app.conf.update(
     CELERY_TASK_SERIALIZER='json',
     CELERY_RESULT_SERIALIZER='json',
-    CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
+    CELERY_RESULT_BACKEND = 'amqp'
 )
 
 @app.task
 def hello(s):
     return "hello, " + s
+
+@app.task
+def event(event):
+    print type(event)
+    print event

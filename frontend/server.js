@@ -12,6 +12,9 @@
 var debug = require('debug')('frontend:server');
 var express = require('express');
 var redis = require('redis');
+var celery = require('node-celery');
+
+var store = require('./lib/store');
 
 var redisClient = redis.createClient();
 
@@ -24,6 +27,31 @@ redisClient.on('error', function(err) {
     process.exit(1);
 });
 */
+
+var celeryClient = celery.createClient({
+    CELERY_BROKER_URL: 'amqp://guest@localhost:5672//',
+    CELERY_RESULT_BACKEND: 'amqp'
+});
+
+celeryClient.on('error', function(err) {
+    console.error('celery error: %s', err);
+    process.exit(1);
+});
+
+
+celeryClient.on('connect', function() {
+    var syncRedisClient = redis.createClient();
+
+    syncRedisClient.on('ready', function() {
+        console.log('starting event sync to backend');
+        store.eventQueueSender(syncRedisClient, celeryClient);
+    });
+});
+
+
+//
+// Main frontend setup
+//
 
 var app = express();
 
@@ -44,24 +72,3 @@ redisClient.on('ready', function() {
     app.listen(8004);
     console.log('listening on port 8004');
 });
-
-
-/*
-var celery = require("node-celery");
-
-var celery_client = celery.createClient({
-        CELERY_BROKER_URL: 'amqp://guest:guest@localhost:5672//',
-        CELERY_RESULT_BACKEND: 'redis://localhost/0'
-});
-
-celery_client.on('connect', function() {
-    var result = celery_client.call('cmc_backend.hello', ["world"]);
-    setTimeout(function() {
-
-        result.get(function(data) {
-                console.log(data);
-        });
-
-    }, 100);
-});
-*/
