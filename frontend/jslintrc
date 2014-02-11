@@ -1,0 +1,10 @@
+{
+    "devel": true,
+    "plusplus": true,
+    "regexp": true,
+    "vars": true,
+    "todo": true,
+    "white": true,
+    "nomen": true,
+    "unparam": true
+}

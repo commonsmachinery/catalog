@@ -1,0 +1,2 @@
+lint:
+	$(MAKE) -C .. lint
