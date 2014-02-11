@@ -6,7 +6,6 @@ Requirements
 * Python 2.7, virtualenv, pip
 * RabbitMQ
 * Node.js
-* node-celery
 * GCC (to build Redis)
 * Redland and Python bindings for Redland
 
@@ -53,9 +52,12 @@ It's also possible to use Redis that has been previously installed in the system
 Frontend
 --------
 
-Run the frontend (in a separate terminal window):
+Install all the frontend dependencies:
 
     cd frontend
-    npm install node-celery (if not already installed)
+    npm install
+
+Run it (in a separate terminal window):
+
     node server.js
 
