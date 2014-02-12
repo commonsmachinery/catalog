@@ -7,7 +7,7 @@ Requirements
 * RabbitMQ
 * Node.js
 * GCC (to build Redis)
-* Redland and Python bindings for Redland
+* Redland
 
 The catalog uses celery and redis internally. Those are built and installed locally under build/backend
 
@@ -16,7 +16,7 @@ Installing prerequisites
 
 On Ubuntu:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python-librdf
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev
 
 Make sure that Node.js is installed to run the frontend.
 
