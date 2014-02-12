@@ -61,3 +61,29 @@ Run it (in a separate terminal window):
 
     node server.js
 
+
+Using
+=====
+
+REST API
+--------
+
+List works:
+
+    curl -H 'Accept: application/json' http://localhost:8004/works/
+
+Create a work:
+
+    curl -v -X POST -d '{"visibility":"public"}' -H 'Content-type: application/json' http://localhost:8004/works/
+
+Get a work:
+
+    curl -H 'Accept: application/json' http://localhost:8004/works/4
+
+Update a work:
+
+    curl -X PUT -d '{"state":"published"}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/4
+
+Delete a work:
+
+    curl -v -X DELETE http://localhost:8004/works/4

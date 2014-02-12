@@ -136,6 +136,100 @@ var rest = function(app, redis, uriBase) {
             });
         });
     });
+
+
+    app.put('/works/:workID', function(req, res) {
+        var now, user;
+
+        now = Date.now();
+        user = 'test';
+
+        // TODO: do sanitychecking on the ID
+        store.getWork(redis, req.params.workID, function(err, work) {
+            if (err) {
+                console.log(err);
+                res.send(500, 'Error getting work');
+                return;
+            }
+
+            if (!work) {
+                res.send(404);
+                return;
+            }
+
+            work.updated = now;
+            work.updatedBy = user;
+
+            _.extend(work, _.pick(req.body, 'metadataGraph'));
+
+            if (validWorkVisibility[req.body.visibility]) {
+                work.visibility = req.body.visibility;
+            }
+
+            if (validWorkState[req.body.state]) {
+                work.state = req.body.state;
+            }
+
+            store.addEvent(
+                redis,
+                { type: 'catalog.work.updated',
+                  timestamp: now,
+                  user: user,
+                  data: work
+                },
+                function(err, event) {
+                    if (err) {
+                        console.error(err);
+                        res.send(500, 'Error processing event');
+                        return;
+                    }
+
+                    debug('successfully updated work');
+                    res.send(work);
+                });
+        });
+    });
+
+    app.delete('/works/:workID', function(req, res) {
+        var now, user;
+
+        now = Date.now();
+        user = 'test';
+
+        // TODO: do sanitychecking on the ID
+        store.getWork(redis, req.params.workID, function(err, work) {
+            if (err) {
+                console.log(err);
+                res.send(500, 'Error getting work');
+                return;
+            }
+
+            if (!work) {
+                res.send(404);
+                return;
+            }
+
+            store.addEvent(
+                redis,
+                { type: 'catalog.work.deleted',
+                  timestamp: now,
+                  user: user,
+                  data: work
+                },
+                function(err, event) {
+                    if (err) {
+                        console.error(err);
+                        res.send(500, 'Error processing event');
+                        return;
+                    }
+
+                    // TODO: this could be 202 Accepted if we add undo capability
+
+                    debug('successfully deleted work');
+                    res.send(204);
+                });
+        });
+    });
 };
 
 module.exports = rest;

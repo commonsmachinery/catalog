@@ -28,7 +28,7 @@ var workCreated = function workCreated(redis, event, callback) {
     // Store work into a bunch of tables
     var work = event.data;
     
-    debug('processing WorkCreated: %j', event);
+    debug('workCreated processing: %j', event);
 
     // TODO: this should be a hsetnx on each property, or we should
     // change all this into a Lua script that checks that the work
@@ -39,7 +39,41 @@ var workCreated = function workCreated(redis, event, callback) {
         .zadd('works.by.date', work.created, work.id)
         .exec(function(err, res) {
             if (err) {
-                callback('error processing WorkCreated event:\n' + err.join('\n'), event);
+                callback('workCreated: error processing event:\n' + err.join('\n'), event);
+                return;
+            }
+
+            callback(null, event);
+        });
+};
+
+var workUpdated = function workUpdated(redis, event, callback) {
+    // Store work into a bunch of tables
+    var work = event.data;
+
+    debug('workUpdated processing: %j', event);
+
+    redis.hmset('work:' + work.id, _.pick(work, workProperties), function(err, res) {
+        if (err) {
+            callback('workUpdated: error processing event: ' + err, event);
+            return;
+        }
+
+        callback(null, event);
+    });
+};
+
+var workDeleted = function workDeleted(redis, event, callback) {
+    var work = event.data;
+
+    debug('workDeleted processing: %j', event);
+
+    redis.multi()
+        .del('work:' + work.id)
+        .zrem('works.by.date', work.id)
+        .exec(function(err, res) {
+            if (err) {
+                callback('workUpdated: error processing event:\n' + err.join('\n'), event);
                 return;
             }
 
@@ -49,7 +83,10 @@ var workCreated = function workCreated(redis, event, callback) {
 
 var eventProcessors = {
     'catalog.work.created': workCreated,
+    'catalog.work.updated': workUpdated,
+    'catalog.work.deleted': workDeleted,
 };
+
 
 exports.addEvent = function addEvent(redis, event, callback) {
     var processor = eventProcessors[event.type];
@@ -92,7 +129,6 @@ exports.getWork = function getWork(redis, workID, callback) {
             return;
         }
 
-        debug('%j', res);
         callback(null, _.object(workProperties, res));
     });
 };
@@ -104,18 +140,18 @@ exports.getWork = function getWork(redis, workID, callback) {
 var eventQueueSender = function eventQueueSender(redis, celery) {
     debug('blocking on events list');
     redis.brpop('events', 0, function(err, res) {
-        var event, result;
+        var event;
 
         if (err) {
             console.error('error reading events, sleeping a while: %s', err);
-            setTimeout(function() { eventQueueSender(redis, celery) }, 5000);
+            setTimeout(function() { eventQueueSender(redis, celery); }, 5000);
             return;
         }
 
         event = JSON.parse(res[1]);
 
         debug('sending event to backend: %j', event);
-        result = celery.call('catalog_backend.event', { event: event }, {}, function (result) {
+        celery.call('catalog_backend.event', { event: event }, {}, function (result) {
             debug('got response from backend: %j', result);
         });
 
