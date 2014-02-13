@@ -1,17 +1,17 @@
 
 Invariants:
         
-len(OBJ:events for main events) <= (
-     count(OBJ in objects.with.events) + 
-     count(OBJ in event.worker:W:object for all W))
-
-if (OBJ:event.worker == W) then (event.worker:W:object == OBJ)
-
-if OBJ:event.worker == W then
-    (event.worker:W:events[0] not in OBJ:events)
-
-len(event.worker:W:object for all W) <= 1
-len(event.worker:W:events for all W) <= 1
+    len(OBJ:events for main events) <= (
+         count(OBJ in objects.with.events) + 
+         count(OBJ in event.worker:W:object for all W))
+    
+    if (OBJ:event.worker == W) then (event.worker:W:object == OBJ)
+    
+    if OBJ:event.worker == W then
+        (event.worker:W:events[0] not in OBJ:events)
+    
+    len(event.worker:W:object for all W) <= 1
+    len(event.worker:W:events for all W) <= 1
 
 
 Add event and update frontend cached state:
@@ -23,7 +23,7 @@ Add event and update frontend cached state:
     EXEC
 
     
-Event worker main loop iteration:
+Event worker main loop:
 
     def main_loop():
         OBJ = BRPOPLPUSH objects.with.events event.worker:2:object 0
@@ -64,6 +64,8 @@ Event worker main loop iteration:
         EXEC
 
      
+Event worker restart code before going into main loop:
+
     def restart():
         if LLEN event.worker:2:object > 0:
             OBJ = LINDEX event.worker:2:object 0
