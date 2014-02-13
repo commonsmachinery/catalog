@@ -70,20 +70,22 @@ REST API
 
 List works:
 
-    curl -H 'Accept: application/json' http://localhost:8004/works/
+    curl -H 'Accept: application/json' http://localhost:8004/works
 
-Create a work:
+Create a work (the subject in the metadata will be rewritten to the
+generated subject):
 
-    curl -v -X POST -d '{"visibility":"public"}' -H 'Content-type: application/json' http://localhost:8004/works/
+    curl -v -X POST -d '{"visibility":"public", "metadataGraph": { "http://localhost:8004/works": { "http://purl.org/dc/terms/title": [ { "value": "Example Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' http://localhost:8004/works
 
 Get a work:
 
-    curl -H 'Accept: application/json' http://localhost:8004/works/4
+    curl -H 'Accept: application/json' http://localhost:8004/works/1392318412903
 
 Update a work:
 
-    curl -X PUT -d '{"state":"published"}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/4
+    curl -X PUT -d '{"state":"published", "metadataGraph": { "http://localhost:8004/works": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1392318412903
 
 Delete a work:
 
-    curl -v -X DELETE http://localhost:8004/works/4
+    curl -v -X DELETE http://localhost:8004/works/1392318412903
+

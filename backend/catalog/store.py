@@ -8,7 +8,19 @@
 #
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir.
 
+import time
 import RDF
+
+class ParamError(Exception): pass
+
+class WorkNotFound(Exception):
+    def __init__(self, id):
+        super(Exception, self).__init__(self, 'work not found: {0}'.format(id))
+
+
+valid_work_visibility = [ 'private', 'group', 'public' ]
+valid_work_state = [ 'draft', 'published' ]
+
 
 NS_CATALOG = "http://catalog.commonsmachinery.se/ns#"
 NS_REM3 = "http://scam.sf.net/schema#"
@@ -38,28 +50,63 @@ work_properties_types = {
     'updated': int,
 }
 
-WORK_METADATA_CONTEXT = "urn:work-metadata-%d"
-WORK_PROPERTIES_CONTEXT = "urn:work-properties-%d"
-WORK_PROPERTIES_SUBJECT = "urn:properties"
+# TODO: this should be configurable
+WORK_METADATA_SUBJECT = "http://localhost:8004/works/%s/metadata"
+WORK_RESOURCE_SUBJECT = "http://localhost:8004/works/%s"
+CREATE_WORK_SUBJECT = "http://localhost:8004/works"
 
 class RedlandStore(object):
     def __init__(self, name):
         self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
         self._model = RDF.Model(self._store)
 
-    def store_work(self, data):
-        data = data.copy()
-        data["id"] = int(data["id"])
+    def _add_statement(self, subject_node, predicate_node, object_node, context):
+        statement = RDF.Statement(subject_node, predicate_node, object_node)
+        if (statement, context) not in self._model:
+            self._model.append(statement, context=context)
 
-        context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % data["id"])
 
-        for subject in data["metadataGraph"].keys():
-            subject_node = RDF.Node(uri_string=str(subject))
+    def store_work(self, user = None, timestamp = None, metadataGraph = None,
+                   visibility = 'private', state = 'draft', **kwargs):
+        if kwargs:
+            print 'store_work: ignoring args:', kwargs
 
-            for predicate in data["metadataGraph"][subject].keys():
+        # TODO: later there should be proper ACLs
+        if not user:
+            raise RuntimeError('no user')
+
+        if timestamp is None:
+            timestamp = int(time.time())
+
+        if visibility not in valid_work_visibility:
+            raise ParamError('invalid visiblity: {0}'.format(visiblity))
+
+        if state not in valid_work_state:
+            raise ParamError('invalid state: {0}'.format(state))
+
+        data = {}
+
+        # TODO: get work IDs from somewhere...
+        work_id = timestamp
+
+        work_subject = RDF.Node(uri_string = WORK_RESOURCE_SUBJECT % work_id)
+        metadata_subject = RDF.Node(uri_string = WORK_METADATA_SUBJECT % work_id)
+
+        # TODO: check that metadataGraph is proper RDF/JSON
+        if not metadataGraph:
+            metadataGraph = {}
+
+        for subject in metadataGraph.keys():
+            if subject == CREATE_WORK_SUBJECT:
+                # alias for the new subject of the work
+                subject_node = work_subject
+            else:
+                subject_node = RDF.Node(uri_string=str(subject))
+
+            for predicate in metadataGraph[subject].keys():
                 predicate_node = RDF.Node(uri_string=str(predicate))
 
-                for object in data["metadataGraph"][subject][predicate]:
+                for object in metadataGraph[subject][predicate]:
                     value = object["value"]
                     type = object["type"]
                     #datatype = object["datatype"]
@@ -72,31 +119,54 @@ class RedlandStore(object):
                     elif type == "bnode":
                         object_node = RDF.Node(blank=value)
 
-                    statement = RDF.Statement(subject_node, predicate_node, object_node)
+                    self._add_statement(subject_node, predicate_node, object_node, metadata_subject)
 
-                    if (statement, context) not in self._model:
-                       self._model.append(statement, context=context)
 
-        del data["metadataGraph"]
+        # Save the main work properties
 
-        # save remaining properties under the properties context
+        context = work_subject
 
-        context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % data["id"])
-        subject_node = RDF.Node(uri_string=WORK_PROPERTIES_SUBJECT)
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['id']),
+                            RDF.Node(literal = str(work_id)),
+                            context)
 
-        for key, value in data.iteritems():
-            if key not in work_properties_rdf:
-                raise RuntimeError("Unknown work property %s" % key)
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['resource']),
+                            work_subject,
+                            context)
 
-            predicate_node = RDF.Node(uri_string=work_properties_rdf[key])
-            object_node = RDF.Node(literal=str(value))
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['metadata']),
+                            metadata_subject,
+                            context)
 
-            statement = RDF.Statement(subject_node, predicate_node, object_node)
-            if (statement, context) not in self._model:
-                self._model.append(statement, context=context)
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['created']),
+                            RDF.Node(literal = str(timestamp)),
+                            context)
+
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['creator']),
+                            RDF.Node(literal = str(user)),
+                            context)
+
+        # TODO: Visibility and state should really be controlled
+        # vocubularies with full URIs, but not now.
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['visibility']),
+                            RDF.Node(literal = str(visibility)),
+                            context)
+
+        self._add_statement(work_subject,
+                            RDF.Node(uri_string = work_properties_rdf['state']),
+                            RDF.Node(literal = str(state)),
+                            context)
 
         # TODO: figure out how to close the store on shutdown instead
         self._model.sync()
+        return work_id
+
 
     def update_work(self, data):
         data = data.copy()
@@ -116,10 +186,18 @@ class RedlandStore(object):
         # TODO: figure out how to close the store on shutdown instead
         self._model.sync()
 
-    def get_work(self, id):
+    def get_work(self, user = None, id = None, **kwargs):
         data = {}
 
-        context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % int(id))
+        # TODO: later there should be proper ACLs
+        if not user:
+            raise RuntimeError('no user')
+
+        if not id:
+            raise RuntimeError('no ID parameter')
+
+
+        context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
 
         for statement in self._model.as_stream(context=context):
             property_uri = unicode(statement.predicate.uri)
@@ -127,20 +205,26 @@ class RedlandStore(object):
                 raise RuntimeError("Unknown work property %s" % property_uri)
 
             property_name = work_properties_json[property_uri]
-            if property_name in work_properties_types:
-                property_value = work_properties_types[property_name](statement.object.literal[0])
-            else:
+            if statement.object.is_literal():
                 property_value = statement.object.literal[0]
+                if property_name in work_properties_types:
+                    property_value = work_properties_types[property_name](property_value)
+
+            elif statement.object.is_resource():
+                property_value = unicode(statement.object.uri)
+
+            else:
+                raise RuntimeError('cannot handle blank nodes in work properties: %s' % statement)
 
             data[unicode(property_name)] = property_value
 
         if len(data) == 0:
-            raise RuntimeError("Entry not found in the store.")
+            raise WorkNotFound(id)
 
         data["metadataGraph"] = {}
         metadata_graph = data["metadataGraph"]
 
-        context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % int(id))
+        context = RDF.Node(uri_string = str(WORK_METADATA_SUBJECT % id))
 
         for statement in self._model.as_stream(context=context):
             subject_uri = unicode(statement.subject.uri)

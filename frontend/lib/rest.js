@@ -12,29 +12,25 @@
 var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
 
-var store = require('./store');
+var rest = function(app, backend, uriBase) {
 
-
-var validWorkVisibility = {
-    'private': 'private',
-    'group': 'group',
-    'public': 'public',
-};
-
-var validWorkState = {
-    'inprogress': 'inprogress',
-    'proofing': 'proofing',
-    'published': 'published',
-};
-
-
-
-var rest = function(app, redis, uriBase) {
-
-    // Helper methods
+    var cudCallOptions = { };
 
     var buildURI = function() {
         return uriBase + '/' + Array.prototype.join.call(arguments, '/');
+    };
+
+    var handleBackendResult = function handleBackendResult(result, callback) {
+        result.on('ready', function(message) {
+            if (message.status === 'SUCCESS') {
+                debug('task result: %j', message.result);
+                callback(null, message.result);
+            }
+            else {
+                console.error('backend task failed: %j', message);
+                callback({ status: message.status, exception: message.result.exc_type }, null);
+            }
+        });
     };
 
     //
@@ -45,6 +41,7 @@ var rest = function(app, redis, uriBase) {
     // TODO: add request sanity checking
 
     app.get('/works', function(req, res) {
+/*
         redis.zrange('works.by.date', 0, -1, function(err, works) {
             if (err) {
                 console.error(err);
@@ -62,83 +59,84 @@ var rest = function(app, redis, uriBase) {
                 }
             });
         });
+*/
     });
 
 
     app.post('/works', function(req, res) {
-        var now, user;
+        var user, result;
 
-        now = Date.now();
         user = 'test';
 
-        // TODO: check that req.body.metadata makes sense
+        result = backend.call('catalog_backend.create_work',
+                              {
+                                  user: user,
+                                  timestamp: Date.now(),
+                                  metadataGraph: req.body.metadataGraph || {},
+                                  visibility: req.body.visibility,
+                                  state: req.body.state,
+                              },
+                              cudCallOptions);
 
-        redis.incr('next.work.id', function(err, workID) {
-            if (err) {
-                console.error(err);
-                res.send(500, 'Error accessing redis');
-                return;
-            }
+        handleBackendResult(
+            result,
+            function(err, work) {
+                var workURI;
 
-            store.addEvent(
-                redis,
-                { type: 'catalog.work.created',
-                  timestamp: now,
-                  user: user,
-                  
-                  data: {
-                      id: workID,
-                      resource: buildURI('works', workID),
-                      metadata: buildURI('works', workID, 'metadata'),
-                      metadataGraph: req.body.metadataGraph || {},
-                      created: now,
-                      creator: user,
-                      visibility: validWorkVisibility[req.body.visibility] || 'private',
-                      state: validWorkState[req.body.state] || 'inprogress',
-                  }
-                },
-                function(err, event) {
-                    if (err) {
-                        console.error(err);
-                        res.send(500, 'Error processing event');
-                        return;
-                    }
+                if (err) {
+                    res.send(500, 'Error processing event');
+                    return;
+                }
 
-                    debug('successfully added work, redirecting to %s', event.data.resource);
-                    res.redirect(event.data.resource);
-                });
-        });
+                workURI = buildURI('works', work.id);
+                debug('successfully added work, redirecting to %s', workURI);
+                res.redirect(workURI);
+            });
     });
 
 
     app.get('/works/:workID', function(req, res) {
         // TODO: do sanitychecking on the ID
-        store.getWork(redis, req.params.workID, function(err, work) {
-            if (err) {
-                console.log(err);
-                res.send(500, 'Error getting work');
-                return;
-            }
 
-            if (!work) {
-                res.send(404);
-                return;
-            }
-                
-            res.format({
-                'text/html': function() {
-                    res.send('work: ' + JSON.stringify(work));
-                },
-                
-                'application/json': function() {
-                    res.send(work);
+        var user, result;
+
+        user = 'test';
+
+        result = backend.call('catalog_backend.get_work',
+                              {
+                                  user: user,
+                                  id: req.params.workID
+                              },
+                              cudCallOptions);
+
+        handleBackendResult(
+            result,
+            function(err, work) {
+                if (err) {
+                    if (err.exception === 'WorkNotFound') {
+                        res.send(404);
+                    }
+                    else {
+                        res.send(500, 'Error processing event');
+                    }
+                    return;
                 }
+
+                res.format({
+                    'text/html': function() {
+                        res.send('work: ' + JSON.stringify(work));
+                    },
+                
+                    'application/json': function() {
+                        res.send(work);
+                    }
+                });
             });
-        });
     });
 
 
     app.put('/works/:workID', function(req, res) {
+/*
         var now, user;
 
         now = Date.now();
@@ -188,9 +186,11 @@ var rest = function(app, redis, uriBase) {
                     res.send(work);
                 });
         });
+*/
     });
 
     app.delete('/works/:workID', function(req, res) {
+/*
         var now, user;
 
         now = Date.now();
@@ -229,6 +229,7 @@ var rest = function(app, redis, uriBase) {
                     res.send(204);
                 });
         });
+*/
     });
 };
 
