@@ -16,6 +16,7 @@ setup(
     author_email='dev@commonsmachinery.se',
     version='0.1',
     py_modules=['catalog_backend'],
+    packages=['catalog'],
     include_package_data=True,
     license='AGPLv3',
 )

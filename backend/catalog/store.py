@@ -40,8 +40,9 @@ work_properties_types = {
 
 WORK_METADATA_CONTEXT = "urn:work-metadata-%d"
 WORK_PROPERTIES_CONTEXT = "urn:work-properties-%d"
+WORK_PROPERTIES_SUBJECT = "urn:properties"
 
-class EntryStore(object):
+class RedlandStore(object):
     def __init__(self, name):
         self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
         self._model = RDF.Model(self._store)
@@ -52,10 +53,10 @@ class EntryStore(object):
         context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % data["id"])
 
         for subject in data["metadataGraph"].keys():
-            subject_node = RDF.Node(uri_string=subject)
+            subject_node = RDF.Node(uri_string=str(subject))
 
             for predicate in data["metadataGraph"][subject].keys():
-                predicate_node = RDF.Node(uri_string=predicate)
+                predicate_node = RDF.Node(uri_string=str(predicate))
 
                 for object in data["metadataGraph"][subject][predicate]:
                     value = object["value"]
@@ -73,14 +74,14 @@ class EntryStore(object):
                     statement = RDF.Statement(subject_node, predicate_node, object_node)
 
                     if (statement, context) not in self._model:
-                        self._model.append(statement, context=context)
+                       self._model.append(statement, context=context)
 
         del data["metadataGraph"]
 
         # save remaining properties under the properties context
 
         context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % data["id"])
-        subject_node = RDF.Node(uri_string="urn:properties")
+        subject_node = RDF.Node(uri_string=WORK_PROPERTIES_SUBJECT)
 
         for key, value in data.iteritems():
             if key not in work_properties_rdf:
@@ -91,7 +92,24 @@ class EntryStore(object):
 
             statement = RDF.Statement(subject_node, predicate_node, object_node)
             if (statement, context) not in self._model:
-                        self._model.append(statement, context=context)
+                self._model.append(statement, context=context)
+
+        # TODO: figure out how to close the store on shutdown instead
+        self._model.sync()
+
+    def update_work(self, data):
+        self.delete_work(int(data["id"]))
+        self.store_work(data)
+
+    def delete_work(self, id):
+        context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % id)
+        self._model.remove_statements_with_context(context)
+
+        context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % id)
+        self._model.remove_statements_with_context(context)
+
+        # TODO: figure out how to close the store on shutdown instead
+        self._model.sync()
 
     def get_work(self, id):
         data = {}
@@ -146,3 +164,41 @@ class EntryStore(object):
             metadata_graph[subject_uri][predicate_uri].append(object)
 
         return data
+
+    def get_works_by_id(self, ids):
+        return [self.get_work(id) for id in ids]
+
+    def get_works(self):
+        """
+        Get the complete list of works as dicts/JSON
+        """
+        id_nodes = self._model.get_targets(
+            RDF.Uri(WORK_PROPERTIES_SUBJECT),
+            RDF.Uri(work_properties_rdf["id"])
+        )
+        ids = [int(id.literal[0]) for id in id_nodes]
+        return self.get_works_by_id(ids)
+
+    def query_works_simple(self, property_name, property_value):
+        """
+        Query works by single non-metadata property (resource, created, etc.)
+        """
+        if property_name not in work_properties_rdf:
+                raise RuntimeError("Unknown work property %s" % property_name)
+
+        query_statement = RDF.Statement(
+            RDF.Uri(WORK_PROPERTIES_SUBJECT),
+            RDF.Uri(work_properties_rdf[property_name]),
+            RDF.Node(property_value)
+        )
+
+        ids = []
+        for statement, context in self._model.find_statements_context(query_statement):
+            id_statement = RDF.Statement(
+                RDF.Uri(WORK_PROPERTIES_SUBJECT),
+                RDF.Uri(work_properties_rdf["id"]),
+                None
+            )
+            id_results = self._model.find_statements(id_statement, context=context)
+            ids.append(int(id_results.current().object.literal[0]))
+        return self.get_works_by_id(ids)
