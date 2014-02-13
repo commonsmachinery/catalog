@@ -49,6 +49,7 @@ class RedlandStore(object):
 
     def store_work(self, data):
         data = data.copy()
+        data["id"] = int(data["id"])
 
         context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % data["id"])
 
@@ -98,15 +99,19 @@ class RedlandStore(object):
         self._model.sync()
 
     def update_work(self, data):
-        self.delete_work(int(data["id"]))
+        data = data.copy()
+        data["id"] = int(data["id"])
+
+        self.delete_work(data["id"], del_properties=False)
         self.store_work(data)
 
-    def delete_work(self, id):
+    def delete_work(self, id, del_properties=True):
         context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % id)
         self._model.remove_statements_with_context(context)
 
-        context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % id)
-        self._model.remove_statements_with_context(context)
+        if del_properties:
+            context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % id)
+            self._model.remove_statements_with_context(context)
 
         # TODO: figure out how to close the store on shutdown instead
         self._model.sync()

@@ -40,6 +40,7 @@ class StoreTask(app.Task):
 def event(**kwargs):
     main_store = event.main_store
     ev = kwargs['event']
+    print ev
 
     if ev["type"] == "catalog.work.created":
         main_store.store_work(ev["data"])
