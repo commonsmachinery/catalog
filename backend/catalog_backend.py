@@ -20,6 +20,7 @@ app.conf.update(
     CELERY_RESULT_BACKEND = 'amqp',
     CELERY_TASK_RESULT_EXPIRES = 30,
     CELERY_TASK_RESULT_DURABLE = False,
+    CELERY_IMPORTS = ("catalog.store"),
 )
 
 
@@ -49,3 +50,5 @@ def create_work(**kwargs):
 @app.task(base=StoreTask)
 def get_work(**kwargs):
     return create_work.main_store.get_work(**kwargs)
+
+
