@@ -40,14 +40,11 @@ Install the backend inside virtualenv:
     python setup.py install
     cd ..
 
-Run `./run_local.sh` to simultaneously start Redis and Celery, or run them separately:
+Run `./run_local.sh` to simultaneously start frontend and backend, or run them separately:
 
-    build/backend/bin/redis-server redis_local.conf
     celery -A catalog_backend worker --loglevel=info --workdir=data
 
-Redis snapshot data as well as Redland storage data will be saved under `./data`.
-
-It's also possible to use Redis that has been previously installed in the system.
+Redland storage data will be saved under `./data`.
 
 Frontend
 --------
@@ -57,7 +54,8 @@ Install all the frontend dependencies:
     cd frontend
     npm install
 
-Run it (in a separate terminal window):
+Run it using `./run_local.sh` to start the frontend together with backend or use the command below
+in a separate shell:
 
     node server.js
 
