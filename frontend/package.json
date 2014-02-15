@@ -10,11 +10,13 @@
     },
     "bin": "server.js",
     "dependencies" : {
-        "node-celery" : "*",
+        "consolidate" : "*",
+        "debug": "*",
         "express": "3.x",
+        "jade": "*",
+        "node-celery" : "*",
         "redis": "*",
-        "underscore": "*",
-        "debug": "*"
+        "underscore": "*"
     },
     "devDependencies" : {
         "jslint": "*"
