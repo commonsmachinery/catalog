@@ -16,7 +16,7 @@ Installing prerequisites
 
 On Ubuntu:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev curl
 
 Make sure that Node.js is installed to run the frontend.
 
