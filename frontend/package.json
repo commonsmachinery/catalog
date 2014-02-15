@@ -19,7 +19,8 @@
         "underscore": "*"
     },
     "devDependencies" : {
-        "jslint": "*"
+        "jslint": "*",
+        "nodemon": "*"
     },
     "license": "AGPLv3"
 }
