@@ -188,14 +188,14 @@ class RedlandStore(object):
 
     def get_work(self, user = None, id = None, **kwargs):
         data = {}
-
+        # TODO: handle this propperly, this was put just to make the template infrastructure.
+        id = kwargs['id']
+        user = kwargs['user'] 
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
-
         if not id:
             raise RuntimeError('no ID parameter')
-
 
         context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
 

@@ -11,7 +11,7 @@ from celery import Task
 from celery.signals import worker_shutdown
 from catalog.store import RedlandStore
 
-app = Celery('catalog_backend', broker='amqp://guest@localhost//')
+app = Celery('catalog_backend', broker='amqp://guest@localhost:5672//')
 
 app.conf.update(
     CELERY_TASK_SERIALIZER='json',
