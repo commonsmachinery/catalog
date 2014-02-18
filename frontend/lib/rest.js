@@ -2,36 +2,25 @@
 
    Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
-   Authors: Peter Liljenberg <peter@commonsmachinery.se>
+   Authors: 
+        Peter Liljenberg <peter@commonsmachinery.se>
+        Elsa Balderrama <elsa@commonsmachinery.se>
 
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
-  */
+*/
 
 'use strict';
 
 var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
+var backend;
+var baseURL;
 
-var rest = function(app, backend, uriBase) {
+var cudCallOptions = { };
 
-    var cudCallOptions = { };
-
-    var buildURI = function() {
-        return uriBase + '/' + Array.prototype.join.call(arguments, '/');
-    };
-
-    var handleBackendResult = function handleBackendResult(result, callback) {
-        result.on('ready', function(message) {
-            if (message.status === 'SUCCESS') {
-                debug('task result: %j', message.result);
-                callback(null, message.result);
-            }
-            else {
-                console.error('backend task failed: %j', message);
-                callback({ status: message.status, exception: message.result.exc_type }, null);
-            }
-        });
-    };
+function rest(app, localBackend, localBaseURL) {
+    backend = localBackend;
+    baseURL = localBaseURL;
 
     //
     // REST routes
@@ -40,6 +29,7 @@ var rest = function(app, backend, uriBase) {
     // TODO: add request ID checking
     // TODO: add request sanity checking
 
+    app.get('/', getHome);
     app.get('/works', function(req, res) {
 /*
         redis.zrange('works.by.date', 0, -1, function(err, works) {
@@ -63,76 +53,8 @@ var rest = function(app, backend, uriBase) {
     });
 
 
-    app.post('/works', function(req, res) {
-        var user, result;
-
-        user = 'test';
-
-        result = backend.call('catalog_backend.create_work',
-                              {
-                                  user: user,
-                                  timestamp: Date.now(),
-                                  metadataGraph: req.body.metadataGraph || {},
-                                  visibility: req.body.visibility,
-                                  state: req.body.state,
-                              },
-                              cudCallOptions);
-
-        handleBackendResult(
-            result,
-            function(err, work) {
-                var workURI;
-
-                if (err) {
-                    res.send(500, 'Error processing event');
-                    return;
-                }
-
-                workURI = buildURI('works', work.id);
-                debug('successfully added work, redirecting to %s', workURI);
-                res.redirect(workURI);
-            });
-    });
-
-
-    app.get('/works/:workID', function(req, res) {
-        // TODO: do sanitychecking on the ID
-
-        var user, result;
-
-        user = 'test';
-
-        result = backend.call('catalog_backend.get_work',
-                              {
-                                  user: user,
-                                  id: req.params.workID
-                              },
-                              cudCallOptions);
-
-        handleBackendResult(
-            result,
-            function(err, work) {
-                if (err) {
-                    if (err.exception === 'WorkNotFound') {
-                        res.send(404);
-                    }
-                    else {
-                        res.send(500, 'Error processing event');
-                    }
-                    return;
-                }
-
-                res.format({
-                    'text/html': function() {
-                        res.send('work: ' + JSON.stringify(work));
-                    },
-                
-                    'application/json': function() {
-                        res.send(work);
-                    }
-                });
-            });
-    });
+    app.post('/works', postWork);
+    app.get('/works/:workID', getWork);
 
 
     app.put('/works/:workID', function(req, res) {
@@ -231,6 +153,95 @@ var rest = function(app, backend, uriBase) {
         });
 */
     });
+
 };
+
+
+function buildURL() {
+    return baseURL + '/' + Array.prototype.join.call(arguments, '/');
+};
+function getHome (req, res) {
+    res.render('home');
+}
+function getWork(req, res) {
+    function gotoWork(work, err) {
+        if (err) {
+            if (err.exception === 'WorkNotFound') {
+                res.send(404, 'Work not found');
+            }
+            else {
+                res.send(500, 'Error processing event');
+            }
+            return;
+        }
+
+        res.format({
+            'text/html': 
+                res.render('workPermalink',{
+                    work: work || null
+                }),
+            'application/json': 
+                res.send(work)
+        });
+    }
+
+    // TODO: do sanitychecking on the ID
+    var user;
+    var result;
+    var queryData;
+
+    user = 'test';
+    queryData =  {
+        user: user,
+        id: req.params.workID
+    };
+    result = backend.call('catalog_backend.get_work', queryData, cudCallOptions);
+
+    handleBackendResult(result, gotoWork);
+}
+function handleBackendResult(result, callback) {
+    result.on('ready', function(message) {
+        if (message.status === 'SUCCESS') {
+            debug('task result: %j', message.result);
+            callback(message.result);
+        }
+        else {
+            var e = { 
+                status: message.status, 
+                exception: message.result.exc_type 
+            };
+            console.error('backend task failed: %j', message);
+            callback(null, e);
+        }
+    });
+}
+function postWork(req, res) {
+    function gotoWork(work, err) {
+        var workURL;
+
+        if (err) {
+            res.send(500, 'Error processing event: ', err);
+            return;
+        }
+        workURL = buildURL('works', work.id);
+        debug('successfully added work, redirecting to %s', workURL);
+        res.redirect(workURL);
+    }
+    var user;
+    var result;
+    var queryData;
+
+    user = 'test';
+    queryData = {
+        user: user,
+        timestamp: Date.now(),
+        metadataGraph: req.body.metadataGraph || {},
+        visibility: req.body.visibility,
+        state: req.body.state,
+    };
+    result = backend.call('catalog_backend.create_work', queryData, cudCallOptions);
+
+    handleBackendResult(result, gotoWork);
+}
 
 module.exports = rest;

@@ -16,6 +16,7 @@
         "jade": "*",
         "node-celery" : "*",
         "redis": "*",
+        "stylus": "*",
         "underscore": "*"
     },
     "devDependencies" : {
