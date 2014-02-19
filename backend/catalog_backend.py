@@ -20,9 +20,25 @@ app.conf.update(
     CELERY_RESULT_BACKEND = 'amqp',
     CELERY_TASK_RESULT_EXPIRES = 30,
     CELERY_TASK_RESULT_DURABLE = False,
-    CELERY_IMPORTS = ("catalog.store"),
+    CELERY_IMPORTS = ("catalog.store", "catalog_backend"),
 )
 
+class FileLock(object):
+    def __init__(self, id, timeout=60):
+        self._filename = 'lock-%s' % id
+
+        while os.access(self._filename, os.R_OK) and timeout > 0:
+            time.sleep(1)
+            timeout -= 1
+
+        if (not os.access(self._filename, os.R_OK)):
+            self._f = open(self._filename, "w")
+        else:
+            raise RuntimeError("Timeout error while trying to lock access to work")
+
+    def release(self):
+        self._f.close()
+        os.remove(self._filename)
 
 class StoreTask(app.Task):
     abstract = True
@@ -48,7 +64,23 @@ def create_work(**kwargs):
     return { 'id': work_id }
 
 @app.task(base=StoreTask)
+def update_work(**kwargs):
+    id = kwargs['id']
+    lock = FileLock(id)
+    return update_work.main_store.update_work(**kwargs)
+    lock.release()
+
+@app.task(base=StoreTask)
+def delete_work(**kwargs):
+    id = kwargs['id']
+    lock = FileLock(id)
+    return delete_work.main_store.delete_work(**kwargs)
+    lock.release()
+
+@app.task(base=StoreTask)
 def get_work(**kwargs):
     return create_work.main_store.get_work(**kwargs)
 
-
+@app.task(base=StoreTask)
+def get_works(**kwargs):
+    return create_work.main_store.query_works_simple(**kwargs)

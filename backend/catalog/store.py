@@ -9,6 +9,7 @@
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir.
 
 import time
+import re
 import RDF
 
 class ParamError(Exception): pass
@@ -55,6 +56,9 @@ WORK_METADATA_SUBJECT = "http://localhost:8004/works/%s/metadata"
 WORK_RESOURCE_SUBJECT = "http://localhost:8004/works/%s"
 CREATE_WORK_SUBJECT = "http://localhost:8004/works"
 
+DATABASE_META_CONTEXT = "http://catalog.commonsmachinery.se/db"
+
+
 class RedlandStore(object):
     def __init__(self, name):
         self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
@@ -65,6 +69,18 @@ class RedlandStore(object):
         if (statement, context) not in self._model:
             self._model.append(statement, context=context)
 
+    def _get_metadata_context(self, id):
+        """
+        Convenience method to get metadata context (subject) for a work.
+        """
+        if isinstance(id, RDF.Node):
+            context = id
+        else:
+            context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
+
+        for statement in self._model.as_stream(context=context):
+            if unicode(statement.predicate.uri) == work_properties_rdf['metadata']:
+                return str(statement.object.uri)
 
     def store_work(self, user = None, timestamp = None, metadataGraph = None,
                    visibility = 'private', state = 'draft', **kwargs):
@@ -168,36 +184,73 @@ class RedlandStore(object):
         return work_id
 
 
-    def update_work(self, data):
-        data = data.copy()
-        data["id"] = int(data["id"])
+    def update_work(self, **kwargs):
+        id = kwargs.pop('id', None)
+        user = kwargs.pop('user', None)
 
-        self.delete_work(data["id"], del_properties=False)
-        self.store_work(data)
-
-    def delete_work(self, id, del_properties=True):
-        context = RDF.Node(uri_string=WORK_METADATA_CONTEXT % id)
-        self._model.remove_statements_with_context(context)
-
-        if del_properties:
-            context = RDF.Node(uri_string=WORK_PROPERTIES_CONTEXT % id)
-            self._model.remove_statements_with_context(context)
-
-        # TODO: figure out how to close the store on shutdown instead
-        self._model.sync()
-
-    def get_work(self, user = None, id = None, **kwargs):
-        data = {}
-        # TODO: handle this propperly, this was put just to make the template infrastructure.
-        id = kwargs['id']
-        user = kwargs['user'] 
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
         if not id:
             raise RuntimeError('no ID parameter')
 
-        context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
+        work = self.get_work(user=user, id=id)
+
+        if work['creator'] != user:
+            raise RuntimeError("Error accessing work owned by another user")
+
+        data = kwargs.copy()
+        work.update(data)
+
+        work['id'] = id
+        work['user'] = user
+
+        self.delete_work(id=id, user=user)
+        self.store_work(**work)
+
+
+    def delete_work(self, **kwargs):
+        id = kwargs.pop('id', None)
+        user = kwargs.pop('user', None)
+
+        # TODO: later there should be proper ACLs
+        if not user:
+            raise RuntimeError('no user')
+        if not id:
+            raise RuntimeError('no ID parameter')
+
+        work = self.get_work(user=user, id=id)
+
+        if work['creator'] != user:
+            raise RuntimeError("Error accessing work owned by another user")
+
+        resource_context = RDF.Node(uri_string=WORK_RESOURCE_SUBJECT % id)
+        metadata_context = RDF.Node(uri_string=self._get_metadata_context(id))
+
+        self._model.remove_statements_with_context(resource_context)
+        self._model.remove_statements_with_context(metadata_context)
+
+        # TODO: figure out how to close the store on shutdown instead
+        self._model.sync()
+
+    def get_work(self, **kwargs):
+        data = {}
+
+        # TODO: handle this propperly, this was put just to make the template infrastructure.
+        id = kwargs.pop('id', None)
+        user = kwargs.pop('user', None)
+
+        # TODO: later there should be proper ACLs
+        if not user:
+            raise RuntimeError('no user')
+
+        if not id:
+            raise RuntimeError('no ID parameter')
+
+        if isinstance(id, RDF.Node):
+            context = id
+        else:
+            context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
 
         for statement in self._model.as_stream(context=context):
             property_uri = unicode(statement.predicate.uri)
@@ -220,6 +273,9 @@ class RedlandStore(object):
 
         if len(data) == 0:
             raise WorkNotFound(id)
+
+        if data["visibility"] == "private" and data["creator"] != "user":
+            raise RuntimeError("Error accessing private work owned by different user")
 
         data["metadataGraph"] = {}
         metadata_graph = data["metadataGraph"]
@@ -254,40 +310,79 @@ class RedlandStore(object):
 
         return data
 
-    def get_works_by_id(self, ids):
-        return [self.get_work(id) for id in ids]
-
-    def get_works(self):
+    def query_works_simple(self, **kwargs):
         """
-        Get the complete list of works as dicts/JSON
-        """
-        id_nodes = self._model.get_targets(
-            RDF.Uri(WORK_PROPERTIES_SUBJECT),
-            RDF.Uri(work_properties_rdf["id"])
-        )
-        ids = [int(id.literal[0]) for id in id_nodes]
-        return self.get_works_by_id(ids)
+        Query works using a dictionary of key=value parameter pairs to match works.
+        Parameters can be given as JSON properties or predicates
+        ("http://purl.org/dc/terms/title").
 
-    def query_works_simple(self, property_name, property_value):
+        Reserved kwargs:
+            user
+            offset
+            limit
         """
-        Query works by single non-metadata property (resource, created, etc.)
-        """
-        if property_name not in work_properties_rdf:
-                raise RuntimeError("Unknown work property %s" % property_name)
+        user = kwargs.pop('user', None)
+        offset = kwargs.pop("offset", 0)
+        limit = kwargs.pop("limit", 0)
 
-        query_statement = RDF.Statement(
-            RDF.Uri(WORK_PROPERTIES_SUBJECT),
-            RDF.Uri(work_properties_rdf[property_name]),
-            RDF.Node(property_value)
-        )
+        # TODO: later there should be proper ACLs
+        if not user:
+            raise RuntimeError('no user')
 
-        ids = []
-        for statement, context in self._model.find_statements_context(query_statement):
-            id_statement = RDF.Statement(
-                RDF.Uri(WORK_PROPERTIES_SUBJECT),
-                RDF.Uri(work_properties_rdf["id"]),
-                None
-            )
-            id_results = self._model.find_statements(id_statement, context=context)
-            ids.append(int(id_results.current().object.literal[0]))
-        return self.get_works_by_id(ids)
+        # parse query params and convert them to predicates
+        params = []
+        # TODO: support resources in property values
+        for key, value in kwargs.iteritems():
+            url_re = "^https?:"
+            if re.match(url_re, key):
+                param_name = key
+            else:
+                if key not in work_properties_rdf:
+                    #raise RuntimeError("Unknown work property %s" % key)
+                    print "Warning: unknown work property used in query (%s)" % key
+                param_name = work_properties_rdf[key]
+            params.append((param_name, value))
+
+        query_string = "SELECT ?s WHERE { \n"
+
+        query_params_all = []
+
+        for p, o in params:
+            query_params_all.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
+
+        # query params, part 1 - private works owned by user
+        query_string += "{\n"
+        query_params_1 = query_params_all[:]
+
+        p, o = work_properties_rdf['creator'], user
+        query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
+        p, o = work_properties_rdf['visibility'], "private"
+        query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
+
+        query_string = query_string + " . \n".join(query_params_1)
+
+        # query params, part 2 - private works owned by user
+        query_string += "\n} UNION {\n"
+        query_params_2 = query_params_all[:]
+
+        p, o = work_properties_rdf['visibility'], "public"
+        query_params_2.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
+
+        query_string = query_string + " . \n".join(query_params_2)
+        query_string += "\n}"
+
+        # end query
+        query_string = query_string + " . \n }"
+        if offset > 0:
+            query_string = query_string + " OFFSET %d" % offset
+        if limit > 0:
+            query_string = query_string + " LIMIT %d" % limit
+
+        query = RDF.Query(query_string)
+
+        query_results = query.execute(self._model)
+        results = []
+        for result in query_results:
+            work_subject = result['s']
+            results.append(self.get_work(user=user, id=work_subject))
+        return results
