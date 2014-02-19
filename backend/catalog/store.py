@@ -224,7 +224,7 @@ class RedlandStore(object):
         if work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
 
-        resource_context = RDF.Node(uri_string=WORK_RESOURCE_SUBJECT % id)
+        resource_context = RDF.Node(uri_string=WORK_RESOURCE_SUBJECT % str(id))
         metadata_context = RDF.Node(uri_string=self._get_metadata_context(id))
 
         self._model.remove_statements_with_context(resource_context)

@@ -10,6 +10,7 @@ from celery import Celery
 from celery import Task
 from celery.signals import worker_shutdown
 from catalog.store import RedlandStore
+import os, time
 
 app = Celery('catalog_backend', broker='amqp://guest@localhost:5672//')
 
@@ -24,14 +25,14 @@ app.conf.update(
 )
 
 class FileLock(object):
-    def __init__(self, id, timeout=60):
+    def __init__(self, id, timeout=15):
         self._filename = 'lock-%s' % id
 
-        while os.access(self._filename, os.R_OK) and timeout > 0:
+        while not os.access(self._filename, os.R_OK) and timeout > 0:
             time.sleep(1)
             timeout -= 1
 
-        if (not os.access(self._filename, os.R_OK)):
+        if (os.access(self._filename, os.R_OK)):
             self._f = open(self._filename, "w")
         else:
             raise RuntimeError("Timeout error while trying to lock access to work")
