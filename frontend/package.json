@@ -1,27 +1,35 @@
 {
-    "name": "catalog-frontend",
-    "version": "0.0.1",
-    "homepage": "https://github.com/commonsmachinery/catalog",
-    "author": "Commons Machinery <dev@commonsmachinery.se>",
-    "description": "Web/REST frontend to the catalog.",
-    "repository": {
-        "type": "git",
-        "url": "https://github.com/commonsmachinery/catalog.git"
-    },
-    "bin": "server.js",
-    "dependencies" : {
-        "consolidate" : "*",
-        "debug": "*",
-        "express": "3.x",
-        "jade": "*",
-        "node-celery" : "*",
-        "redis": "*",
-        "stylus": "*",
-        "underscore": "*"
-    },
-    "devDependencies" : {
-        "jslint": "*",
-        "nodemon": "*"
-    },
-    "license": "AGPLv3"
+  "name": "catalog-frontend",
+  "version": "0.0.1",
+  "homepage": "https://github.com/commonsmachinery/catalog",
+  "author": "Commons Machinery <dev@commonsmachinery.se>",
+  "description": "Web/REST frontend to the catalog.",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/commonsmachinery/catalog.git"
+  },
+  "bin": "server.js",
+  "dependencies": {
+    "consolidate": "*",
+    "debug": "*",
+    "express": "3.x",
+    "jade": "*",
+    "node-celery": "*",
+    "redis": "*",
+    "stylus": "*",
+    "underscore": "*"
+  },
+  "devDependencies": {
+    "jslint": "*",
+    "nodemon": "*",
+    "volo": "*"
+  },
+  "license": "AGPLv3",
+  "amd": {},
+  "volo": {
+    "baseUrl": "./public/lib",
+    "dependencies": {
+      "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js"
+    }
+  }
 }

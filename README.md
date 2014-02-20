@@ -53,6 +53,7 @@ Install all the frontend dependencies:
 
     cd frontend
     npm install
+    ./volo
 
 Run it using `./run_local.sh` to start the frontend together with backend or use the command below
 in a separate shell:
