@@ -79,8 +79,9 @@ function getWork(req, res) {
         }
         res.format({
             'text/html': function(){
+                console.log(work);
                 res.render('workPermalink',{
-                    work: work || null
+                    work: work
                 })
             },
             'application/json': function(){
@@ -114,10 +115,12 @@ function getWorks(req, res) {
         }
         res.format({
             'text/html': function() {
-                res.send(works);
+                res.render('workCollection', {
+                    works: works
+                });
             },
             'application/json': function() {
-                res.render('worksList', works);
+                res.send(works);
             }
         });
         return;

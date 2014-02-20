@@ -22,5 +22,6 @@ mixin branch(data)
 				|#{val}
 
 include includes/top
-	+branch(work)
+	for work in works
+		+branch(work)
 include includes/bottom
