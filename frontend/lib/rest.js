@@ -25,28 +25,7 @@ function rest(app, localBackend, localBaseURL) {
     // TODO: add request ID checking
     // TODO: add request sanity checking
 
-    app.get('/works', function(req, res) {
-/*
-        redis.zrange('works.by.date', 0, -1, function(err, works) {
-            if (err) {
-                console.error(err);
-                res.send(500, 'Error fetching list of works');
-                return;
-            }
-
-            res.format({
-                'text/html': function() {
-                    res.send('works: ' + works.join(' '));
-                },
-                
-                'application/json': function() {
-                    res.send(works);
-                }
-            });
-        });
-*/
-    });
-
+    app.get('/works', getWorks);
     app.get('/works/:workID', getWork);
     app.post('/works', postWork);
     app.put('/works/:workID', putWork);
@@ -59,6 +38,7 @@ function rest(app, localBackend, localBaseURL) {
 function buildURL() {
     return baseURL + '/' + Array.prototype.join.call(arguments, '/');
 }
+
 function deleteWork(req, res) {
     function sendResponse (work, err) {
         /* ToDo: Send response code only, let the client handle which message to display */
@@ -84,6 +64,7 @@ function deleteWork(req, res) {
     var result = backend.call('catalog_backend.delete_work', queryData, cudCallOptions);
     handleBackendResult(result, sendResponse);
 }
+
 function getWork(req, res) {
     function gotoWork(work, err) {
         /* ToDo: Send response code only, let the client handle which message to display */
@@ -123,6 +104,34 @@ function getWork(req, res) {
     handleBackendResult(result, gotoWork);
     return;
 }
+
+function getWorks(req, res) {
+    function sendResult (works, err) {
+        if (err) {
+            console.error(err);
+            res.send(500, 'Error fetching list of works');
+            return;
+        }
+        res.format({
+            'text/html': function() {
+                res.send(works);
+            },
+            'application/json': function() {
+                res.render('worksList', works);
+            }
+        });
+        return;
+    }
+    var user = 'test';
+    var queryData = req.query;
+
+    queryData.user = user;
+
+    var result = backend.call('catalog_backend.get_works', queryData, cudCallOptions);
+    handleBackendResult(result, sendResult);
+    return;
+}
+
 function handleBackendResult(result, callback) {
     result.on('ready', function(message) {
         if (message.status === 'SUCCESS') {
@@ -140,6 +149,7 @@ function handleBackendResult(result, callback) {
     });
     return;
 }
+
 function postWork(req, res) {
     function gotoWork(work, err) {
         var workURL;
@@ -169,6 +179,7 @@ function postWork(req, res) {
     handleBackendResult(result, gotoWork);
     return;
 }
+
 function putWork(req, res) {
     function sendResult (work, err) {
         /* ToDo: Send response code only, let the client handle which message to display */
@@ -198,7 +209,8 @@ function putWork(req, res) {
     /* ToDo: make 'global' */
     // var validWorkVisibility = [
     //     'public',
-    //     'private'
+    //     'private',
+    //      'group'
     // ];
     // var validWorkState = [
     //     'published',

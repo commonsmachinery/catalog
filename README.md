@@ -70,6 +70,10 @@ List works:
 
     curl -H 'Accept: application/json' http://localhost:8004/works
 
+Filter works:
+    
+    curl -H http://localhost:8004/works?visibility=public
+
 Create a work (the subject in the metadata will be rewritten to the
 generated subject):
 
@@ -78,6 +82,8 @@ generated subject):
 Get a work:
 
     curl -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+
+
 
 Update a work:
 
