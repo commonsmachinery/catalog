@@ -58,7 +58,6 @@ CREATE_WORK_SUBJECT = "http://localhost:8004/works"
 
 DATABASE_META_CONTEXT = "http://catalog.commonsmachinery.se/db"
 
-
 class RedlandStore(object):
     def __init__(self, name):
         self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
@@ -69,21 +68,45 @@ class RedlandStore(object):
         if (statement, context) not in self._model:
             self._model.append(statement, context=context)
 
+    def _get_resource_context(self, id):
+        """
+        Convenience method to get resource context (subject) for a work.
+        """
+        if isinstance(id, basestring) or isinstance(id, int):
+            subject = WORK_RESOURCE_SUBJECT % id
+        else:
+            raise RuntimeError("id must be string or integer")
+        context = RDF.Node(uri_string=str(subject))
+        return context
+
     def _get_metadata_context(self, id):
         """
         Convenience method to get metadata context (subject) for a work.
         """
-        if isinstance(id, RDF.Node):
-            context = id
+        if isinstance(id, basestring) or isinstance(id, int):
+            subject = WORK_METADATA_SUBJECT % id
         else:
-            context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
+            raise RuntimeError("id must be string or integer")
+        context = RDF.Node(uri_string=str(subject))
+        return context
 
-        for statement in self._model.as_stream(context=context):
-            if unicode(statement.predicate.uri) == work_properties_rdf['metadata']:
-                return str(statement.object.uri)
+    def _get_work_id(self, work_subject):
+        if isinstance(work_subject, basestring):
+            work_subject = RDF.Node(uri_string=work_subject)
+
+        query_statement = RDF.Statement(subject=RDF.Node(work_subject),
+            predicate=RDF.Node(uri_string=work_properties_rdf['id']), object=None)
+
+        for statement in self._model.find_statements(query_statement):
+            return statement.object.literal[0]
 
     def store_work(self, user = None, timestamp = None, metadataGraph = None,
-                   visibility = 'private', state = 'draft', **kwargs):
+                   visibility = 'private', state = 'draft',
+                   id = None, **kwargs):
+        """
+        Create work given the resource metadata as kwargs and work metadata as metadataGraph.
+        Use id value of None to generate an ID from timestamp.
+        """
         if kwargs:
             print 'store_work: ignoring args:', kwargs
 
@@ -103,10 +126,13 @@ class RedlandStore(object):
         data = {}
 
         # TODO: get work IDs from somewhere...
-        work_id = timestamp
+        if id is None:
+            work_id = timestamp
+        else:
+            work_id = id
 
-        work_subject = RDF.Node(uri_string = WORK_RESOURCE_SUBJECT % work_id)
-        metadata_subject = RDF.Node(uri_string = WORK_METADATA_SUBJECT % work_id)
+        work_subject = self._get_resource_context(work_id)
+        metadata_subject = self._get_metadata_context(work_id)
 
         # TODO: check that metadataGraph is proper RDF/JSON
         if not metadataGraph:
@@ -136,7 +162,6 @@ class RedlandStore(object):
                         object_node = RDF.Node(blank=value)
 
                     self._add_statement(subject_node, predicate_node, object_node, metadata_subject)
-
 
         # Save the main work properties
 
@@ -185,14 +210,9 @@ class RedlandStore(object):
 
 
     def update_work(self, **kwargs):
-        id = kwargs.pop('id', None)
-        user = kwargs.pop('user', None)
-
-        # TODO: later there should be proper ACLs
-        if not user:
-            raise RuntimeError('no user')
-        if not id:
-            raise RuntimeError('no ID parameter')
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
 
         work = self.get_work(user=user, id=id)
 
@@ -208,24 +228,18 @@ class RedlandStore(object):
         self.delete_work(id=id, user=user)
         self.store_work(**work)
 
-
     def delete_work(self, **kwargs):
-        id = kwargs.pop('id', None)
-        user = kwargs.pop('user', None)
-
-        # TODO: later there should be proper ACLs
-        if not user:
-            raise RuntimeError('no user')
-        if not id:
-            raise RuntimeError('no ID parameter')
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
 
         work = self.get_work(user=user, id=id)
 
         if work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
 
-        resource_context = RDF.Node(uri_string=WORK_RESOURCE_SUBJECT % str(id))
-        metadata_context = RDF.Node(uri_string=self._get_metadata_context(id))
+        resource_context = self._get_resource_context(id)
+        metadata_context = self._get_metadata_context(id)
 
         self._model.remove_statements_with_context(resource_context)
         self._model.remove_statements_with_context(metadata_context)
@@ -234,23 +248,13 @@ class RedlandStore(object):
         self._model.sync()
 
     def get_work(self, **kwargs):
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+
         data = {}
 
-        # TODO: handle this propperly, this was put just to make the template infrastructure.
-        id = kwargs.pop('id', None)
-        user = kwargs.pop('user', None)
-
-        # TODO: later there should be proper ACLs
-        if not user:
-            raise RuntimeError('no user')
-
-        if not id:
-            raise RuntimeError('no ID parameter')
-
-        if isinstance(id, RDF.Node):
-            context = id
-        else:
-            context = RDF.Node(uri_string = str(WORK_RESOURCE_SUBJECT % id))
+        context = self._get_resource_context(id)
 
         for statement in self._model.as_stream(context=context):
             property_uri = unicode(statement.predicate.uri)
@@ -277,10 +281,8 @@ class RedlandStore(object):
         if data["visibility"] == "private" and data["creator"] != "user":
             raise RuntimeError("Error accessing private work owned by different user")
 
-        data["metadataGraph"] = {}
-        metadata_graph = data["metadataGraph"]
-
-        context = RDF.Node(uri_string = str(WORK_METADATA_SUBJECT % id))
+        metadata_graph = {}
+        context = self._get_metadata_context(id)
 
         for statement in self._model.as_stream(context=context):
             subject_uri = unicode(statement.subject.uri)
@@ -308,6 +310,7 @@ class RedlandStore(object):
 
             metadata_graph[subject_uri][predicate_uri].append(object)
 
+        data["metadataGraph"] = metadata_graph
         return data
 
     def query_works_simple(self, **kwargs):
@@ -384,5 +387,6 @@ class RedlandStore(object):
         results = []
         for result in query_results:
             work_subject = result['s']
-            results.append(self.get_work(user=user, id=work_subject))
+            work_id = self._get_work_id(work_subject)
+            results.append(self.get_work(user=user, id=work_id))
         return results
