@@ -85,3 +85,31 @@ def get_work(**kwargs):
 @app.task(base=StoreTask)
 def get_works(**kwargs):
     return create_work.main_store.query_works_simple(**kwargs)
+
+# sources of works
+
+@app.task(base=StoreTask)
+def add_source(**kwargs):
+    return create_work.main_store.store_source(**kwargs)
+
+@app.task(base=StoreTask)
+def get_sources(**kwargs):
+    return create_work.main_store.get_sources(**kwargs)
+
+@app.task(base=StoreTask)
+def delete_source(**kwargs):
+    return create_work.main_store.delete_source(**kwargs)
+
+# posted instances
+
+@app.task(base=StoreTask)
+def add_post(**kwargs):
+    return create_work.main_store.store_post(**kwargs)
+
+@app.task(base=StoreTask)
+def get_posts(**kwargs):
+    return create_work.main_store.get_posts(**kwargs)
+
+@app.task(base=StoreTask)
+def delete_post(**kwargs):
+    return create_work.main_store.delete_post(**kwargs)

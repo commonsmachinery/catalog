@@ -337,11 +337,11 @@ class RedlandStore(object):
         self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
         self._model = RDF.Model(self._store)
 
-    def _get_work_id(self, work_subject):
-        if isinstance(work_subject, basestring):
-            work_subject = RDF.Node(uri_string=work_subject)
+    def _get_entry_id(self, subject):
+        if isinstance(subject, basestring):
+            subject = RDF.Node(uri_string=subject)
 
-        query_statement = RDF.Statement(subject=RDF.Node(work_subject),
+        query_statement = RDF.Statement(subject=RDF.Node(subject),
             predicate=RDF.Node(uri_string=work_property_uris['id']), object=None)
 
         for statement in self._model.find_statements(query_statement):
@@ -439,24 +439,6 @@ class RedlandStore(object):
 
         return work.get_data()
 
-    def get_source(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id')
-        user = kwargs.pop('user')
-
-        source = Source.from_model(self._model, id)
-
-        return source.get_data()
-
-    def get_post(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id')
-        user = kwargs.pop('user')
-
-        post = Post.from_model(self._model, id)
-
-        return post.get_data()
-
     def query_works_simple(self, **kwargs):
         """
         Query works using a dictionary of key=value parameter pairs to match works.
@@ -531,7 +513,7 @@ class RedlandStore(object):
         results = []
         for result in query_results:
             work_subject = result['s']
-            work_id = self._get_work_id(work_subject)
+            work_id = self._get_entry_id(work_subject)
             results.append(self.get_work(user=user, id=work_id))
         return results
 
@@ -573,7 +555,7 @@ class RedlandStore(object):
         # save source link triple directly, update_work currently ignores "unrelated" kwargs
         # like "source"
 
-        work_id = self._get_work_id(resource)
+        work_id = self._get_entry_id(resource)
 
         source_subject = get_context_node(Source, None, id)
         work_subject = get_context_node(Work, None, work_id)
@@ -609,6 +591,28 @@ class RedlandStore(object):
 
         if (statement, work_subject) in self._model:
             self._model.remove_statement(statement, context=work_subject)
+
+    def get_source(self, **kwargs):
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+
+        source = Source.from_model(self._model, id)
+
+        return source.get_data()
+
+    def get_sources(self, **kwargs):
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+
+        sources = []
+        work = get_work(user=user, id=id)
+        for source_uri in work.get('source', []):
+            source_id = self._get_entry_id(source_uri)
+            source = self.get_source(user=user, id=source_id)
+            sources.append(source)
+        return source
 
     def store_post(self, user=None, timestamp=None, metadataGraph=None,
                    cachedExternalMetadataGraph=None, resource=None,
@@ -648,7 +652,7 @@ class RedlandStore(object):
         # save source link triple directly, update_work currently ignores "unrelated" kwargs
         # like "source"
 
-        work_id = self._get_work_id(resource)
+        work_id = self._get_entry_id(resource)
 
         post_subject = get_context_node(Post, None, id)
         work_subject = get_context_node(Work, None, work_id)
@@ -684,3 +688,25 @@ class RedlandStore(object):
 
         if (statement, work_subject) in self._model:
             self._model.remove_statement(statement, context=work_subject)
+
+    def get_post(self, **kwargs):
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+
+        post = Post.from_model(self._model, id)
+
+        return post.get_data()
+
+    def get_posts(self, **kwargs):
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+
+        posts = []
+        work = get_work(user=user, id=id)
+        for post_uri in work.get('post', []):
+            post_id = self._get_entry_id(post_uri)
+            post = self.get_post(user=user, id=post_id)
+            posts.append(post)
+        return posts
