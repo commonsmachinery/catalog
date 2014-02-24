@@ -11,6 +11,7 @@ from celery import Task
 from celery.signals import worker_shutdown
 from catalog.store import RedlandStore
 import os, time
+import errno
 
 app = Celery('catalog_backend', broker='amqp://guest@localhost:5672//')
 
@@ -25,21 +26,50 @@ app.conf.update(
 )
 
 class FileLock(object):
-    def __init__(self, id, timeout=15):
-        self._filename = 'lock-%s' % id
+    def __init__(self, id, timeout=15, lockdir = '.'):
+        self._filename = os.path.join(lockdir, 'lock-%s' % id)
+        self._timeout = timeout
+        self._locked = False
 
-        while not os.access(self._filename, os.R_OK) and timeout > 0:
-            time.sleep(1)
-            timeout -= 1
+    def __enter__(self):
+        assert not self._locked
 
-        if (os.access(self._filename, os.R_OK)):
-            self._f = open(self._filename, "w")
-        else:
-            raise RuntimeError("Timeout error while trying to lock access to work")
+        pid = str(os.getpid())
+        timeout = self._timeout
 
-    def release(self):
-        self._f.close()
-        os.remove(self._filename)
+        # Attempt locking by creating a symlink.  This is an atomic
+        # operation that will succeed only if the link doesn't already
+        # exist.  Use the PID as the "target file" to provide info
+        # about who holds the link
+
+        while True:
+            try:
+                os.symlink(pid, self._filename)
+            except OSError, e:
+                if e.errno == errno.EEXIST:
+                    if timeout > 0:
+                        time.sleep(1)
+                        timeout -= 1
+                    else:
+                        raise RuntimeError("Timeout error while trying to lock access to work")
+                else:
+                    raise
+            else:
+                self._locked = True
+                return
+
+
+    def __exit__(self, *args):
+        if self._locked:
+            try:
+                os.remove(self._filename)
+            except OSError, e:
+                if e.errno == errno.ENOENT:
+                    print('warning: lock file unexpectedly removed')
+                else:
+                    raise
+            self._locked = False
+
 
 class StoreTask(app.Task):
     abstract = True
@@ -67,16 +97,14 @@ def create_work(**kwargs):
 @app.task(base=StoreTask)
 def update_work(**kwargs):
     id = kwargs['id']
-    lock = FileLock(id)
-    return update_work.main_store.update_work(**kwargs)
-    lock.release()
+    with FileLock(id):
+        return update_work.main_store.update_work(**kwargs)
 
 @app.task(base=StoreTask)
 def delete_work(**kwargs):
     id = kwargs['id']
-    lock = FileLock(id)
-    return delete_work.main_store.delete_work(**kwargs)
-    lock.release()
+    with FileLock(id):
+        return delete_work.main_store.delete_work(**kwargs)
 
 @app.task(base=StoreTask)
 def get_work(**kwargs):
@@ -90,6 +118,7 @@ def get_works(**kwargs):
 
 @app.task(base=StoreTask)
 def add_source(**kwargs):
+    # TODO: lock work here
     return create_work.main_store.store_source(**kwargs)
 
 @app.task(base=StoreTask)
@@ -98,12 +127,14 @@ def get_sources(**kwargs):
 
 @app.task(base=StoreTask)
 def delete_source(**kwargs):
+    # TODO: lock work here
     return create_work.main_store.delete_source(**kwargs)
 
 # posted instances
 
 @app.task(base=StoreTask)
 def add_post(**kwargs):
+    # TODO: lock work here
     return create_work.main_store.store_post(**kwargs)
 
 @app.task(base=StoreTask)
@@ -112,4 +143,5 @@ def get_posts(**kwargs):
 
 @app.task(base=StoreTask)
 def delete_post(**kwargs):
+    # TODO: lock work here
     return create_work.main_store.delete_post(**kwargs)
