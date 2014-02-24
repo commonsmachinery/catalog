@@ -154,7 +154,7 @@ class Entry(object):
                 property_value = statement.object.literal[0]
                 if property_type == "number":
                     property_value = int(property_value)
-                elif property_type == "string" or property_type == "resource":
+                elif property_type == "string":
                     property_value = unicode(property_value)
                 else:
                     raise RuntimeError("Unknown property type %s" % property_type)
@@ -171,6 +171,8 @@ class Entry(object):
                         property_value.append(str(statement.object.uri))
                     else:
                         property_value = [str(statement.object.uri)]
+                elif property_type == "resource":
+                    property_value = unicode(statement.object.uri)
             else:
                 raise RuntimeError('cannot handle blank nodes in work properties: %s' % statement)
 
@@ -205,7 +207,7 @@ class Entry(object):
                              RDF.Node(literal=str(self._dict[key])),
                              context)
                 statements.append(statement)
-            elif property_type == "resource":
+            elif property_type == "resource": # and self._dict.get(key, False):
                 statement = (work_subject,
                              RDF.Node(uri_string=property_uri),
                              RDF.Node(uri_string=str(self._dict[key])),
@@ -490,7 +492,7 @@ class RedlandStore(object):
 
         query_string = query_string + " . \n".join(query_params_1)
 
-        # query params, part 2 - private works owned by user
+        # query params, part 2 - public works by everyone
         query_string += "\n} UNION {\n"
         query_params_2 = query_params_all[:]
 
@@ -526,8 +528,6 @@ class RedlandStore(object):
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
-        if not resource:
-            raise RuntimeError('no resource')
         if timestamp is None:
             timestamp = int(time.time())
 
@@ -573,6 +573,7 @@ class RedlandStore(object):
     # TODO: do we delete source by id or resource?
     def delete_source(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
+        # TODO: delete not only link, but source as well
         id = kwargs.pop('id')
         user = kwargs.pop('user')
         resource = kwargs.pop('resource')
@@ -595,24 +596,42 @@ class RedlandStore(object):
     def get_source(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
         id = kwargs.pop('id')
-        user = kwargs.pop('user')
 
-        source = Source.from_model(self._model, id)
+        source = CatalogSource.from_model(self._model, id)
 
         return source.get_data()
 
     def get_sources(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id')
-        user = kwargs.pop('user')
+        id = kwargs.pop('id', None)
+        user = kwargs.pop('user', None)
 
         sources = []
-        work = get_work(user=user, id=id)
-        for source_uri in work.get('source', []):
-            source_id = self._get_entry_id(source_uri)
-            source = self.get_source(user=user, id=source_id)
-            sources.append(source)
-        return source
+
+        if id is not None:
+            works = [self.get_work(user=user, id=id)]
+            for work in works:
+                for source_uri in work.get('source', []):
+                    source_id = self._get_entry_id(source_uri)
+                    source = self.get_source(user=user, id=source_id)
+                    sources.append(source)
+        elif user is not None:
+            # TODO: addedBy is an attribute specific to sources
+            # but relying on it is a hack
+            query_statement = RDF.Statement(subject=None,
+                predicate=RDF.Node(uri_string=NS_CATALOG+"addedBy"), object=None)
+
+            for statement in self._model.find_statements(query_statement):
+                source_subject = statement.subject
+                id_query_statement = RDF.Statement(
+                    subject=source_subject,
+                    predicate=RDF.Node(uri_string=NS_CATALOG+"id"),
+                    object=None)
+                id_stream = self._model.find_statements(id_query_statement)
+                id = id_stream.current().object.literal[0]
+                sources.append(self.get_source(id=id))
+
+        return sources
 
     def store_post(self, user=None, timestamp=None, metadataGraph=None,
                    cachedExternalMetadataGraph=None, resource=None,
