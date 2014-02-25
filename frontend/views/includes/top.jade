@@ -13,6 +13,8 @@ meta(charset="utf-8")
 html(lang="en")
 	head
 		title Catalog
+		link(rel="stylesheet", href="/css/style.css")
+		script(src="/lib/require.js", data-main="/app/boot")
 	body
 		nav: ul
 			li: a#link1 
@@ -22,3 +24,4 @@ html(lang="en")
 			li: a#link3 
 				| link3
 		div#content
+			| 
