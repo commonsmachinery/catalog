@@ -384,6 +384,7 @@ class RedlandStore(object):
             'visibility': visibility,
             'state': state,
             'id': id,
+            'resource': str(get_context_node(Work, None, id).uri),
         })
 
         work.to_model(self._model)
@@ -521,19 +522,21 @@ class RedlandStore(object):
 
     def store_source(self, user=None, timestamp=None, metadataGraph=None,
                      cachedExternalMetadataGraph=None, resource=None,
-                     id=None, **kwargs):
+                     work_id=None, source_id=None, **kwargs):
         if kwargs:
             print 'store_source: ignoring args:', kwargs
 
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
+        if work_id is None:
+            raise RuntimeError('no work id')
         if timestamp is None:
             timestamp = int(time.time())
 
-        # TODO: get work IDs from somewhere...
-        if id is None:
-            id = timestamp
+        # TODO: get source IDs from somewhere...
+        if source_id is None:
+            source_id = timestamp
 
         # TODO: check that metadataGraph is proper RDF/JSON
         if not metadataGraph:
@@ -547,7 +550,7 @@ class RedlandStore(object):
             'metadataGraph': metadataGraph,
             'cachedExternalMetadataGraph': cachedExternalMetadataGraph,
             'resource': resource,
-            'id': id,
+            'id': source_id,
         })
 
         source.to_model(self._model)
@@ -555,9 +558,7 @@ class RedlandStore(object):
         # save source link triple directly, update_work currently ignores "unrelated" kwargs
         # like "source"
 
-        work_id = self._get_entry_id(resource)
-
-        source_subject = get_context_node(Source, None, id)
+        source_subject = get_context_node(Source, None, source_id)
         work_subject = get_context_node(Work, None, work_id)
 
         statement = RDF.Statement(work_subject,
@@ -568,7 +569,7 @@ class RedlandStore(object):
             self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return id
+        return source_id
 
     # TODO: do we delete source by id or resource?
     def delete_source(self, **kwargs):
@@ -635,21 +636,23 @@ class RedlandStore(object):
 
     def store_post(self, user=None, timestamp=None, metadataGraph=None,
                    cachedExternalMetadataGraph=None, resource=None,
-                   id=None, **kwargs):
+                   work_id=None, post_id=None, **kwargs):
         if kwargs:
             print 'store_post: ignoring args:', kwargs
 
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
+        if not work_id:
+            raise RuntimeError('no work id')
         if not resource:
             raise RuntimeError('no resource')
         if timestamp is None:
             timestamp = int(time.time())
 
         # TODO: get work IDs from somewhere...
-        if id is None:
-            id = timestamp
+        if post_id is None:
+            post_id = timestamp
 
         # TODO: check that metadataGraph is proper RDF/JSON
         if not metadataGraph:
@@ -663,7 +666,7 @@ class RedlandStore(object):
             'metadataGraph': metadataGraph,
             'cachedExternalMetadataGraph': cachedExternalMetadataGraph,
             'resource': resource,
-            'id': id,
+            'id': post_id,
         })
 
         post.to_model(self._model)
@@ -671,9 +674,7 @@ class RedlandStore(object):
         # save source link triple directly, update_work currently ignores "unrelated" kwargs
         # like "source"
 
-        work_id = self._get_entry_id(resource)
-
-        post_subject = get_context_node(Post, None, id)
+        post_subject = get_context_node(Post, None, post_id)
         work_subject = get_context_node(Work, None, work_id)
 
         statement = RDF.Statement(work_subject,
@@ -684,7 +685,7 @@ class RedlandStore(object):
             self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return id
+        return post_id
 
     # TODO: do we delete post by id or resource?
     def delete_post(self, **kwargs):
@@ -729,3 +730,44 @@ class RedlandStore(object):
             post = self.get_post(user=user, id=post_id)
             posts.append(post)
         return posts
+
+    def get_complete_metadata(self, **kwargs):
+        # TODO: handle this properly, later there should be proper ACLs
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+        format = kwargs.pop('format', 'json')
+
+        work = self.get_work(user=user, id=id)
+
+        temp_store = RDF.MemoryStorage()
+        temp_model = RDF.Model(temp_store)
+
+        metadata_context = get_context_node(Work, METADATA_GRAPH, id)
+        for statement in self._model.as_stream(context=metadata_context):
+            temp_model.append(statement)
+
+        for source_uri in work.get('source', []):
+            source_id = self._get_entry_id(source_uri)
+            source = self.get_source(user=user, id=source_id)
+
+            temp_model.append(RDF.Statement(
+                subject=RDF.Node(uri_string=str(work['resource'])),
+                predicate=RDF.Node(uri_string="http://purl.org/dc/elements/1.1/source"),
+                object=RDF.Node(uri_string=str(source['resource']))
+            ))
+
+            # look for cached metadata if any
+            metadata_context = get_context_node(Source, CACHED_METADATA_GRAPH, source_id)
+            for statement in self._model.as_stream(context=metadata_context):
+                temp_model.append(statement)
+
+            # look for metadata in the catalog
+            # TODO: implement better checking for metadata presence in the catalog
+            source_resource_id = self._get_entry_id(str(source['resource']))
+            if source_resource_id:
+                metadata_context = get_context_node(Work, METADATA_GRAPH, source_resource_id)
+                for statement in self._model.as_stream(context=metadata_context):
+                    temp_model.append(statement)
+
+        result = temp_model.to_string(name=format, base_uri=None)
+        return result
