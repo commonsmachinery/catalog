@@ -183,19 +183,12 @@ class Entry(object):
 
     # from_model aka get_work - get work as dict from Redland model
     @classmethod
-    def from_model(cls, model, context): #id):
+    def from_model(cls, model, context):
         data = {}
 
-        #
-        # danger
-        #
-        #context = get_context_node(cls, None, id)
         if context is None:
             raise RuntimeError("no context")
         context = context
-        #
-        # danger
-        #
 
         for statement in model.as_stream(context=context):
             property_uri = unicode(statement.predicate.uri)
