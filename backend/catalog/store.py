@@ -14,9 +14,9 @@ import RDF
 
 class ParamError(Exception): pass
 
-class WorkNotFound(Exception):
-    def __init__(self, id):
-        super(Exception, self).__init__(self, 'work not found: {0}'.format(id))
+class EntryNotFound(Exception):
+    def __init__(self, context):
+        super(Exception, self).__init__(self, 'Entry not found: {0}'.format(context))
 
 
 valid_work_visibility = [ 'private', 'group', 'public' ]
@@ -26,21 +26,6 @@ valid_work_state = [ 'draft', 'published' ]
 NS_CATALOG = "http://catalog.commonsmachinery.se/ns#"
 NS_REM3 = "http://scam.sf.net/schema#"
 NS_XSD = "http://www.w3.org/2001/XMLSchema#"
-
-work_property_uris = {
-    'id':           NS_CATALOG  + "id",
-    'resource':     NS_REM3     + "resource",
-    'metadata':     NS_REM3     + "metadata",
-    'created':      NS_CATALOG  + "created",
-    'creator':      NS_CATALOG  + "creator",
-    'updated':      NS_CATALOG  + "updated",
-    'updatedBy':    NS_CATALOG  + "updatedBy",
-    'visibility':   NS_CATALOG  + "visibility",
-    'state':        NS_CATALOG  + "state",
-    'post':         NS_CATALOG  + "post",
-    'source':       NS_CATALOG  + "source",
-}
-
 
 METADATA_GRAPH = NS_REM3 + "metadata"
 CACHED_METADATA_GRAPH = NS_REM3 + "cachedExternalMetadata"
@@ -81,6 +66,65 @@ def get_context_node(cls, graph, id):
         return RDF.Node(uri_string=str(uri_format % id))
     else:
         raise RuntimeError("id must be string or integer")
+
+def get_work_context(graph, id):
+    if graph is None:
+        uri_format = "http://localhost:8004/works/%s"
+    elif graph == METADATA_GRAPH:
+        uri_format = "http://localhost:8004/works/%s/metadata"
+    else:
+        raise RuntimeError("Invalid subgraph URI %s" % graph)
+
+    if isinstance(id, basestring) or isinstance(id, int):
+        return RDF.Node(uri_string=str(uri_format % id))
+    else:
+        raise RuntimeError("id must be string or integer")
+
+def get_source_context(graph, work_id=None, user_id=None, source_id=None):
+    if not ((work_id or user_id) and source_id):
+        raise RuntimeError("Can't generate source context without work/user and source ID")
+
+    if user_id:
+        # or can we just check that id is not None?
+        if isinstance(user_id, basestring) or isinstance(user_id, int):
+            toplevel = "users/%s/" % user_id
+        else:
+            raise RuntimeError("user id must be string or integer")
+    else:
+        if isinstance(work_id, basestring) or isinstance(work_id, int):
+            toplevel = "users/%s/" % work_id
+        else:
+            raise RuntimeError("work id must be string or integer")
+
+    if graph is None:
+        uri_format = "http://localhost:8004/" + toplevel + "sources/%s"
+    elif graph == METADATA_GRAPH:
+        uri_format = "http://localhost:8004/" + toplevel + "sources/%s/metadata"
+    elif graph == CACHED_METADATA_GRAPH:
+        uri_format = "http://localhost:8004/" + toplevel + "souces/%s/cachedExternalMetadata"
+    else:
+        raise RuntimeError("Invalid subgraph URI %s" % graph)
+
+    if isinstance(source_id, basestring) or isinstance(source_id, int) :
+        return RDF.Node(uri_string=str(uri_format % source_id))
+    else:
+        raise RuntimeError("id must be string or integer")
+
+def get_post_context(graph, work_id, post_id):
+    if graph is None:
+        uri_format = "http://localhost:8004/works/%s/posts/%s"
+    elif graph == METADATA_GRAPH:
+        uri_format = "http://localhost:8004/works/%s/posts/%s/metadata"
+    elif graph == CACHED_METADATA_GRAPH:
+        uri_format = "http://localhost:8004/works/%s/posts/%s/cachedExternalMetadata"
+    else:
+        raise RuntimeError("Invalid subgraph URI %s" % graph)
+
+    if isinstance(work_id, basestring) or isinstance(work_id, int) and \
+       isinstance(post_id, basestring) or isinstance(post_id, int) :
+        return RDF.Node(uri_string=str(uri_format % (work_id, post_id)))
+    else:
+        raise RuntimeError("ids must be string or integer")
 
 class Entry(object):
     schema = {
@@ -139,10 +183,19 @@ class Entry(object):
 
     # from_model aka get_work - get work as dict from Redland model
     @classmethod
-    def from_model(cls, model, id):
+    def from_model(cls, model, context): #id):
         data = {}
 
-        context = get_context_node(cls, None, id)
+        #
+        # danger
+        #
+        #context = get_context_node(cls, None, id)
+        if context is None:
+            raise RuntimeError("no context")
+        context = context
+        #
+        # danger
+        #
 
         for statement in model.as_stream(context=context):
             property_uri = unicode(statement.predicate.uri)
@@ -179,12 +232,27 @@ class Entry(object):
             data[property_name] = property_value
 
         if len(data) == 0:
-            raise WorkNotFound(id)
+            raise EntryNotFound(context)
 
         return cls(data)
 
     def to_model(self, model):
-        context = get_context_node(self.__class__, None, self._dict['id'])
+        #context = get_context_node(self.__class__, None, self._dict['id'])
+        #
+        # FIXME: it's really bad idea to pull user/work_id from the entry dict
+        # possible solution could be to accept context in this method directly
+        #
+        if self.__class__ == Work:
+            context = get_work_context(None, self._dict['id'])
+        elif issubclass(self.__class__, Source):
+            context = get_source_context(None,
+                work_id=self._dict.get('work_id', None),
+                user_id=self._dict.get('user_id', None),
+                source_id=self._dict['id'])
+        elif self.__class__ == Post:
+            context = get_post_context(None, self._dict['work_id'], self._dict['id'])
+        else:
+            raise RuntimeError("Invalid Entry class")
         work_subject = context
         statements = []
 
@@ -194,7 +262,23 @@ class Entry(object):
 
             # make sure graph fields exist, even if the graph is empty
             if property_type == "graph" and not self._dict.has_key(property_name):
-                self._dict[key] = get_context_node(self.__class__, property_uri, self._dict['id'])
+                #self._dict[key] = get_context_node(self.__class__, property_uri, self._dict['id'])
+                #
+                # FIXME: it's really bad idea to pull user/work_id from the entry dict
+                # possible solution could be to accept context in this method directly
+                #
+                if self.__class__ == Work:
+                    self._dict[key] = get_work_context(property_uri, self._dict['id'])
+                elif issubclass(self.__class__, Source):
+                    self._dict[key] = get_source_context(property_uri,
+                        work_id=self._dict.get('work_id', None),
+                        user_id=self._dict.get('user_id', None),
+                        source_id=self._dict['id'])
+                elif self.__class__ == Post:
+                    self._dict[key] = get_post_context(property_uri, self._dict['work_id'], self._dict['id'])
+                else:
+                    raise RuntimeError("Invalid Entry class")
+
             if property_type == "graph" and not self._dict.has_key(property_name + "Graph"):
                 self._dict[property_name + "Graph"] = {}
 
@@ -344,7 +428,7 @@ class RedlandStore(object):
             subject = RDF.Node(uri_string=subject)
 
         query_statement = RDF.Statement(subject=RDF.Node(subject),
-            predicate=RDF.Node(uri_string=work_property_uris['id']), object=None)
+            predicate=RDF.Node(uri_string=Work.schema['id'][1]), object=None)
 
         for statement in self._model.find_statements(query_statement):
             return statement.object.literal[0]
@@ -362,7 +446,7 @@ class RedlandStore(object):
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
-        if timestamp is None:
+        if not timestamp:
             timestamp = int(time.time())
         if visibility not in valid_work_visibility:
             raise ParamError('invalid visibility: {0}'.format(visibility))
@@ -384,7 +468,7 @@ class RedlandStore(object):
             'visibility': visibility,
             'state': state,
             'id': id,
-            'resource': str(get_context_node(Work, None, id).uri),
+            'resource': str(get_work_context(None, id).uri),
         })
 
         work.to_model(self._model)
@@ -415,7 +499,7 @@ class RedlandStore(object):
         id = kwargs.pop('id')
         user = kwargs.pop('user')
 
-        work = Work.from_model(self._model, id)
+        work = Work.from_model(self._model, get_work_context(None, id))
 
         if work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
@@ -424,7 +508,7 @@ class RedlandStore(object):
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
 
-        resource_context = get_context_node(Work, None, id)
+        resource_context = get_work_context(None, id)
         self._model.remove_statements_with_context(resource_context)
 
         # TODO: figure out how to close the store on shutdown instead
@@ -435,7 +519,7 @@ class RedlandStore(object):
         id = kwargs.pop('id')
         user = kwargs.pop('user')
 
-        work = Work.from_model(self._model, id)
+        work = Work.from_model(self._model, get_work_context(None, id))
 
         if work["visibility"] == "private" and work["creator"] != user:
             raise RuntimeError("Error accessing private work owned by different user")
@@ -469,10 +553,10 @@ class RedlandStore(object):
             if re.match(url_re, key):
                 param_name = key
             else:
-                if key not in work_property_uris:
+                if key not in Work.schema:
                     #raise RuntimeError("Unknown work property %s" % key)
                     print "Warning: unknown work property used in query (%s)" % key
-                param_name = work_property_uris[key]
+                param_name = Work.schema[key][1]
             params.append((param_name, value))
 
         query_string = "SELECT ?s WHERE { \n"
@@ -486,9 +570,9 @@ class RedlandStore(object):
         query_string += "{\n"
         query_params_1 = query_params_all[:]
 
-        p, o = work_property_uris['creator'], user
+        p, o = Work.schema['creator'][1], user
         query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
-        p, o = work_property_uris['visibility'], "private"
+        p, o = Work.schema['visibility'][1], "private"
         query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
 
         query_string = query_string + " . \n".join(query_params_1)
@@ -497,7 +581,7 @@ class RedlandStore(object):
         query_string += "\n} UNION {\n"
         query_params_2 = query_params_all[:]
 
-        p, o = work_property_uris['visibility'], "public"
+        p, o = Work.schema['visibility'][1], "public"
         query_params_2.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
 
         query_string = query_string + " . \n".join(query_params_2)
@@ -522,20 +606,20 @@ class RedlandStore(object):
 
     def store_source(self, user=None, timestamp=None, metadataGraph=None,
                      cachedExternalMetadataGraph=None, resource=None,
-                     work_id=None, source_id=None, **kwargs):
+                     work_id=None, user_id=None, source_id=None, **kwargs):
         if kwargs:
             print 'store_source: ignoring args:', kwargs
 
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
-        if work_id is None:
+        if not work_id:
             raise RuntimeError('no work id')
-        if timestamp is None:
+        if not timestamp:
             timestamp = int(time.time())
 
         # TODO: get source IDs from somewhere...
-        if source_id is None:
+        if not source_id:
             source_id = timestamp
 
         # TODO: check that metadataGraph is proper RDF/JSON
@@ -551,6 +635,8 @@ class RedlandStore(object):
             'cachedExternalMetadataGraph': cachedExternalMetadataGraph,
             'resource': resource,
             'id': source_id,
+            'work_id': work_id,
+            'user_id': user_id,
         })
 
         source.to_model(self._model)
@@ -558,8 +644,8 @@ class RedlandStore(object):
         # save source link triple directly, update_work currently ignores "unrelated" kwargs
         # like "source"
 
-        source_subject = get_context_node(Source, None, source_id)
-        work_subject = get_context_node(Work, None, work_id)
+        source_subject = get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id)
+        work_subject = get_work_context(None, work_id)
 
         statement = RDF.Statement(work_subject,
             RDF.Node(uri_string=NS_CATALOG + "source"),
@@ -579,13 +665,13 @@ class RedlandStore(object):
         user = kwargs.pop('user')
         resource = kwargs.pop('resource')
 
-        work = Work.from_model(self._model, id)
+        work = Work.from_model(self._model, get_work_context(None, id))
 
         if work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
 
         # delete source link
-        work_subject = get_context_node(Work, None, id)
+        work_subject = get_work_context(None, id)
 
         statement = RDF.Statement(work_subject,
             RDF.Node(uri_string=NS_CATALOG + "source"),
@@ -595,42 +681,40 @@ class RedlandStore(object):
             self._model.remove_statement(statement, context=work_subject)
 
     def get_source(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id')
+        work_id = kwargs.pop('work_id', None)
+        user_id = kwargs.pop('user_id', None)
+        source_id = kwargs.pop('source_id', None)
 
-        source = CatalogSource.from_model(self._model, id)
+        source = CatalogSource.from_model(self._model, get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id))
 
         return source.get_data()
 
     def get_sources(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id', None)
+        work_id = kwargs.pop('work_id', None)
+        user_id = kwargs.pop('user_id', None)
         user = kwargs.pop('user', None)
 
         sources = []
 
-        if id is not None:
-            works = [self.get_work(user=user, id=id)]
-            for work in works:
-                for source_uri in work.get('source', []):
-                    source_id = self._get_entry_id(source_uri)
-                    source = self.get_source(user=user, id=source_id)
-                    sources.append(source)
-        elif user is not None:
+        if work_id:
+            work = self.get_work(user=user, id=work_id)
+            for source_uri in work.get('source', []):
+                source_id = self._get_entry_id(source_uri)
+                source = self.get_source(user=user, work_id=work['id'], source_id=source_id)
+                sources.append(source)
+        elif user_id:
             # TODO: addedBy is an attribute specific to sources
             # but relying on it is a hack
             query_statement = RDF.Statement(subject=None,
-                predicate=RDF.Node(uri_string=NS_CATALOG+"addedBy"), object=None)
+                predicate=RDF.Node(uri_string=NS_CATALOG+"addedBy"),
+                object=RDF.Node(literal=user_id))
 
             for statement in self._model.find_statements(query_statement):
+                # now if only we
                 source_subject = statement.subject
-                id_query_statement = RDF.Statement(
-                    subject=source_subject,
-                    predicate=RDF.Node(uri_string=NS_CATALOG+"id"),
-                    object=None)
-                id_stream = self._model.find_statements(id_query_statement)
-                id = id_stream.current().object.literal[0]
-                sources.append(self.get_source(id=id))
+                source = CatalogSource.from_model(self._model, source_subject)
+                sources.append(source)
 
         return sources
 
@@ -667,6 +751,7 @@ class RedlandStore(object):
             'cachedExternalMetadataGraph': cachedExternalMetadataGraph,
             'resource': resource,
             'id': post_id,
+            'work_id': work_id,
         })
 
         post.to_model(self._model)
@@ -674,8 +759,8 @@ class RedlandStore(object):
         # save source link triple directly, update_work currently ignores "unrelated" kwargs
         # like "source"
 
-        post_subject = get_context_node(Post, None, post_id)
-        work_subject = get_context_node(Work, None, work_id)
+        post_subject = get_post_context(None, work_id, post_id)
+        work_subject = get_work_context(None, work_id)
 
         statement = RDF.Statement(work_subject,
             RDF.Node(uri_string=NS_CATALOG + "post"),
@@ -690,17 +775,18 @@ class RedlandStore(object):
     # TODO: do we delete post by id or resource?
     def delete_post(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id')
+        post_id = kwargs.pop('id')
+        work_id = kwargs.pop('work_id')
         user = kwargs.pop('user')
         resource = kwargs.pop('resource')
 
-        work = Work.from_model(self._model, id)
+        work = Work.from_model(self._model, get_work_context(None, id))
 
         if work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
 
         # delete post link
-        work_subject = get_context_node(Work, None, id)
+        work_subject = get_work_context(None, id)
 
         statement = RDF.Statement(work_subject,
             RDF.Node(uri_string=NS_CATALOG + "post"),
@@ -711,10 +797,11 @@ class RedlandStore(object):
 
     def get_post(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
-        id = kwargs.pop('id')
+        work_id = kwargs.pop('work_id')
+        post_id = kwargs.pop('post_id')
         user = kwargs.pop('user')
 
-        post = Post.from_model(self._model, id)
+        post = Post.from_model(self._model, get_post_context(None, work_id, post_id))
 
         return post.get_data()
 
@@ -742,13 +829,13 @@ class RedlandStore(object):
         temp_store = RDF.MemoryStorage()
         temp_model = RDF.Model(temp_store)
 
-        metadata_context = get_context_node(Work, METADATA_GRAPH, id)
+        metadata_context = get_work_context(METADATA_GRAPH, id)
         for statement in self._model.as_stream(context=metadata_context):
             temp_model.append(statement)
 
         for source_uri in work.get('source', []):
             source_id = self._get_entry_id(source_uri)
-            source = self.get_source(user=user, id=source_id)
+            source = self.get_source(user=user, work_id=work['id'], source_id=source_id)
 
             temp_model.append(RDF.Statement(
                 subject=RDF.Node(uri_string=str(work['resource'])),
@@ -757,7 +844,7 @@ class RedlandStore(object):
             ))
 
             # look for cached metadata if any
-            metadata_context = get_context_node(Source, CACHED_METADATA_GRAPH, source_id)
+            metadata_context = get_source_context(CACHED_METADATA_GRAPH, work_id=id, source_id=source_id)
             for statement in self._model.as_stream(context=metadata_context):
                 temp_model.append(statement)
 
@@ -765,7 +852,7 @@ class RedlandStore(object):
             # TODO: implement better checking for metadata presence in the catalog
             source_resource_id = self._get_entry_id(str(source['resource']))
             if source_resource_id:
-                metadata_context = get_context_node(Work, METADATA_GRAPH, source_resource_id)
+                metadata_context = get_work_context(METADATA_GRAPH, source_resource_id)
                 for statement in self._model.as_stream(context=metadata_context):
                     temp_model.append(statement)
 
