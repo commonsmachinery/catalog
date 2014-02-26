@@ -145,3 +145,7 @@ def get_posts(**kwargs):
 def delete_post(**kwargs):
     # TODO: lock work here
     return create_work.main_store.delete_post(**kwargs)
+
+@app.task(base=StoreTask)
+def get_complete_metadata(**kwargs):
+    return create_work.main_store.get_complete_metadata(**kwargs)
