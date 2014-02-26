@@ -14,10 +14,11 @@
 function app (){
     app.get('/', getHome);
     app.get('/browse', getBrowse);
-    app.get('/search', getSearch);
 }
 
-
+function getBrowse (req, res) {
+	res.render('browse');
+}
 function getHome (req, res) {
     res.render('home');
 }

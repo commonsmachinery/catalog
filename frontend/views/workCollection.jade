@@ -8,9 +8,10 @@
 
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-mixin branch(data)
+- var works = data
+mixin branch(works)
 	dl
-		for val, key in data
+		for val, key in works
 			dt
 				| #{key}:
 				if(typeof val == 'object')
@@ -24,11 +25,11 @@ mixin branch(data)
 include includes/top
 	for work in works
 		h2: a(href="#{work.resource}") #{work.id}
-		a(href="#{work.metadata}") (see metadata...)
+		a(href="#{work.metaworks}") (see metaworks...)
 		- delete work.resource
 		- delete work.id
-		- delete work.metadataGraph
-		- delete work.metadata
+		- delete work.metaworksGraph
+		- delete work.metaworks
 		- work.created = new Date(work.created).toString();
 		+branch(work)
 include includes/bottom
