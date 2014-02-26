@@ -31,7 +31,7 @@ function rest(app, localBackend, localBaseURI) {
     app.get('/users/:userID/works/:workID', getWork);
     app.get('/works', getWorks);
     app.get('/works/:workID', getWork);
-    // app.get('/works/:workID/completeMetadata', getCompleteMetadata);
+    app.get('/works/:workID/completeMetadata', getCompleteMetadata);
     // app.get('/works/:workID/metadata', getMetadata);
     // app.get('/works/:workID/posts', getPosts);
     // app.patch('/works/:workID', patchWork);
@@ -160,6 +160,16 @@ function getWorks(req, res) {
     call(res, queryData, 'get_works', 'workCollection');
     return;
 }
+
+function getCompleteMetadata(req, res) {
+    var user = 'test';
+    var queryData = req.query;
+    queryData = commonData(req);
+    queryData.format = req.params.format;
+    call(res, queryData, 'get_complete_metadata', 'completeMetadata');
+    return;
+}
+
 
 function handleBackendResult(result, callback) {
     result.on('ready', function(message) {
