@@ -9,9 +9,9 @@
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
 - var works = data
-mixin branch(works)
+mixin branch(data)
 	dl
-		for val, key in works
+		for val, key in data
 			dt
 				| #{key}:
 				if(typeof val == 'object')
@@ -28,8 +28,8 @@ include includes/top
 		a(href="#{work.metaworks}") (see metaworks...)
 		- delete work.resource
 		- delete work.id
-		- delete work.metaworksGraph
-		- delete work.metaworks
+		- delete work.metadataGraph
+		- delete work.metadata
 		- work.created = new Date(work.created).toString();
 		+branch(work)
 include includes/bottom
