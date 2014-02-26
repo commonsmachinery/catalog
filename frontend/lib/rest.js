@@ -65,8 +65,8 @@ function rest(app, localBackend, localBaseURI) {
 };
 
 
-function buildURL() {
-    return baseURL + '/' + Array.prototype.join.call(arguments, '/');
+function buildURI() {
+    return baseURI + '/' + Array.prototype.join.call(arguments, '/');
 }
 
 function call (res, queryData, call, view, callback, errorCheck) {
@@ -197,6 +197,8 @@ function postWork(req, res) {
     }
 
     var user = 'test';
+    var errors = 'Error creating work.';
+
     var workData = {
         metadataGraph: req.body.metadataGraph,
         state: req.body.state,
