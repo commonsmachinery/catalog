@@ -92,7 +92,7 @@ def get_source_context(graph, work_id=None, user_id=None, source_id=None):
             raise RuntimeError("user id must be string or integer")
     else:
         if isinstance(work_id, basestring) or isinstance(work_id, int):
-            toplevel = "users/%s/" % work_id
+            toplevel = "works/%s/" % work_id
         else:
             raise RuntimeError("work id must be string or integer")
 
@@ -183,19 +183,12 @@ class Entry(object):
 
     # from_model aka get_work - get work as dict from Redland model
     @classmethod
-    def from_model(cls, model, context): #id):
+    def from_model(cls, model, context):
         data = {}
 
-        #
-        # danger
-        #
-        #context = get_context_node(cls, None, id)
         if context is None:
             raise RuntimeError("no context")
         context = context
-        #
-        # danger
-        #
 
         for statement in model.as_stream(context=context):
             property_uri = unicode(statement.predicate.uri)
@@ -518,13 +511,17 @@ class RedlandStore(object):
         # TODO: handle this properly, later there should be proper ACLs
         id = kwargs.pop('id')
         user = kwargs.pop('user')
+        subgraph = kwargs.pop('subgraph', None)
 
         work = Work.from_model(self._model, get_work_context(None, id))
 
         if work["visibility"] == "private" and work["creator"] != user:
             raise RuntimeError("Error accessing private work owned by different user")
 
-        return work.get_data()
+        if not subgraph:
+            return work.get_data()
+        else:
+            return work.get_data().get(subgraph + "Graph", {})
 
     def query_works_simple(self, **kwargs):
         """
@@ -684,10 +681,14 @@ class RedlandStore(object):
         work_id = kwargs.pop('work_id', None)
         user_id = kwargs.pop('user_id', None)
         source_id = kwargs.pop('source_id', None)
+        subgraph = kwargs.pop('subgraph', None)
 
         source = CatalogSource.from_model(self._model, get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id))
 
-        return source.get_data()
+        if not subgraph:
+            return source.get_data()
+        else:
+            return source.get_data().get(subgraph + "Graph", {})
 
     def get_sources(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
@@ -714,7 +715,7 @@ class RedlandStore(object):
                 # now if only we
                 source_subject = statement.subject
                 source = CatalogSource.from_model(self._model, source_subject)
-                sources.append(source)
+                sources.append(source.get_data())
 
         return sources
 
@@ -824,37 +825,48 @@ class RedlandStore(object):
         user = kwargs.pop('user')
         format = kwargs.pop('format', 'json')
 
-        work = self.get_work(user=user, id=id)
+        query_format = """
+            PREFIX dc: <http://purl.org/dc/elements/1.1/>
+            PREFIX catalog: <http://catalog.commonsmachinery.se/ns#>
+            PREFIX rem3: <http://scam.sf.net/schema#>
 
-        temp_store = RDF.MemoryStorage()
-        temp_model = RDF.Model(temp_store)
+            CONSTRUCT {
+                ?s ?p ?o .
+                ?work dc:source ?sourceWork .
+            }
+            WHERE
+            {
+                BIND (<%s> AS ?work)
+                BIND ("%s" AS ?user)
 
-        metadata_context = get_work_context(METADATA_GRAPH, id)
-        for statement in self._model.as_stream(context=metadata_context):
+                ?work catalog:creator ?creator .
+                ?work catalog:visibility ?visibility .
+                ?work rem3:metadata ?workMetadata .
+                ?work catalog:source ?sourceRef .
+                ?sourceRef rem3:resource ?sourceWork .
+
+                { ?sourceWork rem3:metadata ?sourceMetadata . }
+                UNION
+                { ?sourceRef rem3:cachedExternalMetadata ?sourceMetadata . }
+
+                GRAPH ?g { ?s ?p ?o . }
+
+                FILTER((?g = ?workMetadata || ?g = ?sourceMetadata) &&
+                       ((?visibility = "public") ||
+                        (?visibility = "private") && (?creator = ?user)))
+            }
+        """
+
+        query_string = query_format % (get_work_context(None, id).uri, user)
+        query = RDF.Query(query_string)
+
+        query_results = query.execute(self._model)
+
+        # TODO: use results.to_string() with proper format URIs
+        temp_model = RDF.Model(RDF.MemoryStorage())
+
+        for statement in query_results.as_stream():
             temp_model.append(statement)
-
-        for source_uri in work.get('source', []):
-            source_id = self._get_entry_id(source_uri)
-            source = self.get_source(user=user, work_id=work['id'], source_id=source_id)
-
-            temp_model.append(RDF.Statement(
-                subject=RDF.Node(uri_string=str(work['resource'])),
-                predicate=RDF.Node(uri_string="http://purl.org/dc/elements/1.1/source"),
-                object=RDF.Node(uri_string=str(source['resource']))
-            ))
-
-            # look for cached metadata if any
-            metadata_context = get_source_context(CACHED_METADATA_GRAPH, work_id=id, source_id=source_id)
-            for statement in self._model.as_stream(context=metadata_context):
-                temp_model.append(statement)
-
-            # look for metadata in the catalog
-            # TODO: implement better checking for metadata presence in the catalog
-            source_resource_id = self._get_entry_id(str(source['resource']))
-            if source_resource_id:
-                metadata_context = get_work_context(METADATA_GRAPH, source_resource_id)
-                for statement in self._model.as_stream(context=metadata_context):
-                    temp_model.append(statement)
 
         result = temp_model.to_string(name=format, base_uri=None)
         return result

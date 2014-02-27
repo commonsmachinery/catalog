@@ -9,6 +9,7 @@
     "url": "https://github.com/commonsmachinery/catalog.git"
   },
   "bin": "server.js",
+  "main": "./server",
   "dependencies": {
     "consolidate": "*",
     "debug": "*",

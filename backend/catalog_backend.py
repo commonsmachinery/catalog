@@ -108,44 +108,52 @@ def delete_work(**kwargs):
 
 @app.task(base=StoreTask)
 def get_work(**kwargs):
-    return create_work.main_store.get_work(**kwargs)
+    return get_work.main_store.get_work(**kwargs)
 
 @app.task(base=StoreTask)
 def get_works(**kwargs):
-    return create_work.main_store.query_works_simple(**kwargs)
+    return get_works.main_store.query_works_simple(**kwargs)
 
 # sources of works
 
 @app.task(base=StoreTask)
 def add_source(**kwargs):
     # TODO: lock work here
-    return create_work.main_store.store_source(**kwargs)
+    return add_source.main_store.store_source(**kwargs)
+
+@app.task(base=StoreTask)
+def get_source(**kwargs):
+    return get_source.main_store.get_source(**kwargs)
 
 @app.task(base=StoreTask)
 def get_sources(**kwargs):
-    return create_work.main_store.get_sources(**kwargs)
+    return get_sources.main_store.get_sources(**kwargs)
 
 @app.task(base=StoreTask)
 def delete_source(**kwargs):
     # TODO: lock work here
-    return create_work.main_store.delete_source(**kwargs)
+    return delete_source.main_store.delete_source(**kwargs)
 
 # posted instances
 
 @app.task(base=StoreTask)
 def add_post(**kwargs):
     # TODO: lock work here
-    return create_work.main_store.store_post(**kwargs)
+    return add_post.main_store.store_post(**kwargs)
 
 @app.task(base=StoreTask)
 def get_posts(**kwargs):
-    return create_work.main_store.get_posts(**kwargs)
+    return get_posts.main_store.get_posts(**kwargs)
 
 @app.task(base=StoreTask)
 def delete_post(**kwargs):
     # TODO: lock work here
-    return create_work.main_store.delete_post(**kwargs)
+    return delete_post.main_store.delete_post(**kwargs)
+
+@app.task(base=StoreTask)
+def get_metadata(**kwargs):
+    return get_metadata.main_store.get_metadata(**kwargs)
 
 @app.task(base=StoreTask)
 def get_complete_metadata(**kwargs):
-    return create_work.main_store.get_complete_metadata(**kwargs)
+    return get_complete_metadata.main_store.get_complete_metadata(**kwargs)
