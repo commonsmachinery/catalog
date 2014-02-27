@@ -12,52 +12,67 @@
 
 'use strict';
 
-
-/* ============================== Backend Setup ============================== */
-
 //var redis = require('redis');
 var celery = require('node-celery');
-
-var backend = celery.createClient({
-    CELERY_BROKER_URL: 'amqp://guest@localhost:5672//',
-    CELERY_RESULT_BACKEND: 'amqp',
-    CELERY_TASK_RESULT_EXPIRES: 30,
-    CELERY_TASK_RESULT_DURABLE: false
-});
-
-backend.once('error', function(err) {
-    console.error('celery error: %s', err);
-});
-
-// Kick everything off 
-backend.once('connect', function() {
-    console.log('celery is ready, starting web server');
-    app.listen(8004);
-    console.log('listening on port 8004');
-});
-
-/* ============================== Frontend Setup ========================= */
-var cons = require('consolidate'); 
+var cons = require('consolidate');
 var debug = require('debug')('frontend:server');
 var express = require('express');
 var stylus = require('stylus');
 
-//var redisClient = redis.createClient();
-var app = express();
+
+var main = function main(config) {
+    if (!config.baseURI) {
+        config.baseURI = 'http://localhost:' + config.port;
+    }
+
+    /* ============================== Frontend Setup ========================= */
+
+    //var redisClient = redis.createClient();
+    var app = express();
 
 
-// Middlewares
-app.use(express.logger());
-app.use(express.json());
+    // Middlewares
+    app.use(express.logger());
+    app.use(express.json());
 
-// Templating
-app.engine('.jade', cons.jade);
-app.set('view engine', 'jade');
-app.use(stylus.middleware({
-    src: __dirname + '/styles',
-    dest: __dirname + '/public/css',
-}));
-app.use(express.static('./public'));
+    // Templating
+    app.engine('.jade', cons.jade);
+    app.set('view engine', 'jade');
+    app.use(stylus.middleware({
+        src: __dirname + '/styles',
+        dest: __dirname + '/public/css',
+    }));
+    app.use(express.static('./public'));
 
-// endpoint logic
-var rest = require('./lib/rest.js')(app, backend, 'http://localhost:8004')
+
+    /* ============================== Backend Setup ============================== */
+
+    var backend = celery.createClient({
+        CELERY_BROKER_URL: config.brokerURL || 'amqp://guest@localhost:5672//',
+        CELERY_RESULT_BACKEND: 'amqp',
+        CELERY_TASK_RESULT_EXPIRES: 30,
+        CELERY_TASK_RESULT_DURABLE: false
+    });
+
+    backend.on('error', function(err) {
+        console.error('celery error: %s', err);
+    });
+
+
+    // Link frontend logic to the backend
+    require('./lib/rest')(app, backend, config.baseURI);
+
+
+    // Kick everything off
+    backend.once('connect', function() {
+        console.log('celery is ready, starting web server');
+        app.listen(config.port);
+        console.log('listening on port ' + config.port);
+    });
+};
+
+module.exports = main;
+
+if (require.main === module) {
+    main({ port: 8004 });
+}
