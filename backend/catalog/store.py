@@ -819,6 +819,50 @@ class RedlandStore(object):
             posts.append(post)
         return posts
 
+    def get_metadata(self, **kwargs):
+        id = kwargs.pop('id')
+        user = kwargs.pop('user')
+        format = kwargs.pop('format', 'json')
+
+        query_format = """
+            PREFIX dc: <http://purl.org/dc/elements/1.1/>
+            PREFIX catalog: <http://catalog.commonsmachinery.se/ns#>
+            PREFIX rem3: <http://scam.sf.net/schema#>
+
+            CONSTRUCT {
+                ?s ?p ?o .
+            }
+            WHERE
+            {
+                BIND (<%s> AS ?work)
+                BIND ("%s" AS ?user)
+
+                ?work catalog:creator ?creator .
+                ?work catalog:visibility ?visibility .
+                ?work rem3:metadata ?workMetadata .
+
+                GRAPH ?g { ?s ?p ?o . }
+
+                FILTER((?g = ?workMetadata) &&
+                       ((?visibility = "public") ||
+                        (?visibility = "private") && (?creator = ?user)))
+            }
+        """
+
+        query_string = query_format % (get_work_context(None, id).uri, user)
+        query = RDF.Query(query_string)
+
+        query_results = query.execute(self._model)
+
+        # TODO: use results.to_string() with proper format URIs
+        temp_model = RDF.Model(RDF.MemoryStorage())
+
+        for statement in query_results.as_stream():
+            temp_model.append(statement)
+
+        result = temp_model.to_string(name=format, base_uri=None)
+        return result
+
     def get_complete_metadata(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
         id = kwargs.pop('id')
