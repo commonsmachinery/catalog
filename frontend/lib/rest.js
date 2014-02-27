@@ -32,8 +32,7 @@ function rest(app, localBackend, localBaseURI) {
     app.get('/works', getWorks);
     app.get('/works/:workID', getWork);
     app.get('/works/:workID/completeMetadata', getCompleteMetadata);
-    // app.get('/works/:workID/metadata', getMetadata);
-    // app.get('/works/:workID/posts', getPosts);
+    app.get('/works/:workID/metadata', getMetadata);
     // app.patch('/works/:workID', patchWork);
     app.post('/works', postWork);
     app.put('/works/:workID', putWork);
@@ -41,17 +40,17 @@ function rest(app, localBackend, localBaseURI) {
     /* sources */
     // app.delete('/users/:userID/sources/:sourceID', deleteSource);
     app.get('/users/:userID/sources', getSources);
-    // app.get('/users/:userID/sources/:sourceID', getSource);
-    // app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getCEM);
-    // app.get('/users/:userID/sources/:sourceID/metadata', getMetadata);
+    app.get('/users/:userID/sources/:sourceID', getSource);
+    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
+    app.get('/users/:userID/sources/:sourceID/metadata', getSourceMetadata);
     // app.patch('/users/:userID/sources/:sourceID', patchSource);
     // app.put('/users/:userID/sources/:sourceID', putSource);
 
     // app.delete('/works/:workID/sources/:sourceID', deleteSource);
     app.get('/works/:workID/sources', getSources);
-    // app.get('/works/:workID/sources/:sourceID', getSource);
-    // app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getCEM);
-    // app.get('/works/:workID/sources/:sourceID/metadata', getMetadata);
+    app.get('/works/:workID/sources/:sourceID', getSource);
+    app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
+    app.get('/works/:workID/sources/:sourceID/metadata', getSourceMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
     // app.post('/works/:workID/sources', postSource);
     // app.put('/works/:workID/sources/:sourceID', putSource);
@@ -135,8 +134,40 @@ function deleteWork(req, res) {
 
 function getPosts (req, res) {
     var queryData = commonData(req);
-    call(res, queryData, 'get_sources', respond);
+    call(res, queryData, 'get_posts', respond);
    return;
+}
+
+function getSource (req, res) {
+    var queryData = {
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+        source_id: req.params.sourceID,
+    }
+    call(res, queryData, 'get_source', 'workSource');
+    return;
+}
+
+function getSourceMetadata (req, res) {
+    var queryData = {
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+        source_id: req.params.sourceID,
+        subgraph: "metadata"
+    }
+    call(res, queryData, 'get_source', 'sourceMetadata');
+    return;
+}
+
+function getSourceCEM (req, res) {
+    var queryData = {
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+        source_id: req.params.sourceID,
+        subgraph: "cachedExternalMetadata"
+    }
+    call(res, queryData, 'get_source', 'sourceCEM');
+    return;
 }
 
 function getSources (req, res) {

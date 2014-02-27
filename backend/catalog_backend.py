@@ -122,6 +122,10 @@ def add_source(**kwargs):
     return add_source.main_store.store_source(**kwargs)
 
 @app.task(base=StoreTask)
+def get_source(**kwargs):
+    return get_source.main_store.get_source(**kwargs)
+
+@app.task(base=StoreTask)
 def get_sources(**kwargs):
     return get_sources.main_store.get_sources(**kwargs)
 

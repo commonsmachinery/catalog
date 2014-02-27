@@ -677,10 +677,14 @@ class RedlandStore(object):
         work_id = kwargs.pop('work_id', None)
         user_id = kwargs.pop('user_id', None)
         source_id = kwargs.pop('source_id', None)
+        subgraph = kwargs.pop('subgraph', None)
 
         source = CatalogSource.from_model(self._model, get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id))
 
-        return source.get_data()
+        if not subgraph:
+            return source.get_data()
+        else:
+            return source.get_data()[subgraph + "Graph"]
 
     def get_sources(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
@@ -707,7 +711,7 @@ class RedlandStore(object):
                 # now if only we
                 source_subject = statement.subject
                 source = CatalogSource.from_model(self._model, source_subject)
-                sources.append(source)
+                sources.append(source.get_data())
 
         return sources
 
