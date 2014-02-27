@@ -196,10 +196,11 @@ function getMetadata(req, res) {
     var user = 'test';
     var queryData = req.query;
     queryData = commonData(req);
-    queryData.format = req.params.format;
+    queryData.subgraph = "metadata";
     call(res, queryData, 'get_metadata', 'workMetadata');
     return;
 }
+
 function getCompleteMetadata(req, res) {
     var user = 'test';
     var queryData = req.query;
