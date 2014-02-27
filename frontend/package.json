@@ -29,9 +29,10 @@
   "volo": {
     "baseUrl": "./public/lib",
     "dependencies": {
+      "backbone": "http://backbonejs.org/backbone.js",
+      "jquery": "http://code.jquery.com/jquery-2.1.0.js",
       "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
-      "watch": "https://raw.github.com/melanke/Watch.JS/master/src/watch.js",
-      "jquery": "http://code.jquery.com/jquery-2.1.0.js"
+      "underscore": "http://underscorejs.org/underscore.js"
     }
   }
 }

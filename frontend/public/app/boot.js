@@ -4,27 +4,40 @@ requirejs.config({
 	baseUrl : '/app',
 	paths : {
 		lib : '/lib'
+	},
+	shim: {
+		backbone: {
+			deps: ['underscore', 'jquery'],
+			exports: 'Backbone'
+		},
+		underscore: {
+			exports: '_'
+		}
 	}
 });
 
-require(['lib/jquery', 'lib/watch'], function($, watch){	
+require(['lib/jquery', 'lib/backbone'], function($, Backbone){	
+
+	var routes = Backbone.Router.extend({
+	routes: {
+		"/": 'home',
+		"/work/:id": 'work',
+		"/works(?:filters)": 'works'
+	},
+	home: function() {
+		require(['home']);
+	},
+	works: function(filters) {
+		require(['works']);
+	},
+	work: function (id) {
+		require(['workPermalink']);
+	}
+	});
+	Backbone.history.start();
+
 	function _init(){
-		/* Map module loading */
-		var path = window.location.pathname;
-		switch(true){
-			case '/' === path: 
-				require(['home']);
-				break;
-			case /\/?works\/?$/.test(path): 
-				require(['works']);
-				break;
-			case /\/?works\/[1-9]+$/.test(path): 
-				require(['workPermalink']);
-				break;
-			case /\/?browse\/?$/.test(path): 
-				require(['works']);
-				break;
-		}
+		
 	}
 	if(document.readyState == 'complete'){
 		_init();

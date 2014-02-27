@@ -26,21 +26,21 @@ function rest(app, localBackend, localBaseURI) {
     // TODO: add request sanity checking
 
     /* works */
-    app.delete('/works/:workID', deleteWork);
-    app.get('/users/:userID/works', getWorks);
+    app.delete('/works/:id', deleteWork);
+    app.get('/users/:id/works', getWorks);
     app.get('/users/:userID/works/:workID', getWork);
     app.get('/works', getWorks);
-    app.get('/works/:workID', getWork);
-    // app.get('/works/:workID/completeMetadata', getCompleteMetadata);
-    // app.get('/works/:workID/metadata', getMetadata);
-    // app.get('/works/:workID/posts', getPosts);
-    // app.patch('/works/:workID', patchWork);
+    app.get('/works/:id', getWork);
+    app.get('/works/:id/completeMetadata', getCompleteMetadata);
+    // app.get('/works/:id/metadata', getMetadata);
+    // app.get('/works/:id/posts', getPosts);
+    // app.patch('/works/:id', patchWork);
     app.post('/works', postWork);
-    app.put('/works/:workID', putWork);
+    app.put('/works/:id', putWork);
 
     /* sources */
     // app.delete('/users/:userID/sources/:sourceID', deleteSource);
-    app.get('/users/:userID/sources', getSources);
+    app.get('/users/:id/sources', getSources);
     // app.get('/users/:userID/sources/:sourceID', getSource);
     // app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getCEM);
     // app.get('/users/:userID/sources/:sourceID/metadata', getMetadata);
@@ -48,18 +48,18 @@ function rest(app, localBackend, localBaseURI) {
     // app.put('/users/:userID/sources/:sourceID', putSource);
 
     // app.delete('/works/:workID/sources/:sourceID', deleteSource);
-    app.get('/works/:workID/sources', getSources);
+    app.get('/works/:id/sources', getSources);
     // app.get('/works/:workID/sources/:sourceID', getSource);
     // app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getCEM);
     // app.get('/works/:workID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    // app.post('/works/:workID/sources', postSource);
+    // app.post('/works/:id/sources', postSource);
     // app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
-    app.get('/works/:workID/posts', getPosts);
-    // app.post('/works/:workID/posts', postPost);
-    // app.delete('/works/:workID/posts', deletePost);
+    app.get('/works/:id/posts', getPosts);
+    // app.post('/works/:id/posts', postPost);
+    // app.delete('/works/:id/posts', deletePost);
 
     return;
 };
@@ -114,10 +114,18 @@ function call (res, queryData, call, view, callback, errorCheck) {
 function commonData (req) { 
     var user = 'test';
     var queryData =  {
-        id: req.params.workID,
+        id: req.params.id,
         user: user,
     };
     return queryData;
+}
+
+function getCompleteMetadata (req, res) {
+    var queryData = commonData(req);
+    call(res, queryData, 'get_complete_metadata', 'completeMetadata', function(data){
+        console.log(data);
+    });
+    return;
 }
 
 function deleteWork(req, res) {
@@ -136,7 +144,7 @@ function deleteWork(req, res) {
 function getPosts (req, res) {
     var queryData = commonData(req);
     call(res, queryData, 'get_sources', respond);
-   return;
+    return;
 }
 
 function getSources (req, res) {
@@ -146,8 +154,6 @@ function getSources (req, res) {
 }
 
 function getWork(req, res) {
-    // TODO: do sanitychecking on the ID
-    var user;
     var queryData = commonData(req);
     call(res, queryData, 'get_work', 'workPermalink');
     return;
