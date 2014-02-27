@@ -42,7 +42,7 @@ function rest(app, localBackend, localBaseURI) {
     // app.delete('/users/:userID/sources/:sourceID', deleteSource);
     app.get('/users/:id/sources', getSources);
     app.get('/users/:userID/sources/:sourceID', getSource);
-    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getCEM);
+    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/users/:userID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/users/:userID/sources/:sourceID', patchSource);
     // app.put('/users/:userID/sources/:sourceID', putSource);
@@ -50,7 +50,7 @@ function rest(app, localBackend, localBaseURI) {
     // app.delete('/works/:workID/sources/:sourceID', deleteSource);
     app.get('/works/:id/sources', getSources);
     app.get('/works/:workID/sources/:sourceID', getSource);
-    app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getCEM);
+    app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
     // app.post('/works/:id/sources', postSource);
