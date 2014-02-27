@@ -8,23 +8,6 @@
 
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-- var work = data
-mixin branch(data)
-	dl
-		for val, key in data
-			dt #{key}:
-			if(typeof val == 'object')
-				dd
-					+branch(val)
-			else
-				dd #{val}
-
 include includes/top
-	h1 #{work.id}
-	a(href="#{work.metadata}") (view metadata...)
-	-delete work.id
-	-delete work.resource
-	-delete work.metadata
-	-work.created = new Date(work.created).toString()
-	+branch(work)
+	pre #{data}
 include includes/bottom

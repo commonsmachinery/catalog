@@ -120,14 +120,6 @@ function commonData (req) {
     return queryData;
 }
 
-function getCompleteMetadata (req, res) {
-    var queryData = commonData(req);
-    call(res, queryData, 'get_complete_metadata', 'completeMetadata', function(data){
-        console.log(data);
-    });
-    return;
-}
-
 function deleteWork(req, res) {
     function respond (work, err) {
         res.send(204, 'successfully deleted work'); 
@@ -144,7 +136,7 @@ function deleteWork(req, res) {
 function getPosts (req, res) {
     var queryData = commonData(req);
     call(res, queryData, 'get_sources', respond);
-    return;
+   return;
 }
 
 function getSources (req, res) {
@@ -166,6 +158,26 @@ function getWorks(req, res) {
     call(res, queryData, 'get_works', 'workCollection');
     return;
 }
+
+function getMetadata(req, res) {
+    var user = 'test';
+    var queryData = req.query;
+    queryData = commonData(req);
+    queryData.format = req.params.format;
+    call(res, queryData, 'get_metadata', 'workMetadata');
+    return;
+}
+    
+function getCompleteMetadata(req, res) {
+    var user = 'test';
+    var queryData = req.query;
+    queryData.user = user;
+    queryData.id = req.params.id;
+    queryData.format = req.params.format;
+    call(res, queryData, 'get_complete_metadata', 'completeMetadata');
+    return;
+}
+
 
 function handleBackendResult(result, callback) {
     result.on('ready', function(message) {
@@ -193,6 +205,8 @@ function postWork(req, res) {
     }
 
     var user = 'test';
+    var errors = 'Error creating work.';
+
     var workData = {
         metadataGraph: req.body.metadataGraph,
         state: req.body.state,

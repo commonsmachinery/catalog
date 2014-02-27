@@ -25,7 +25,7 @@ mixin branch(data)
 include includes/top
 	for work in works
 		h2: a(href="#{work.resource}") #{work.id}
-		a(href="#{work.metaworks}") (see metaworks...)
+		a(href="#{work.metadata}") (see metadata...)
 		- delete work.resource
 		- delete work.id
 		- delete work.metadataGraph
