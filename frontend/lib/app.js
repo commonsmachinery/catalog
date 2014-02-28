@@ -11,7 +11,7 @@
 
 'use strict';
 
-function app (){
+function routes (app){
     app.get('/', getHome);
     app.get('/browse', getBrowse);
 }
@@ -23,4 +23,4 @@ function getHome (req, res) {
     res.render('home');
 }
 
-module.exports = app;
+module.exports = routes;

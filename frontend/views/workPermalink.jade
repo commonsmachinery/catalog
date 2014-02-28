@@ -13,18 +13,22 @@ mixin branch(data)
 	dl
 		for val, key in data
 			dt #{key}:
-			if(typeof val == 'object')
+			if typeof val == 'object'
 				dd
 					+branch(val)
 			else
-				dd #{val}
+				if owner
+					dd.editable(data-key="#{key}") #{val}
+				else
+					dd(data-key="#{key}") #{val}
 
 include includes/top
-	h1 #{work.id}
+	h1#id(data-key) #{work.id}
 	a(href="#{work.metadata}") (view metadata...)
+	input.edit(type="button" value="edit")
 	-delete work.id
 	-delete work.resource
 	-delete work.metadata
-	-work.created = new Date(work.created).toString()
+	- work.created = new Date(parseInt(work.created)).toString()
 	+branch(work)
 include includes/bottom

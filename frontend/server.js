@@ -61,7 +61,7 @@ var main = function main(config) {
 
     // Link frontend logic to the backend
     require('./lib/rest')(app, backend, config.baseURI);
-
+    require('./lib/app')(app);
 
     // Kick everything off
     backend.once('connect', function() {
