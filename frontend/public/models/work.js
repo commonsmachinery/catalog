@@ -1,10 +1,19 @@
 
 define(function(require){
 
-	var Backbone = require('backbone');
+	var Backbone = require('lib/backbone');
 	var Work = Backbone.Model.extend({
+		urlRoot: '/works',
 		initialize: function(){
-			$('dd').on('click', edit);
+			this.on('change:created', setDate);
+			return;
 		}
-	})
+	});
+
+	function setDate (model, val, opt) {
+		var date = new Date(val).getTime();
+		model.set('created', date);
+		return;
+	}
+	return Work;
 })

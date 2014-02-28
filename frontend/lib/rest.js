@@ -91,9 +91,21 @@ function call (res, queryData, call, view, callback, errorCheck) {
         if(callback){
             return callback(data)
         }
+        var owner = false;
+        if(queryData.user){
+            if(queryData.user_id && queryData.user_id == queryData.user){
+                owner = true;
+            }
+            else if (data.creator && data.creator == queryData.user){
+                owner = true;
+            }
+        }
         res.format({
             'text/html': function(){
-                res.render(view, {data: data})
+                res.render(view, {
+                    data: data, 
+                    owner: owner
+                })
             },
             'application/json': function(){
                 res.send(data)
@@ -260,9 +272,8 @@ function putWork(req, res) {
 
     var user = 'test';
     var errors = 'Error updating work.';
-
     var workData = {
-        id: req.params.workID,
+        id: req.params.id,
         metadataGraph: req.body.metadataGraph,
         state: req.body.state,
         time: Date.now(),

@@ -4,6 +4,7 @@ requirejs.config({
 	baseUrl : '/app',
 	paths: {
 		lib : '../lib',
+		models: '../models',
 		jquery : '../lib/jquery',
 		underscore: '../lib/underscore'
 	}
@@ -21,10 +22,10 @@ require(['lib/jquery', 'lib/backbone'], function($, Backbone){
 			require(['home']);
 		},
 		works: function(filters) {
-			require(['works']);
+			require(['workCollection']);
 		},
 		work: function (id) {
-			require(['work']);
+			require(['workPermalink']);
 		}
 	});
 	var app = new Router();
