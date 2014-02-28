@@ -30,10 +30,10 @@
   "volo": {
     "baseUrl": "./public/lib",
     "dependencies": {
-      "backbone": "http://backbonejs.org/backbone.js",
-      "jquery": "http://code.jquery.com/jquery-2.1.0.js",
+      "jquery": "github:jquery/jquery/2.1.0",
       "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
-      "underscore": "http://underscorejs.org/underscore.js"
+      "underscore": "github:amdjs/underscore/1.5.2",
+      "backbone": "github:jashkenas/backbone/1.1.2"
     }
   }
 }

@@ -1,8 +1,7 @@
 
 define(function(require){
 
-	var $ = require(['lib/jquery']);
-	var watch = require(['lib/watch']).watch;
+	var $ = require('jquery');
 	console.log($('body'));
 	return;
 })

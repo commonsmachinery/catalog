@@ -2,39 +2,33 @@
 
 requirejs.config({
 	baseUrl : '/app',
-	paths : {
-		lib : '/lib'
-	},
-	shim: {
-		backbone: {
-			deps: ['underscore', 'jquery'],
-			exports: 'Backbone'
-		},
-		underscore: {
-			exports: '_'
-		}
+	paths: {
+		lib : '../lib',
+		jquery : '../lib/jquery',
+		underscore: '../lib/underscore'
 	}
 });
 
 require(['lib/jquery', 'lib/backbone'], function($, Backbone){	
 
-	var routes = Backbone.Router.extend({
-	routes: {
-		"/": 'home',
-		"/work/:id": 'work',
-		"/works(?:filters)": 'works'
-	},
-	home: function() {
-		require(['home']);
-	},
-	works: function(filters) {
-		require(['works']);
-	},
-	work: function (id) {
-		require(['workPermalink']);
-	}
+	var Router = Backbone.Router.extend({
+		routes: {
+			"": 'home',
+			"works/:id": 'work',
+			"works(?:filters)(/)": 'works',
+		},
+		home: function() {
+			require(['home']);
+		},
+		works: function(filters) {
+			require(['works']);
+		},
+		work: function (id) {
+			require(['work']);
+		}
 	});
-	Backbone.history.start();
+	var app = new Router();
+	console.log(Backbone.history.start({pushState: true, root:'/'}));
 
 	function _init(){
 		
