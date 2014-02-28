@@ -101,7 +101,7 @@ def get_source_context(graph, work_id=None, user_id=None, source_id=None):
     elif graph == METADATA_GRAPH:
         uri_format = "http://localhost:8004/" + toplevel + "sources/%s/metadata"
     elif graph == CACHED_METADATA_GRAPH:
-        uri_format = "http://localhost:8004/" + toplevel + "souces/%s/cachedExternalMetadata"
+        uri_format = "http://localhost:8004/" + toplevel + "sources/%s/cachedExternalMetadata"
     else:
         raise RuntimeError("Invalid subgraph URI %s" % graph)
 
@@ -610,14 +610,16 @@ class RedlandStore(object):
         # TODO: later there should be proper ACLs
         if not user:
             raise RuntimeError('no user')
-        if not work_id:
-            raise RuntimeError('no work id')
         if not timestamp:
             timestamp = int(time.time())
 
         # TODO: get source IDs from somewhere...
         if not source_id:
             source_id = timestamp
+
+        if not user_id:
+            # check that a work exists, so we don't add an orphaned source
+            work = self.get_work(user=user, id=work_id)
 
         # TODO: check that metadataGraph is proper RDF/JSON
         if not metadataGraph:
@@ -642,40 +644,77 @@ class RedlandStore(object):
         # like "source"
 
         source_subject = get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id)
-        work_subject = get_work_context(None, work_id)
 
-        statement = RDF.Statement(work_subject,
-            RDF.Node(uri_string=NS_CATALOG + "source"),
-            source_subject)
+        if work_id:
+            work_subject = get_work_context(None, work_id)
 
-        if (statement, work_subject) not in self._model:
-            self._model.append(statement, context=work_subject)
+            statement = RDF.Statement(work_subject,
+                RDF.Node(uri_string=NS_CATALOG + "source"),
+                source_subject)
+
+            if (statement, work_subject) not in self._model:
+                self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return source_id
+        return {'work_id': work_id, 'user_id': user_id, 'source_id': source_id}
 
-    # TODO: do we delete source by id or resource?
-    def delete_source(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        # TODO: delete not only link, but source as well
-        id = kwargs.pop('id')
+    def update_source(self, **kwargs):
         user = kwargs.pop('user')
-        resource = kwargs.pop('resource')
+        work_id = kwargs.pop('work_id', None)
+        user_id = kwargs.pop('user_id', None)
+        source_id = kwargs.pop('source_id', None)
 
-        work = Work.from_model(self._model, get_work_context(None, id))
+        source = self.get_source(user=user, work_id=work_id, user_id=user_id, source_id=source_id)
 
-        if work['creator'] != user:
+        if source['addedBy'] != user:
+            raise RuntimeError("Error accessing source added by another user")
+
+        data = kwargs.copy()
+
+        source.update(data)
+
+        source['work_id'] = work_id
+        source['user_id'] = user_id
+        source['source_id'] = source_id
+        source['user'] = user
+
+        self.delete_source(user=user, work_id=work_id, user_id=user_id, source_id=source_id)
+        self.store_source(**source)
+
+    def delete_source(self, **kwargs):
+        user = kwargs.pop('user')
+        work_id = kwargs.pop('work_id', None)
+        user_id = kwargs.pop('user_id', None)
+        source_id = kwargs.pop('source_id', None)
+
+        if work_id:
+            work = self.get_work(user=user, id=work_id)
+        else:
+            work = None
+        source = CatalogSource.from_model(self._model, get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id))
+
+        if work and work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
 
+        source_subject = get_source_context(None, work_id=work_id, user_id=user_id, source_id=source_id)
+
         # delete source link
-        work_subject = get_work_context(None, id)
+        if work:
+            work_subject = get_work_context(None, work_id)
 
-        statement = RDF.Statement(work_subject,
-            RDF.Node(uri_string=NS_CATALOG + "source"),
-            RDF.Node(uri_string=resource))
+            statement = RDF.Statement(work_subject,
+                RDF.Node(uri_string=NS_CATALOG + "source"),
+                source_subject)
 
-        if (statement, work_subject) in self._model:
-            self._model.remove_statement(statement, context=work_subject)
+            if (statement, work_subject) in self._model:
+                self._model.remove_statement(statement, context=work_subject)
+
+        # delete source data
+        for subgraph_uri in source.get_subgraphs():
+            subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
+            self._model.remove_statements_with_context(subgraph_context)
+        self._model.remove_statements_with_context(source_subject)
+        self._model.sync()
 
     def get_source(self, **kwargs):
         work_id = kwargs.pop('work_id', None)
@@ -702,7 +741,7 @@ class RedlandStore(object):
             work = self.get_work(user=user, id=work_id)
             for source_uri in work.get('source', []):
                 source_id = self._get_entry_id(source_uri)
-                source = self.get_source(user=user, work_id=work['id'], source_id=source_id)
+                source = self.get_source(user=user, work_id=work_id, source_id=source_id)
                 sources.append(source)
         elif user_id:
             # TODO: addedBy is an attribute specific to sources
@@ -771,30 +810,38 @@ class RedlandStore(object):
             self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return post_id
+        return {'work_id': work_id, 'post_id': post_id}
 
-    # TODO: do we delete post by id or resource?
     def delete_post(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
-        post_id = kwargs.pop('id')
         work_id = kwargs.pop('work_id')
+        post_id = kwargs.pop('post_id')
         user = kwargs.pop('user')
-        resource = kwargs.pop('resource')
 
-        work = Work.from_model(self._model, get_work_context(None, id))
+        work = self.get_work(user=user, id=work_id)
+        post = Post.from_model(self._model, get_post_context(None, work_id, post_id))
 
         if work['creator'] != user:
             raise RuntimeError("Error accessing work owned by another user")
 
         # delete post link
-        work_subject = get_work_context(None, id)
+        work_subject = get_work_context(None, work_id)
+        post_subject = get_post_context(None, work_id, post_id)
 
         statement = RDF.Statement(work_subject,
             RDF.Node(uri_string=NS_CATALOG + "post"),
-            RDF.Node(uri_string=resource))
+            post_subject)
 
         if (statement, work_subject) in self._model:
             self._model.remove_statement(statement, context=work_subject)
+
+        # delete post data
+        for subgraph_uri in post.get_subgraphs():
+            subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
+            self._model.remove_statements_with_context(subgraph_context)
+        self._model.remove_statements_with_context(post_subject)
+
+        self._model.sync()
 
     def get_post(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
@@ -812,10 +859,10 @@ class RedlandStore(object):
         user = kwargs.pop('user')
 
         posts = []
-        work = get_work(user=user, id=id)
+        work = self.get_work(user=user, id=id)
         for post_uri in work.get('post', []):
             post_id = self._get_entry_id(post_uri)
-            post = self.get_post(user=user, id=post_id)
+            post = self.get_post(user=user, work_id=id, post_id=post_id)
             posts.append(post)
         return posts
 

@@ -33,40 +33,41 @@ function rest(app, localBackend, localBaseURI) {
     app.get('/works/:id', getWork);
     app.get('/works/:id/completeMetadata', getCompleteMetadata);
     app.get('/works/:id/metadata', getMetadata);
-    app.get('/works/:id/posts', getPosts);
     // app.patch('/works/:id', patchWork);
     app.post('/works', postWork);
     app.put('/works/:id', putWork);
 
     /* sources */
-    // app.delete('/users/:userID/sources/:sourceID', deleteSource);
-    app.get('/users/:id/sources', getSources);
+    app.delete('/users/:userID/sources/:sourceID', deleteSource);
+    app.get('/users/:userID/sources', getSources);
     app.get('/users/:userID/sources/:sourceID', getSource);
     app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/users/:userID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/users/:userID/sources/:sourceID', patchSource);
-    // app.put('/users/:userID/sources/:sourceID', putSource);
+    app.post('/users/:userID/sources', postSource);
+    app.put('/users/:userID/sources/:sourceID', putSource);
 
-    // app.delete('/works/:workID/sources/:sourceID', deleteSource);
-    app.get('/works/:id/sources', getSources);
+    app.delete('/works/:workID/sources/:sourceID', deleteSource);
+    app.get('/works/:workID/sources', getSources);
     app.get('/works/:workID/sources/:sourceID', getSource);
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    // app.post('/works/:id/sources', postSource);
-    // app.put('/works/:workID/sources/:sourceID', putSource);
+    app.post('/works/:workID/sources', postSource);
+    app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
     app.get('/works/:id/posts', getPosts);
-    // app.post('/works/:id/posts', postPost);
-    // app.delete('/works/:id/posts', deletePost);
+    app.get('/works/:workID/posts/:postID', getPost);
+    app.post('/works/:id/posts', postPost);
+    app.delete('/works/:workID/posts/:postID', deletePost);
 
     return;
 };
 
 
-function buildURL() {
-    return baseURL + '/' + Array.prototype.join.call(arguments, '/');
+function buildURI() {
+    return baseURI + '/' + Array.prototype.join.call(arguments, '/');
 }
 
 function call (res, queryData, call, view, callback, errorCheck) {
@@ -129,18 +130,77 @@ function deleteWork(req, res) {
 
     var queryData = commonData(req);
     var errors = 'Error deleting work.'
-    var result = backend.call(res, queryData, 'delete_work', null, respond, errors);
+    var result = call(res, queryData, 'delete_work', null, respond, errors);
     return;
 }
 
 function getPosts (req, res) {
     var queryData = commonData(req);
-    call(res, queryData, 'get_posts', respond);
-   return;
+    call(res, queryData, 'get_posts', 'workPosts');
+    return;
+}
+
+function getPost (req, res) {
+    var user = 'test';
+
+    var queryData = {
+        user: user,
+        work_id: req.params.workID,
+        post_id: req.params.postID,
+    }
+    call(res, queryData, 'get_post', 'workPost');
+    return;
+}
+
+
+function postPost(req, res) {
+    function respond(post, err) {
+        var postURI = buildURI('works', post.work_id, 'posts', post.post_id);
+        debug('successfully added post, redirecting to %s', postURI);
+        res.redirect(postURI);
+    }
+
+    var user = 'test';
+    var errors = 'Error creating post.';
+
+    var postData = {
+        user: user,
+        timestamp: Date.now(),
+        metadataGraph: req.body.metadataGraph,
+        cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
+        resource: req.body.resource,
+        work_id: req.params.id,
+    };
+
+    call(res, postData, 'add_post', null, respond, errors);
+    return;
+}
+
+function deletePost (req, res) {
+    var user = 'test';
+
+    function respond (work, err) {
+        res.send(204, 'successfully deleted post'); 
+        return;
+         // TODO: this could be 202 Accepted if we add undo capability
+    }
+
+    var queryData = {
+        user: user,
+        work_id: req.params.workID,
+        post_id: req.params.postID,
+    }
+
+    var errors = 'Error deleting post.'
+    var result = call(res, queryData, 'delete_post', null, respond, errors);
+    return;
 }
 
 function getSource (req, res) {
+    var user = 'test';
+
     var queryData = {
+        user: user,
         work_id: req.params.workID,
         user_id: req.params.userID,
         source_id: req.params.sourceID,
@@ -149,8 +209,87 @@ function getSource (req, res) {
     return;
 }
 
-function getSourceMetadata (req, res) {
+function postSource(req, res) {
+    function respond(source, err) {
+        var sourceURI;
+
+        if (source.user_id) {
+            sourceURI = buildURI('users', source.user_id, 'sources', source.source_id);
+        } else {
+            sourceURI = buildURI('works', source.work_id, 'sources', source.source_id);
+        }
+
+        debug('successfully added source, redirecting to %s', sourceURI);
+        res.redirect(sourceURI);
+    }
+
+    var user = 'test';
+    var errors = 'Error creating source.';
+
+    var sourceData = {
+        user: user,
+        timestamp: Date.now(),
+        metadataGraph: req.body.metadataGraph,
+        cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
+        resource: req.body.resource,
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+    };
+
+    call(res, sourceData, 'add_source', null, respond, errors);
+    return;
+}
+
+function putSource(req, res) {
+    function respond(work, err) {
+        debug('successfully source work');
+        res.send('success');
+        return;
+    }
+
+    var user = 'test';
+    var errors = 'Error updating source.';
+
+    var sourceData = {
+        user: user,
+        timestamp: Date.now(),
+        metadataGraph: req.body.metadataGraph,
+        cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
+        resource: req.body.resource,
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+        source_id: req.params.sourceID
+    };
+    call(res, sourceData, 'update_source', null, respond, errors);
+    return;
+}
+
+function deleteSource (req, res) {
+    var user = 'test';
+
+    function respond (work, err) {
+        res.send(204, 'successfully deleted source'); 
+        return;
+         // TODO: this could be 202 Accepted if we add undo capability
+    }
+
     var queryData = {
+        user: user,
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+        source_id: req.params.sourceID,
+    }
+
+    var errors = 'Error deleting source.'
+    var result = call(res, queryData, 'delete_source', null, respond, errors);
+    return;
+}
+
+function getSourceMetadata (req, res) {
+    var user = 'test';
+
+    var queryData = {
+        user: user,
         work_id: req.params.workID,
         user_id: req.params.userID,
         source_id: req.params.sourceID,
@@ -161,7 +300,10 @@ function getSourceMetadata (req, res) {
 }
 
 function getSourceCEM (req, res) {
+    var user = 'test';
+
     var queryData = {
+        user: user,
         work_id: req.params.workID,
         user_id: req.params.userID,
         source_id: req.params.sourceID,
@@ -172,7 +314,13 @@ function getSourceCEM (req, res) {
 }
 
 function getSources (req, res) {
-    var queryData = commonData(req);
+    var user = 'test';
+
+    var queryData = {
+        user: user,
+        work_id: req.params.workID,
+        user_id: req.params.userID,
+    }
     call(res, queryData, 'get_sources', 'workSources');
     return;
 }
@@ -197,7 +345,7 @@ function getMetadata(req, res) {
     queryData.user = user;
     queryData.id = req.params.id;
     queryData.subgraph = "metadata";
-    call(res, queryData, 'get_metadata', 'workMetadata');
+    call(res, queryData, 'get_work', 'workMetadata');
     return;
 }
 

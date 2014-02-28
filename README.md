@@ -72,7 +72,7 @@ List works:
     curl -H 'Accept: application/json' http://localhost:8004/works
 
 Filter works:
-    
+
     curl -H http://localhost:8004/works?visibility=public
 
 Create a work (the subject in the metadata will be rewritten to the
@@ -84,8 +84,6 @@ Get a work:
 
     curl -H 'Accept: application/json' http://localhost:8004/works/1392318412903
 
-
-
 Update a work:
 
     curl -X PUT -d '{"state":"published", "metadataGraph": { "http://localhost:8004/works": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1392318412903
@@ -94,3 +92,19 @@ Delete a work:
 
     curl -v -X DELETE http://localhost:8004/works/1392318412903
 
+Add a source:
+
+    curl -v -X POST -d '{"metadataGraph": { "http://localhost:8004/works": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/sources
+
+Update a source:
+
+    curl -X PUT -d '{"metadataGraph": {"http://localhost:8004/works": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' http://localhost:8004/works/1392318412903/sources/1
+
+Add post:
+
+    curl -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/posts
+
+Delete source or post:
+
+     curl -v -X DELETE http://localhost:8004/works/1392318412903/sources/12345
+     curl -v -X DELETE http://localhost:8004/works/1392318412903/posts/12345

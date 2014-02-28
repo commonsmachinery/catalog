@@ -130,6 +130,11 @@ def get_sources(**kwargs):
     return get_sources.main_store.get_sources(**kwargs)
 
 @app.task(base=StoreTask)
+def update_source(**kwargs):
+    # TODO: lock work here
+    return update_source.main_store.update_source(**kwargs)
+
+@app.task(base=StoreTask)
 def delete_source(**kwargs):
     # TODO: lock work here
     return delete_source.main_store.delete_source(**kwargs)
@@ -146,13 +151,13 @@ def get_posts(**kwargs):
     return get_posts.main_store.get_posts(**kwargs)
 
 @app.task(base=StoreTask)
+def get_post(**kwargs):
+    return get_post.main_store.get_post(**kwargs)
+
+@app.task(base=StoreTask)
 def delete_post(**kwargs):
     # TODO: lock work here
     return delete_post.main_store.delete_post(**kwargs)
-
-@app.task(base=StoreTask)
-def get_metadata(**kwargs):
-    return get_metadata.main_store.get_metadata(**kwargs)
 
 @app.task(base=StoreTask)
 def get_complete_metadata(**kwargs):
