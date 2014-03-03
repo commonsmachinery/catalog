@@ -8,8 +8,8 @@
     "type": "git",
     "url": "https://github.com/commonsmachinery/catalog.git"
   },
-  "bin": "server.js",
-  "main": "./server",
+  "bin": "./frontend/server.js",
+  "main": "./frontend/server",
   "dependencies": {
     "consolidate": "*",
     "debug": "*",
@@ -28,6 +28,7 @@
   "license": "AGPLv3",
   "amd": {},
   "volo": {
+    "baseDir": "./frontend/public/lib",
     "baseUrl": "./public/lib",
     "dependencies": {
       "jquery": "github:jquery/jquery/2.1.0",

@@ -38,11 +38,12 @@ var main = function main(config) {
     // Templating
     app.engine('.jade', cons.jade);
     app.set('view engine', 'jade');
+    app.set('views', './frontend/views');
     app.use(stylus.middleware({
         src: __dirname + '/styles',
         dest: __dirname + '/public/css',
     }));
-    app.use(express.static('./public'));
+    app.use(express.static('./frontend/public'));
 
 
     /* ============================== Backend Setup ============================== */

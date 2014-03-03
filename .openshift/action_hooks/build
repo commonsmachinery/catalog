@@ -1,0 +1,9 @@
+#!/bin/sh
+
+set -e
+cd "$OPENSHIFT_REPO_DIR"
+
+./bootstrap.sh
+
+cd backend
+"$OPENSHIFT_REPO_DIR/build/backend/bin/python" setup.py install

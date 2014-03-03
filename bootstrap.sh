@@ -24,27 +24,27 @@ fi
 #    cd ..
 #fi
 
-if [ -f $BACKEND_DIR/bin/redis-server ];
-then
-    echo "Redis already installed, skipping installation."
-else
-    echo "Redis not installed, downloading..."
-    curl http://download.redis.io/releases/redis-stable.tar.gz | tar -xzv
-    cd redis-stable
-    make install PREFIX=$BACKEND_DIR
-    cd ..
-fi
+# if [ -f $BACKEND_DIR/bin/redis-server ];
+# then
+#     echo "Redis already installed, skipping installation."
+# else
+#     echo "Redis not installed, downloading..."
+#     curl http://download.redis.io/releases/redis-stable.tar.gz | tar -xzv
+#     cd redis-stable
+#     make install PREFIX=$BACKEND_DIR
+#     cd ..
+# fi
 
 if [ -f $BACKEND_DIR/lib/python2.7/site-packages/RDF.py ];
 then
     echo "Redland already installed, skipping installation."
 else
     echo "Redland not installed, downloading..."
-    curl http://download.librdf.org/source/redland-bindings-1.0.16.1.tar.gz | tar -xzv
-    cd redland-bindings-1.0.16.1
-    ./configure --prefix=$BACKEND_DIR --with-python=$BACKEND_DIR/bin/python
-    cd python
-    make install
-    cd ..
-    cd ..
+    (cd /tmp
+     curl http://download.librdf.org/source/redland-bindings-1.0.16.1.tar.gz | tar -xzv
+     cd redland-bindings-1.0.16.1
+     ./configure --prefix=$BACKEND_DIR --with-python=$BACKEND_DIR/bin/python
+     cd python
+     make install
+     )
 fi
