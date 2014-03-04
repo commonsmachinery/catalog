@@ -30,7 +30,7 @@ NS_XSD = "http://www.w3.org/2001/XMLSchema#"
 METADATA_GRAPH = NS_REM3 + "metadata"
 CACHED_METADATA_GRAPH = NS_REM3 + "cachedExternalMetadata"
 
-CREATE_WORK_SUBJECT = "http://localhost:8004/works"
+CREATE_WORK_SUBJECT = "about:resource"
 #DATABASE_META_CONTEXT = "http://catalog.commonsmachinery.se/db"
 
 # convert Entry schemas to dicts with URI keys for serializing to JSON
@@ -257,18 +257,24 @@ class Entry(object):
             if property_type == "graph" and not self._dict.has_key(property_name):
                 #self._dict[key] = get_context_node(self.__class__, property_uri, self._dict['id'])
                 #
-                # FIXME: it's really bad idea to pull user/work_id from the entry dict
+                # FIXME: it's really bad idea to pull user/work_id from the entry dict.
                 # possible solution could be to accept context in this method directly
                 #
                 if self.__class__ == Work:
-                    self._dict[key] = get_work_context(property_uri, self._dict['id'])
+                    graph_context = get_work_context(property_uri, self._dict['id'])
+                    # no RDF.Nodes in the internal dict, it should remain serializable
+                    self._dict[key] = str(graph_context)
                 elif issubclass(self.__class__, Source):
-                    self._dict[key] = get_source_context(property_uri,
+                    graph_context = get_source_context(property_uri,
                         work_id=self._dict.get('work_id', None),
                         user_id=self._dict.get('user_id', None),
                         source_id=self._dict['id'])
+                    # no RDF.Nodes in the internal dict, it should remain serializable
+                    self._dict[key] = str(graph_context)
                 elif self.__class__ == Post:
-                    self._dict[key] = get_post_context(property_uri, self._dict['work_id'], self._dict['id'])
+                    graph_context = get_post_context(property_uri, self._dict['work_id'], self._dict['id'])
+                    # no RDF.Nodes in the internal dict, it should remain serializable
+                    self._dict[key] = str(graph_context)
                 else:
                     raise RuntimeError("Invalid Entry class")
 
@@ -466,7 +472,7 @@ class RedlandStore(object):
 
         work.to_model(self._model)
         self._model.sync()
-        return id
+        return work
 
     def update_work(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
@@ -485,7 +491,7 @@ class RedlandStore(object):
         work['user'] = user
 
         self.delete_work(id=id, user=user)
-        self.store_work(**work)
+        return self.store_work(**work)
 
     def delete_work(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs
@@ -656,7 +662,7 @@ class RedlandStore(object):
                 self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return {'work_id': work_id, 'user_id': user_id, 'source_id': source_id}
+        return source
 
     def update_source(self, **kwargs):
         user = kwargs.pop('user')
@@ -679,7 +685,7 @@ class RedlandStore(object):
         source['user'] = user
 
         self.delete_source(user=user, work_id=work_id, user_id=user_id, source_id=source_id)
-        self.store_source(**source)
+        return self.store_source(**source)
 
     def delete_source(self, **kwargs):
         user = kwargs.pop('user')
@@ -810,7 +816,7 @@ class RedlandStore(object):
             self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return {'work_id': work_id, 'post_id': post_id}
+        return post
 
     def delete_post(self, **kwargs):
         # TODO: handle this properly, later there should be proper ACLs

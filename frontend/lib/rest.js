@@ -130,6 +130,7 @@ function commonData (req) {
     var queryData =  {
         id: req.params.id,
         user: user,
+        timestamp: Date.now(),
     };
     return queryData;
 }
@@ -202,6 +203,7 @@ function deletePost (req, res) {
         user: user,
         work_id: req.params.workID,
         post_id: req.params.postID,
+        timestamp: Date.now()
     }
 
     var errors = 'Error deleting post.'
@@ -291,6 +293,7 @@ function deleteSource (req, res) {
         work_id: req.params.workID,
         user_id: req.params.userID,
         source_id: req.params.sourceID,
+        timestamp: Date.now()
     }
 
     var errors = 'Error deleting source.'
