@@ -1,0 +1,32 @@
+//- 
+	Catalog web/view
+
+	Copyright 2014 Commons Machinery http://commonsmachinery.se/
+
+	Authors:
+		Elsa Balderrama <elsa@commonsmachinery.se>
+
+	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+- var sources = data
+mixin branch(data)
+	dl
+		for val, key in data
+			dt #{key}:
+				if(typeof val == 'object')
+					dd 
+						+branch(val)
+				else
+					if owner
+						dd.editable(data-key="#{key}") #{val}
+					else
+						dd(data-key="#{key}") #{val}
+
+include includes/top
+	input.add(type="button" value="+")
+	for source in sources
+		h2: a(href="#{work.resource}") #{source.id}
+		a(href="#{source.metadata}") (see metadata...)
+		- source.created = new Date(source.created).toString();
+		+branch(source)
+include includes/bottom

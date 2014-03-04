@@ -1,0 +1,32 @@
+//- 
+	Catalog web/view
+
+	Copyright 2014 Commons Machinery http://commonsmachinery.se/
+
+	Authors:
+		Elsa Balderrama <elsa@commonsmachinery.se>
+
+	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+- var posts = data
+mixin branch(data)
+	dl
+		for val, key in data
+			dt #{key}:
+				if(typeof val == 'object')
+					dd 
+						+branch(val)
+				else
+					if owner
+						dd.editable(data-key="#{key}") #{val}
+					else
+						dd(data-key="#{key}") #{val}
+
+include includes/top
+	input.add(type="button" value="+")
+	for post in posts
+		h2: a(href="#{post.resource}") #{post.id}
+		a(href="#{post.metadata}") (see metadata...)
+		- post.posted = new Date(post.posted).toString();
+		+branch(post)
+include includes/bottom

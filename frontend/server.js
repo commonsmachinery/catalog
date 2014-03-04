@@ -40,9 +40,10 @@ var main = function main(config) {
     app.set('view engine', 'jade');
     app.use(stylus.middleware({
         src: __dirname + '/styles',
-        dest: __dirname + '/public/css',
+        dest: __dirname + '/public',
+        compress: true
     }));
-    app.use(express.static('./public'));
+    app.use(express.static(__dirname + '/public'));
 
 
     /* ============================== Backend Setup ============================== */

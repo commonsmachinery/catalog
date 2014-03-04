@@ -53,7 +53,7 @@ function rest(app, localBackend, localBaseURI) {
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    app.post('/works/:workID/sources', postSource);
+    app.post('/works/:id/sources', postSource);
     app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
@@ -89,6 +89,7 @@ function call (res, queryData, call, view, callback, errorCheck) {
             }
             return;
         }
+        console.log('/////////////////////////// DATA ////////////////////////// \n', data, ' \n\n', data);
         if(callback){
             return callback(data)
         }
@@ -213,11 +214,11 @@ function getSource (req, res) {
 
     var queryData = {
         user: user,
-        work_id: req.params.workID,
-        user_id: req.params.userID,
+        work_id: req.params.workID || null,
+        user_id: req.params.userID || null,
         source_id: req.params.sourceID,
     }
-    call(res, queryData, 'get_source', 'workSource');
+    call(res, queryData, 'get_source', 'source');
     return;
 }
 
@@ -244,8 +245,8 @@ function postSource(req, res) {
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
         resource: req.body.resource,
-        work_id: req.params.workID,
-        user_id: req.params.userID,
+        work_id: req.params.workID || null,
+        user_id: req.params.userID || null,
     };
 
     call(res, sourceData, 'add_source', null, respond, errors);
@@ -333,7 +334,7 @@ function getSources (req, res) {
         work_id: req.params.workID,
         user_id: req.params.userID,
     }
-    call(res, queryData, 'get_sources', 'workSources');
+    call(res, queryData, 'get_sources', 'sources');
     return;
 }
 
@@ -357,7 +358,7 @@ function getMetadata(req, res) {
     queryData.user = user;
     queryData.id = req.params.id;
     queryData.subgraph = "metadata";
-    call(res, queryData, 'get_work', 'workMetadata');
+    call(res, queryData, 'get_metadata', 'workMetadata');
     return;
 }
 

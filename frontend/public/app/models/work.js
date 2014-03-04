@@ -4,16 +4,14 @@ define(function(require){
 	var Backbone = require('lib/backbone');
 	var Work = Backbone.Model.extend({
 		urlRoot: '/works',
+		changesMade: '0',
 		initialize: function(){
-			this.on('change:created', setDate);
+			var self = this;
+			this.on('change', function(){
+				self.changesMade++;
+			})
 			return;
 		}
 	});
-
-	function setDate (model, val, opt) {
-		var date = new Date(val).getTime();
-		model.set('created', date);
-		return;
-	}
 	return Work;
 })

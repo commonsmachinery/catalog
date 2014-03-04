@@ -4,22 +4,34 @@ requirejs.config({
 	baseUrl : '/app',
 	paths: {
 		lib : '../lib',
-		models: '../models',
+		models: '../app/models',
+		underscore: '../lib/underscore',
 		jquery : '../lib/jquery',
-		underscore: '../lib/underscore'
+	},
+	map: {
+		'lib': {
+			backbone: 'lib/backbone',
+		}
 	}
 });
 
 require(['lib/jquery', 'lib/backbone'], function($, Backbone){	
+	/* add backbone plugins */
+	require(['lib/Backbone.ModelBinder']);
 
 	var Router = Backbone.Router.extend({
 		routes: {
 			"": 'home',
+			"users/:id/sources/": 'sources',
 			"works/:id": 'work',
+			"works/:id/sources": 'sources',
 			"works(?:filters)(/)": 'works',
 		},
 		home: function() {
 			require(['home']);
+		},
+		sources: function(id){
+			require(['sourceCollection']);
 		},
 		works: function(filters) {
 			require(['workCollection']);
@@ -29,7 +41,7 @@ require(['lib/jquery', 'lib/backbone'], function($, Backbone){
 		}
 	});
 	var app = new Router();
-	console.log(Backbone.history.start({pushState: true, root:'/'}));
+	console.log('route: ', Backbone.history.start({pushState: true, root:'/'}));
 
 	function _init(){
 		
