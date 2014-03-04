@@ -11,6 +11,6 @@ define(function(require){
 	delete $bootstrapData;
 	var work = new Work(workData);
 	var workView = new WorkView(work);
-	workView.render(work);
+	workView.render();
 	return;
 })

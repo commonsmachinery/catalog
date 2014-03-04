@@ -25,11 +25,12 @@ define(function(require){
 		var model = view.model;
 		var changes = model.changesMade;
 		switch(true){
-			case changes > 1:
+			case changes >= 1:
 				model.sync('update', model);
 				break;
 			case changes:
 				/* ToDo: when only one change made, patch */
+				console.log('a');
 				model.sync('update', model);
 				break;
 		}

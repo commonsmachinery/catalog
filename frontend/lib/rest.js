@@ -150,7 +150,7 @@ function deleteWork(req, res) {
 
 function getPosts (req, res) {
     var queryData = commonData(req);
-    call(res, queryData, 'get_posts', 'workPosts');
+    call(res, queryData, 'get_posts', 'posts');
     return;
 }
 

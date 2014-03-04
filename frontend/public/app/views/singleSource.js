@@ -3,11 +3,11 @@ define(function(require){
     var Backbone = require('lib/backbone');
     var util = require('util');
 
-    var Work = Backbone.View.extend({
+    var Source = Backbone.View.extend({
         binder: new Backbone.ModelBinder,
         initialize: function(model){
-
-            this.el = $('#work');
+            
+            this.el = $('#source');
             this.model = model;
             var self = this;
             this.render();
@@ -24,5 +24,5 @@ define(function(require){
         }
     });
 
-    return Work
+    return Source
 })

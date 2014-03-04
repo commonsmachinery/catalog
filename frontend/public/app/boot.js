@@ -41,8 +41,6 @@ require(['lib/jquery', 'lib/backbone'], function($, Backbone){
 		}
 	});
 	var app = new Router();
-	console.log('route: ', Backbone.history.start({pushState: true, root:'/'}));
-
 	function _init(){
 		
 	}

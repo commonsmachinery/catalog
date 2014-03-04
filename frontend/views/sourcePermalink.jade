@@ -8,27 +8,25 @@
 
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-- var works = data
+- var sources = data
 mixin branch(data)
 	dl
 		for val, key in data
-			dt
-				| #{key}:
+			dt #{key}:
 				if(typeof val == 'object')
 					dd 
 						+branch(val)
 				else
-					dd
-						|#{val}
+					if owner
+						input.editable(name="#{key}" disabled value="#{val}")
+					else
+						dd(name="#{key}") #{val}
 
 include includes/top
-	for work in works
-		h2: a(href="#{work.resource}") #{work.id}
-		a(href="#{work.metadata}") (see metadata...)
-		- delete work.resource
-		- delete work.id
-		- delete work.metadataGraph
-		- delete work.metadata
-		- work.created = new Date(work.created).toString();
-		+branch(work)
+	div.bootstrapData #{JSON.stringify(data)}
+	div#source
+		h2: a(href="#{work.resource}") #{source.id}
+		a(href="#{source.metadata}") (see metadata...)
+		- source.created = new Date(source.created).toString();
+		+branch(source)
 include includes/bottom

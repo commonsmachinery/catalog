@@ -17,16 +17,18 @@ mixin branch(data)
 					dd 
 						+branch(val)
 				else
-					if owner
-						dd.editable(data-key="#{key}") #{val}
-					else
-						dd(data-key="#{key}") #{val}
+					dd(name="#{key}") #{val}
 
 include includes/top
-	input.add(type="button" value="+")
-	for post in posts
-		h2: a(href="#{post.resource}") #{post.id}
-		a(href="#{post.metadata}") (see metadata...)
-		- post.posted = new Date(post.posted).toString();
-		+branch(post)
+	div.bootstrapData #{JSON.stringify(data)}
+	div#posts
+		input.add(type="button" value="+")
+		for post in posts
+			h2: a(href="#{post.resource}") #{post.id}
+			a(href="#{post.metadata}") (see metadata...)
+			- delete post.id
+			- delete post.resource
+			- delete post.metadata
+			- post.posted = new Date(post.posted).toString();
+			+branch(post)
 include includes/bottom

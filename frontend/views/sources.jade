@@ -18,15 +18,20 @@ mixin branch(data)
 						+branch(val)
 				else
 					if owner
-						dd.editable(data-key="#{key}") #{val}
+						input.editable(name="#{key}" disabled value="#{val}")
 					else
-						dd(data-key="#{key}") #{val}
+						dd(name="#{key}") #{val}
 
 include includes/top
-	input.add(type="button" value="+")
-	for source in sources
-		h2: a(href="#{work.resource}") #{source.id}
-		a(href="#{source.metadata}") (see metadata...)
-		- source.created = new Date(source.created).toString();
-		+branch(source)
+	div.bootstrapData #{JSON.stringify(data)}
+	div#sources
+		input.add(type="button" value="+")
+		for source in sources
+			h2: a(href="#{source.resource}") #{source.id}
+			a(href="#{source.metadata}") (see metadata...)
+			- delete source.id
+			- delete source.resource
+			- delete source.metadata
+			- source.created = new Date(source.created).toString();
+			+branch(source)
 include includes/bottom
