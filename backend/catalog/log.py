@@ -10,6 +10,9 @@
 
 import sqlite3
 
+import pymongo
+from pymongo import MongoClient
+
 class SqliteLog(object):
     def __init__(self, name):
         self._conn = sqlite3.connect('%s.db' % name)
@@ -58,3 +61,40 @@ class SqliteLog(object):
             }
             events.append(event)
         return events
+
+class MongoDBLog(object):
+    def __init__(self):
+        self._client = MongoClient('mongodb://localhost:27017/')
+        self._db = self._client.catalog
+        self._events = self._db.events
+
+        self._events.ensure_index("user")
+        self._events.ensure_index("resource")
+        self._events.ensure_index([("resource", pymongo.ASCENDING), ("time", pymongo.ASCENDING)])
+
+    def log_event(self, type, time, user, resource, data):
+        event = {
+            'type': type,
+            'time': time,
+            'user': user,
+            'resource': resource,
+            'payload': data,
+        }
+        self._events.insert(event)
+
+    def query_events(self, type=None, time_min=None, time_max=None, user=None, resource=None, limit=100, offset=0):
+        spec = {}
+        if type:
+            spec["type"] = type
+        if user:
+            spec["user"] = user
+        if resource:
+            spec["resource"] = resource
+        if time_min or time_max:
+            spec["time"] = {}
+            if time_min:
+                spec["time"]["$gte"] = time_min
+            if time_max:
+                spec["time"]["$lte"] = time_min
+        cursor = self._events.find(spec=spec, skip=offset, limit=limit)
+        return [obj for obj in cursor]

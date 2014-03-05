@@ -1,2 +1,3 @@
 celery[redis]
 pyinotify
+pymongo

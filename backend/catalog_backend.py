@@ -10,7 +10,7 @@ from celery import Celery
 from celery import Task
 from celery.signals import worker_shutdown
 from catalog.store import RedlandStore
-from catalog.log import SqliteLog
+from catalog.log import MongoDBLog
 import os, time
 import errno
 import json
@@ -94,7 +94,7 @@ class StoreTask(app.Task):
     @property
     def log(self):
         if self._log is None:
-            self._log = SqliteLog("events")
+            self._log = MongoDBLog()
         return self._log
 
 @app.task(base=StoreTask, bind=True)
@@ -107,7 +107,7 @@ def create_work(self, **kwargs):
     #payload = json.dumps(kwargs)
     payload = json.dumps(work.get_data())
 
-    log_event.apply_async(args=('create', time, user, resource, payload))
+    log_event.apply_async(args=('create_work', time, user, resource, payload))
 
     return { 'id': work['id'] }
 
@@ -122,7 +122,7 @@ def update_work(self, **kwargs):
         resource = work['resource']
         payload = json.dumps(work.get_data())
 
-        log_event.apply_async(args=('update', time, user, resource, payload))
+        log_event.apply_async(args=('update_work', time, user, resource, payload))
 
         return None
 
@@ -139,7 +139,7 @@ def delete_work(self, **kwargs):
         resource = work['resource']
         payload = None
 
-        log_event.apply_async(args=('delete', time, user, resource, payload))
+        log_event.apply_async(args=('delete_work', time, user, resource, payload))
 
         return self.main_store.delete_work(**kwargs)
 

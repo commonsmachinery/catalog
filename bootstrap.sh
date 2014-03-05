@@ -48,3 +48,14 @@ else
     cd ..
     cd ..
 fi
+
+if [ -f $BACKEND_DIR/bin/mongod ];
+then
+    echo "MongoDB already installed, skipping installation."
+else
+    echo "MongoDB not installed, downloading..."
+    MONGODB_BDIST_DIR=mongodb-linux-`uname -m`-2.4.9
+    MONGODB_BDIST_TGZ=$MONGODB_BDIST_DIR.tgz
+    wget -c http://fastdl.mongodb.org/linux/$MONGODB_BDIST_TGZ
+    tar --strip-components=2 --directory=$BACKEND_DIR/bin -xzvf $MONGODB_BDIST_TGZ $MONGODB_BDIST_DIR/bin/mongod
+fi
