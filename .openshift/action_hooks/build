@@ -12,7 +12,7 @@ then
     virtualenv "$pythondir"
 fi
 
-"$pythondir/bin/pip" -r requirements_backend.txt
+"$pythondir/bin/pip" install -r requirements_backend.txt
 
 . "$OPENSHIFT_REDLAND_DIR/bin/activate-redland"
 
