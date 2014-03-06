@@ -1,3 +1,6 @@
 #!/bin/sh
 
-`dirname "$0"`/../stop_backend
+set -e
+set -u
+
+"$OPENSHIFT_REPO_DIR/.openshift/stop_backend"
