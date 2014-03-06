@@ -5,14 +5,16 @@ set -u
 
 cd "$OPENSHIFT_REPO_DIR"
 
-if [ ! -d "$OPENSHIFT_DEPENDENCIES_DIR/python" ]
+pythondir="$OPENSHIFT_DEPENDENCIES_DIR/python"
+
+if [ ! -d "$pythondir" ]
 then
-    virtualenv "$OPENSHIFT_DEPENDENCIES_DIR/python"
+    virtualenv "$pythondir"
 fi
 
-"$OPENSHIFT_DEPENDENCIES_DIR/bin/pip" -r requirements_backend.txt
+"$pythondir/bin/pip" -r requirements_backend.txt
 
 . "$OPENSHIFT_REDLAND_DIR/bin/activate-redland"
 
 cd backend
-"$OPENSHIFT_DEPENDENCIES_DIR/bin/python" setup.py install
+"$pythondir/bin/python" setup.py install

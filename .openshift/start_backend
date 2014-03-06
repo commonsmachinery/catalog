@@ -13,7 +13,7 @@ datadir="$OPENSHIFT_DATA_DIR/celery"
 
 mkdir -p "$datadir" "$logdir" "$piddir"
 
-"$OPENSHIFT_DEPENDENCIES_DIR/bin/celery" worker \
+"$OPENSHIFT_DEPENDENCIES_DIR/python/bin/celery" worker \
     --app=catalog_backend \
     --loglevel=info \
     --broker="$OPENSHIFT_RABBITMQ_URI" \

@@ -17,7 +17,21 @@ Add the application as a remote to your git repository:
     rhc app show catalog
     git remote add app <Git URL from app show output>
     git fetch app
-    
+
+Overwrite the template app with the catalog.  Ensure that the right
+branch is checked out in the local repository!
+
+    git push -f app HEAD:master
+
+To push updates to the app thereafter, it should be sufficient to
+update the local repository and push without -f:
+
+    git push app HEAD:master
+
+It is of course also possible to checkout `app/master` in a tracking
+branch in the local repository, merge from `origin/master` and push
+normally.
+
 
 Specifics for VM deployment
 ---------------------------
@@ -33,5 +47,7 @@ After creating the app, but before pushing to it (fix a bug in the VM
 which makes it impossible to push the app, replace APP_ID by the uuid
 of your app):
 
-    rm /var/lib/openshift/<APP_ID>/app-root/runtime/dependencies//nodejs/node_modules/*
-
+    rm -f /var/lib/openshift/<APP_ID>/app-root/runtime/dependencies/nodejs/node_modules/*
+    rm -f /var/lib/openshift/<APP_ID>/app-root/runtime/dependencies/nodejs/node_modules/.bin/*
+    rm -f /var/lib/openshift/<APP_ID>/app-deployments/*/dependencies/nodejs/node_modules/*
+    rm -f /var/lib/openshift/<APP_ID>/app-deployments/*/dependencies/nodejs/node_modules/.bin/*
