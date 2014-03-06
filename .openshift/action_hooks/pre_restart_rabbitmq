@@ -1,0 +1,6 @@
+#!/bin/sh
+
+set -e
+set -u
+
+"$OPENSHIFT_REPO_DIR/.openshift/stop_backend"
