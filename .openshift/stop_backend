@@ -15,6 +15,6 @@ kill -TERM "$pid"
 while true
 do
     # Wait for celery to shut down
-    kill -0 "$pid" || exit 0
+    kill -0 "$pid" 2>/dev/null || exit 0
     sleep 1
 done    
