@@ -9,7 +9,8 @@ pythondir="$OPENSHIFT_DEPENDENCIES_DIR/python"
 
 if [ ! -d "$pythondir" ]
 then
-    virtualenv "$pythondir"
+    # We can't use symlinks due to SELinux setup in Openshift
+    virtualenv --always-copy "$pythondir"
 fi
 
 "$pythondir/bin/pip" install -r requirements_backend.txt
