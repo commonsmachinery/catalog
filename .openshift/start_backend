@@ -1,0 +1,25 @@
+#!/bin/sh
+
+set -e
+set -u
+
+. "$OPENSHIFT_REDLAND_DIR/bin/activate-redland"
+
+cd "$OPENSHIFT_REPO_DIR"
+
+piddir="$OPENSHIFT_DATA_DIR/pid"
+logdir="$OPENSHIFT_DATA_DIR/logs"
+datadir="$OPENSHIFT_DATA_DIR/celery"
+
+mkdir -p "$datadir" "$logdir" "$piddir"
+
+"$OPENSHIFT_DEPENDENCIES_DIR/bin/celery" worker \
+    --app=catalog_backend \
+    --loglevel=info \
+    --broker="$OPENSHIFT_RABBITMQ_URI" \
+    --workdir="$datadir" \
+    --hostname="$OPENSHIFT_GEAR_DNS" \
+    --detach \
+    --logfile="$logdir/celery.log" \
+    --pidfile="$piddir/celery.pid"
+

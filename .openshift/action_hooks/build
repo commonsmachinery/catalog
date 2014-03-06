@@ -1,9 +1,18 @@
 #!/bin/sh
 
 set -e
+set -u
+
 cd "$OPENSHIFT_REPO_DIR"
 
-./bootstrap.sh
+if [ ! -d "$OPENSHIFT_DEPENDENCIES_DIR/python" ]
+then
+    virtualenv "$OPENSHIFT_DEPENDENCIES_DIR/python"
+fi
+
+"$OPENSHIFT_DEPENDENCIES_DIR/bin/pip" -r requirements_backend.txt
+
+. "$OPENSHIFT_REDLAND_DIR/bin/activate-redland"
 
 cd backend
-"$OPENSHIFT_REPO_DIR/build/backend/bin/python" setup.py install
+"$OPENSHIFT_DEPENDENCIES_DIR/bin/python" setup.py install

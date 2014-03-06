@@ -1,0 +1,20 @@
+#!/bin/bash
+
+set -e
+set -u
+
+pidfile="$OPENSHIFT_DATA_DIR/pid/celery.pid"
+
+[ -f "$pidfile" ] || exit 0
+
+pid=$(cat "$pidfile")
+[ -n "$pid" ] || exit 0
+
+kill -TERM "$pid"
+
+while true
+do
+    # Wait for celery to shut down
+    kill -0 "$pid" || exit 0
+    sleep 1
+done    
