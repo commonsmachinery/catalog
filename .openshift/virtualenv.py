@@ -1372,10 +1372,11 @@ def install_python(home_dir, lib_dir, inc_dir, bin_dir, site_packages, clear, sy
             full_pth = join(bin_dir, pth)
             if os.path.exists(full_pth):
                 os.unlink(full_pth)
-            if symlink:
-                os.symlink(py_executable_base, full_pth)
-            else:
-                copyfile(py_executable, full_pth, False)
+
+            # This can be a symlink even if symlink == False since
+            # we're not pointing outside the virtual env
+            os.symlink(py_executable_base, full_pth)
+
 
     if is_win and ' ' in py_executable:
         # There's a bug with subprocess on Windows when using a first
@@ -1536,10 +1537,10 @@ def fix_lib64(lib_dir, symlink=True):
             "Unexpected parent dir: %r" % lib_parent)
         if os.path.lexists(lib64_link):
             return
-        if symlink:
-            os.symlink('lib', lib64_link)
-        else:
-            copyfile(lib_dir, lib64_link, False)
+
+        # This can only be a symlink even if symlink == False, but that should
+        # be ok since we're not pointing outside the virtual env
+        os.symlink('lib', lib64_link)
 
 def resolve_interpreter(exe):
     """
