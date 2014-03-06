@@ -18,3 +18,5 @@ do
     kill -0 "$pid" 2>/dev/null || exit 0
     sleep 1
 done    
+
+rm -f "$pidfile"
