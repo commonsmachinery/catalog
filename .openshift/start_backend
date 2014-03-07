@@ -28,8 +28,8 @@ then
     fi
 fi
 
-
 export PYTHONIOENCODING=utf-8
+source "$OPENSHIFT_REPO_DIR/.openshift/store_config"
 
 "$OPENSHIFT_DEPENDENCIES_DIR/python/bin/celery" worker \
     --app=catalog_backend \

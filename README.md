@@ -46,6 +46,11 @@ Run `./run_local.sh` to simultaneously start frontend and backend, or run them s
 
 Redland storage data will by default be saved as BDB hashes under `./data`.
 
+The base URI for all resources can be configured with an environmental
+variable (showing default value):
+
+    export CATALOG_BACKEND_BASE_URI="http://$OPENSHIFT_APP_DNS"
+
 
 ### Using SQL store backend
 

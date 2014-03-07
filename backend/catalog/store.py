@@ -31,7 +31,9 @@ NS_XSD = "http://www.w3.org/2001/XMLSchema#"
 METADATA_GRAPH = NS_REM3 + "metadata"
 CACHED_METADATA_GRAPH = NS_REM3 + "cachedExternalMetadata"
 
-CREATE_WORK_SUBJECT = "http://localhost:8004/works"
+baseURI = os.getenv('CATALOG_BACKEND_BASE_URI', 'http://localhost:8004')
+
+CREATE_WORK_SUBJECT = baseURI + "/works"
 #DATABASE_META_CONTEXT = "http://catalog.commonsmachinery.se/db"
 
 # convert Entry schemas to dicts with URI keys for serializing to JSON
@@ -46,16 +48,16 @@ def schema2json(s):
 # TODO: this should be configurable
 def get_context_node(cls, graph, id):
     context_map = {
-        (Work, None): "http://localhost:8004/works/%s",
-        (Work, METADATA_GRAPH): "http://localhost:8004/works/%s/metadata",
+        (Work, None): baseURI + "/works/%s",
+        (Work, METADATA_GRAPH): baseURI + "/works/%s/metadata",
 
-        (Post, None): "http://localhost:8004/posts/%s",
-        (Post, METADATA_GRAPH): "http://localhost:8004/posts/%s/metadata",
-        (Post, CACHED_METADATA_GRAPH): "http://localhost:8004/posts/%s/cachedExternalMetadata",
+        (Post, None): baseURI + "/posts/%s",
+        (Post, METADATA_GRAPH): baseURI + "/posts/%s/metadata",
+        (Post, CACHED_METADATA_GRAPH): baseURI + "/posts/%s/cachedExternalMetadata",
 
-        (Source, None): "http://localhost:8004/sources/%s",
-        (Source, METADATA_GRAPH): "http://localhost:8004/sources/%s/metadata",
-        (Source, CACHED_METADATA_GRAPH): "http://localhost:8004/sources/%s/cachedExternalMetadata",
+        (Source, None): baseURI + "/sources/%s",
+        (Source, METADATA_GRAPH): baseURI + "/sources/%s/metadata",
+        (Source, CACHED_METADATA_GRAPH): baseURI + "/sources/%s/cachedExternalMetadata",
     }
 
     if issubclass(cls, Source):
@@ -70,9 +72,9 @@ def get_context_node(cls, graph, id):
 
 def get_work_context(graph, id):
     if graph is None:
-        uri_format = "http://localhost:8004/works/%s"
+        uri_format = baseURI + "/works/%s"
     elif graph == METADATA_GRAPH:
-        uri_format = "http://localhost:8004/works/%s/metadata"
+        uri_format = baseURI + "/works/%s/metadata"
     else:
         raise RuntimeError("Invalid subgraph URI %s" % graph)
 
@@ -98,11 +100,11 @@ def get_source_context(graph, work_id=None, user_id=None, source_id=None):
             raise RuntimeError("work id must be string or integer")
 
     if graph is None:
-        uri_format = "http://localhost:8004/" + toplevel + "sources/%s"
+        uri_format = baseURI + "/" + toplevel + "sources/%s"
     elif graph == METADATA_GRAPH:
-        uri_format = "http://localhost:8004/" + toplevel + "sources/%s/metadata"
+        uri_format = baseURI + "/" + toplevel + "sources/%s/metadata"
     elif graph == CACHED_METADATA_GRAPH:
-        uri_format = "http://localhost:8004/" + toplevel + "sources/%s/cachedExternalMetadata"
+        uri_format = baseURI + "/" + toplevel + "sources/%s/cachedExternalMetadata"
     else:
         raise RuntimeError("Invalid subgraph URI %s" % graph)
 
@@ -113,11 +115,11 @@ def get_source_context(graph, work_id=None, user_id=None, source_id=None):
 
 def get_post_context(graph, work_id, post_id):
     if graph is None:
-        uri_format = "http://localhost:8004/works/%s/posts/%s"
+        uri_format = baseURI + "/works/%s/posts/%s"
     elif graph == METADATA_GRAPH:
-        uri_format = "http://localhost:8004/works/%s/posts/%s/metadata"
+        uri_format = baseURI + "/works/%s/posts/%s/metadata"
     elif graph == CACHED_METADATA_GRAPH:
-        uri_format = "http://localhost:8004/works/%s/posts/%s/cachedExternalMetadata"
+        uri_format = baseURI + "/works/%s/posts/%s/cachedExternalMetadata"
     else:
         raise RuntimeError("Invalid subgraph URI %s" % graph)
 
