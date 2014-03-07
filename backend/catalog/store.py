@@ -11,6 +11,7 @@
 import time
 import re
 import RDF
+import os
 
 class ParamError(Exception): pass
 
@@ -412,8 +413,38 @@ ExternalSource.json_schema = schema2json(ExternalSource.schema)
 
 
 class RedlandStore(object):
+    @staticmethod
+    def get_store_config(name):
+        storage_type = os.getenv('CATALOG_BACKEND_STORE_TYPE', 'hashes')
+        if storage_type == 'hashes':
+            options = "hash-type='{hash_type}',dir='{dir}',contexts='yes'".format(
+                hash_type = os.getenv('CATALOG_BACKEND_STORE_HASH_TYPE', 'bdb'),
+                dir = os.getenv('CATALOG_BACKEND_STORE_DIR', '.'),
+                )
+
+        elif storage_type in ('postgresql', 'mysql'):
+            options = "host='{host}',port='{port}',database='{database}_{name}',user='{user}',password='{password}'".format(
+                host = os.getenv('CATALOG_BACKEND_STORE_DB_HOST', 'localhost'),
+                port = os.getenv('CATALOG_BACKEND_STORE_DB_PORT', '5432'),
+                database = os.getenv('CATALOG_BACKEND_STORE_DB_NAME', 'catalog'),
+                name = name,
+                user = os.getenv('CATALOG_BACKEND_STORE_DB_USER', 'postgres'),
+                password = os.getenv('CATALOG_BACKEND_STORE_DB_PASSWORD', ''),
+                )
+
+        else:
+            raise RuntimeError('invalid storage type: {0}'.format(storage_type))
+
+        return storage_type, options
+
     def __init__(self, name):
-        self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
+        storage_type, options = self.get_store_config(name)
+
+        self._store = RDF.Storage(
+            storage_name = storage_type,
+            name = name,
+            options_string = options)
+
         self._model = RDF.Model(self._store)
 
     def _get_entry_id(self, subject):

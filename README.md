@@ -16,7 +16,7 @@ Installing prerequisites
 
 On Ubuntu:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev curl
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev curl 
 
 Make sure that Node.js is installed to run the frontend.
 
@@ -44,7 +44,38 @@ Run `./run_local.sh` to simultaneously start frontend and backend, or run them s
 
     celery -A catalog_backend worker --loglevel=info --workdir=data
 
-Redland storage data will be saved under `./data`.
+Redland storage data will by default be saved as BDB hashes under `./data`.
+
+
+### Using SQL store backend
+
+Install the desired backend:
+
+    sudo apt-get install librdf-storage-postgresql
+    sudo apt-get install librdf-storage-mysql
+
+Though not tested with MySQL/MariaDB yet, it ought to work.  The
+instructions following are for PostgreSQL, though.
+
+Create a user for the catalog, enter a password:
+
+    sudo -u postgres createuser -P -D -R catalog
+
+Create the databases for the two stores:
+
+    sudo -u postgres createdb -O catalog -E UTF-8 catalog_works
+    sudo -u postgres createdb -O catalog -E UTF-8 catalog_public
+
+Select the postgresql (or mysql) backend:
+
+    export CATALOG_BACKEND_STORE_TYPE=postgresql
+
+Set the other variables as required (default values shown):
+
+    CATALOG_BACKEND_STORE_DB_USER=catalog
+    CATALOG_BACKEND_STORE_DB_PASSWORD=
+    CATALOG_BACKEND_STORE_DB_NAME=
+
 
 Frontend
 --------
