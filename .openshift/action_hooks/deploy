@@ -11,7 +11,7 @@ then
     client_message "Creating database user: catalog"
 
     # Just reuse the admin password instead of having to track another one
-    psql -c "CREATE ROLE catalog NOSUPERUSER NOCREATEDB NOCREATEROLE NOCREATEUSER INHERIT LOGIN PASSWORD '$OPENSHIFT_POSTGRESQL_DB_PASSWORD';"
+    psql -c "CREATE ROLE catalog NOSUPERUSER NOCREATEDB NOCREATEROLE INHERIT LOGIN PASSWORD '$OPENSHIFT_POSTGRESQL_DB_PASSWORD';"
 fi
 
 # Create databases for the works and public stores
