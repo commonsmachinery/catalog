@@ -67,13 +67,34 @@ var main = function main(config) {
     // Kick everything off
     backend.once('connect', function() {
         console.log('celery is ready, starting web server');
-        app.listen(config.port);
-        console.log('listening on port ' + config.port);
+        app.listen(config.port, config.host);
+        console.log('listening on %s:%s', config.host, config.port);
     });
 };
 
 module.exports = main;
 
+var defaultConfig = {
+    host: '0.0.0.0',
+    port: 8004,
+    baseURI: 'http://localhost:8004',
+    brokerURL: 'amqp://guest@localhost:5672//',
+};
+
+var getOpenshiftConfig = function() {
+    return {
+        host: process.env.OPENSHIFT_NODEJS_IP,
+        port: process.env.OPENSHIFT_NODEJS_PORT,
+        baseURI: 'http://' + process.env.OPENSHIFT_APP_DNS,
+        brokerURL: process.env.OPENSHIFT_RABBITMQ_URI,
+    };
+};
+
+var getConfig = function() {
+    return process.env.OPENSHIFT_NODEJS_PORT ?
+        getOpenshiftConfig() : defaultConfig;
+};
+
 if (require.main === module) {
-    main({ port: 8004 });
+    main(getConfig());
 }
