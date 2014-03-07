@@ -2,12 +2,21 @@
 Deploying on Openshift
 ======================
 
-Create a node.js app:
+This assumes you've already created a user and a domain account on
+Openshift.
 
-    TODO...
+Create a node.js app (replace `cm` with your domain):
+
+    rhc app create -n cm -a catalog -t nodejs
+
+The DNS name might not be found, but as long as it says that the
+application was created it's fine.  Verify it's settings:
+
+    rhc app show catalog
 
 Add the necessary cartridges (install Erlang first, see below):
 
+    rhc cartridge add postgresql -a catalog
     rhc cartridge add https://raw.github.com/commonsmachinery/openshift-redland-cart/master/metadata/manifest.yml -a catalog
     rhc cartridge add https://raw.github.com/commonsmachinery/openshift-rabbitmq-cart/master/metadata/manifest.yml -a catalog
 
@@ -23,14 +32,14 @@ branch is checked out in the local repository!
 
     git push -f app HEAD:master
 
-To push updates to the app thereafter, it should be sufficient to
-update the local repository and push without -f:
+To push updates to the app thereafter, it is sufficient to update the
+local repository and push without -f:
 
     git push app HEAD:master
 
 It is of course also possible to checkout `app/master` in a tracking
-branch in the local repository, merge from `origin/master` and push
-normally.
+branch in the local repository, merge from `origin/master` and then
+push normally.
 
 
 Specifics for VM deployment
