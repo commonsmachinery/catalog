@@ -4,6 +4,7 @@ set -e
 set -u
 
 source "$OPENSHIFT_CARTRIDGE_SDK_BASH"
+source "$OPENSHIFT_REDLAND_DIR/bin/activate-redland"
 
 # Create a user for the catalog if not already existing
 if ! psql -A -t -c "select * from pg_user where usename = 'catalog'" | grep -q '^catalog|'
