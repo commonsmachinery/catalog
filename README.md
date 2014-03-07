@@ -72,9 +72,11 @@ Select the postgresql (or mysql) backend:
 
 Set the other variables as required (default values shown):
 
-    CATALOG_BACKEND_STORE_DB_USER=catalog
-    CATALOG_BACKEND_STORE_DB_PASSWORD=
-    CATALOG_BACKEND_STORE_DB_NAME=
+    export CATALOG_BACKEND_STORE_DB_HOST=localhost
+    export CATALOG_BACKEND_STORE_DB_PORT=5432
+    export CATALOG_BACKEND_STORE_DB_USER=catalog
+    export CATALOG_BACKEND_STORE_DB_PASSWORD=
+    export CATALOG_BACKEND_STORE_DB_NAME=
 
 
 Frontend

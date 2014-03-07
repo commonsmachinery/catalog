@@ -12,6 +12,12 @@ then
     exit 1
 fi
 
+if [ -z "$OPENSHIFT_POSTGRESQL_IDENT" ]
+then
+    client_error "PostgreSQL cartridge is required"
+    exit 1
+fi
+
 if [ -z "$OPENSHIFT_REDLAND_IDENT" ]
 then
     client_error "Redland cartridge is required"
