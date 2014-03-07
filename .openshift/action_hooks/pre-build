@@ -1,0 +1,26 @@
+#!/bin/bash
+
+set -e
+
+source "$OPENSHIFT_CARTRIDGE_SDK_BASH"
+
+# Ensure that we're deployed with the necessary cartridges
+
+if [ -z "$OPENSHIFT_NODEJS_IDENT" ]
+then
+    client_error "NodeJS cartridge is required"
+    exit 1
+fi
+
+if [ -z "$OPENSHIFT_REDLAND_IDENT" ]
+then
+    client_error "Redland cartridge is required"
+    exit 1
+fi
+
+if [ -z "$OPENSHIFT_RABBITMQ_IDENT" ]
+then
+    client_error "RabbitMQ cartridge is required"
+    exit 1
+fi
+
