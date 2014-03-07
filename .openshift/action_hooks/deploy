@@ -11,7 +11,7 @@ then
     client_message "Creating database user: catalog"
 
     # Just reuse the admin password instead of having to track another one
-    psql -e "CREATE ROLE catalog NOSUPERUSER NOCREATEDB NOCREATEROLE NOCREATEUSER INHERIT LOGIN PASSWORD '$OPENSHIFT_POSTGRESQL_DB_PASSWORD';"
+    psql -c "CREATE ROLE catalog NOSUPERUSER NOCREATEDB NOCREATEROLE NOCREATEUSER INHERIT LOGIN PASSWORD '$OPENSHIFT_POSTGRESQL_DB_PASSWORD';"
 fi
 
 # Create databases for the works and public stores
@@ -19,14 +19,14 @@ if ! psql -A -t -c "select * from pg_database where datname = 'catalog_works'" |
 then
     client_message "Creating database: catalog_works"
 
-    psql -e "CREATE DATABASE catalog_works OWNER catalog ENCODING 'UTF-8';"
+    psql -c "CREATE DATABASE catalog_works OWNER catalog ENCODING 'UTF-8';"
 fi
 
 if ! psql -A -t -c "select * from pg_database where datname = 'catalog_public'" | grep -q '^catalog_public|'
 then
     client_message "Creating database: catalog_public"
 
-    psql -e "CREATE DATABASE catalog_public OWNER catalog ENCODING 'UTF-8';"
+    psql -c "CREATE DATABASE catalog_public OWNER catalog ENCODING 'UTF-8';"
 fi
 
 # Initiliase the stores
