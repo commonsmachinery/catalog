@@ -30,3 +30,5 @@ then
     exit 1
 fi
 
+# Backend should be down before building, so it can be restarted afterwards
+"$OPENSHIFT_REPO_DIR/.openshift/stop_backend"
