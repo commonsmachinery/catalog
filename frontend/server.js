@@ -1,4 +1,6 @@
-/* 
+#!/usr/bin/env node
+
+/*
   Catalog web/REST frontend - main script
 
   Copyright 2014 Commons Machinery http://commonsmachinery.se/
@@ -19,11 +21,15 @@ var debug = require('debug')('frontend:server');
 var express = require('express');
 var stylus = require('stylus');
 
+var defaultConfig = {
+    host: '0.0.0.0',
+    port: 8004,
+    baseURI: 'http://localhost:8004',
+    brokerURL: 'amqp://guest@localhost:5672//',
+};
 
 var main = function main(config) {
-    if (!config.baseURI) {
-        config.baseURI = 'http://localhost:' + config.port;
-    }
+
 
     /* ============================== Frontend Setup ========================= */
 
@@ -49,7 +55,7 @@ var main = function main(config) {
     /* ============================== Backend Setup ============================== */
 
     var backend = celery.createClient({
-        CELERY_BROKER_URL: config.brokerURL || 'amqp://guest@localhost:5672//',
+        CELERY_BROKER_URL: config.brokerURL || defaultConfig.brokerURL,
         CELERY_RESULT_BACKEND: 'amqp',
         CELERY_TASK_RESULT_EXPIRES: 30,
         CELERY_TASK_RESULT_DURABLE: false
@@ -61,25 +67,21 @@ var main = function main(config) {
 
 
     // Link frontend logic to the backend
-    require('./lib/rest')(app, backend, config.baseURI);
+    require('./lib/rest')(app, backend, config.baseURI || defaultConfig.baseURI);
     require('./lib/app')(app);
 
     // Kick everything off
     backend.once('connect', function() {
+        var port = config.port || defaultConfig.port;
+        var host = config.host || defaultConfig.host;
+
         console.log('celery is ready, starting web server');
-        app.listen(config.port, config.host);
-        console.log('listening on %s:%s', config.host, config.port);
+        app.listen(port, host);
+        console.log('listening on %s:%s', host, port);
     });
 };
 
 module.exports = main;
-
-var defaultConfig = {
-    host: '0.0.0.0',
-    port: 8004,
-    baseURI: 'http://localhost:8004',
-    brokerURL: 'amqp://guest@localhost:5672//',
-};
 
 var getOpenshiftConfig = function() {
     return {

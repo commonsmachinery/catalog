@@ -10,6 +10,9 @@
   },
   "bin": "./frontend/server.js",
   "main": "./frontend/server",
+  "scripts": {
+      "start": "node ./frontend/server.js"
+  },
   "dependencies": {
     "consolidate": "*",
     "debug": "*",
