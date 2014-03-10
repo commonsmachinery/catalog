@@ -8,28 +8,41 @@
 
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-- var source = data
+- var post = data
 - var stringData = JSON.stringify(data);
 
-mixin sourcView(data)
+mixin branch(data)
 	- data = data || {}
+	dl
+		for val, key in data
+			dt #{key}:
+			if typeof val == 'object'
+				dd
+					+branch(val)
+			else
+				if owner
+					dd(name="#{key}") #{val}
+
+mixin postView(data)
 	div.post
 		h2: a.editable(href="#{data.resource || ''}" name="id") #{data.id || ''}
-		| by
+		| by 
 		span(name="creator") #{data.creator || ''}
-		| on
+		| on 
 		span(name="posted") #{data.posted || ''}
 		br
 		| last updated by 
-		span(name="updatedBy") #{data.updatedBy || ''}
+		span(name="updatedBy") #{data.updatedBy || ' --- '}
 		| on 
-		span(name="updated") #{data.updated || ''}
-		a(href="#{data.metadata || ''}" name="metadata") (see metadata...)
-		a(href="#{data.cachedExternalMetadata || ''}" name="cachedExternalMetadata") (see external metadata...)
+		span(name="updated") #{data.updated || ' --- '}
+		| Metadata: 
+		+ branch(data.metadataGraph)
+		| External metadata: 
+		+ branch(data.cachedMetadataGraph)
 
 
 div.bootstrapData #{stringData}
 
 include includes/top
-	+sourceView(work)
+	+ postView(work)
 include includes/bottom

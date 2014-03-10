@@ -53,7 +53,7 @@ function rest(app, localBackend, localBaseURI) {
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    app.post('/works/:id/sources', postSource);
+    app.post('/works/:workID/sources', postSource);
     app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
@@ -89,7 +89,8 @@ function call (res, queryData, call, view, callback, errorCheck) {
             }
             return;
         }
-        console.log('/////////////////////////// DATA ////////////////////////// \n', data, ' \n\n', data);
+        
+        console.log('/////////////////////////// DATA ////////////////////////// \n', data, ' \n\n');
         if(callback){
             return callback(data)
         }
@@ -101,6 +102,9 @@ function call (res, queryData, call, view, callback, errorCheck) {
             else if (data.creator && data.creator == queryData.user){
                 owner = true;
             }
+        }
+        else {
+            queryData.store = 'public';
         }
         res.format({
             'text/html': function(){
@@ -169,7 +173,7 @@ function getPost (req, res) {
 
 function postPost(req, res) {
     function respond(post, err) {
-        var postURI = buildURI('works', post.work_id, 'posts', post.post_id);
+        var postURI = buildURI('works', post.work_id, 'posts', post.id);
         debug('successfully added post, redirecting to %s', postURI);
         res.redirect(postURI);
     }
@@ -229,9 +233,9 @@ function postSource(req, res) {
         var sourceURI;
 
         if (source.user_id) {
-            sourceURI = buildURI('users', source.user_id, 'sources', source.source_id);
+            sourceURI = buildURI('users', source.user_id, 'sources', source.id);
         } else {
-            sourceURI = buildURI('works', source.work_id, 'sources', source.source_id);
+            sourceURI = buildURI('works', source.work_id, 'sources', source.id);
         }
 
         debug('successfully added source, redirecting to %s', sourceURI);
@@ -246,7 +250,6 @@ function postSource(req, res) {
         timestamp: Date.now(),
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
-        resource: req.body.resource,
         work_id: req.params.workID || null,
         user_id: req.params.userID || null,
     };
@@ -351,7 +354,7 @@ function getWorks(req, res) {
     var user = 'test';
     var queryData = req.query;
     queryData.user = user;
-    call(res, queryData, 'get_works', 'workCollection');
+    call(res, queryData, 'get_works', 'works');
     return;
 }
 
@@ -361,7 +364,7 @@ function getMetadata(req, res) {
     queryData.user = user;
     queryData.id = req.params.id;
     queryData.subgraph = "metadata";
-    call(res, queryData, 'get_metadata', 'workMetadata');
+    call(res, queryData, 'get_work', 'workMetadata');
     return;
 }
 

@@ -9,29 +9,37 @@
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
 - var sources = data
-mixin branch(data)
-	dl
-		for val, key in data
-			dt #{key}:
-				if(typeof val == 'object')
-					dd 
-						+branch(val)
-				else
-					if owner
-						input.editable(name="#{key}" disabled value="#{val}")
-					else
-						dd(name="#{key}") #{val}
+- data = {"data":sources};
+- var stringData = JSON.stringify(data);
+
+mixin sourceView(data)
+	- data = data || {}
+	div.post
+		h2: a(href="#{data.resource || ''}" name="id") #{data.id || ''}
+		| by 
+		span(name="creator") #{data.creator || ''} 
+		| on 
+		span(name="created") #{data.created || ''}
+		br
+		| last updated by 
+		span(name="updatedBy") #{data.updatedBy || ' --- '} 
+		| on 
+		span(name="updated") #{data.updated || ' --- '}
+
+
+
+script#formTemplate
+	form
+		label(for="resource") URL: 
+		input(type="text" name="resource" default="http://")
+		input.save(type="button" value="save")
+script#sourceTemplate
+	+sourceView()
+div.bootstrapData #{stringData}
 
 include includes/top
-	div.bootstrapData #{JSON.stringify(data)}
 	div#sources
 		input.add(type="button" value="+")
 		for source in sources
-			h2: a(href="#{source.resource}") #{source.id}
-			a(href="#{source.metadata}") (see metadata...)
-			- delete source.id
-			- delete source.resource
-			- delete source.metadata
-			- source.created = new Date(source.created).toString();
-			+branch(source)
+			+sourceView(source)
 include includes/bottom

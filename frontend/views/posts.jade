@@ -9,26 +9,37 @@
 	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
 - var posts = data
-mixin branch(data)
-	dl
-		for val, key in data
-			dt #{key}:
-				if(typeof val == 'object')
-					dd 
-						+branch(val)
-				else
-					dd(name="#{key}") #{val}
+- data = {"data":posts};
+- var stringData = JSON.stringify(data);
+
+mixin postView(data)
+	- data = data || {}
+	div.post
+		h2: a(href="#{data.resource || ''}" name="id") #{data.id || ''}
+		| by 
+		span(name="creator") #{data.creator || ''} 
+		| on 
+		span(name="created") #{data.created || ''}
+		br
+		| last updated by 
+		span(name="updatedBy") #{data.updatedBy || ' --- '}
+		| on 
+		span(name="updated") #{data.updated || ' --- '}
+		a(href="#{data.metadata || ''}" name="metadata") (see metadata...)
+		a(href="#{data.cachedExternalMetadata || ''}" name="cachedExternalMetadata") (see external metadata...)
+
+script#formTemplate
+	form
+		label(for="resource") URL: 
+		input(type="text" name="resource" default="http://")
+		input.save(type="button" value="save")
+script#postTemplate
+	+ postView()
+div.bootstrapData #{stringData}
 
 include includes/top
-	div.bootstrapData #{JSON.stringify(data)}
 	div#posts
 		input.add(type="button" value="+")
 		for post in posts
-			h2: a(href="#{post.resource}") #{post.id}
-			a(href="#{post.metadata}") (see metadata...)
-			- delete post.id
-			- delete post.resource
-			- delete post.metadata
-			- post.posted = new Date(post.posted).toString();
-			+branch(post)
+			+ postView(post)
 include includes/bottom
