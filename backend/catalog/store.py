@@ -923,3 +923,19 @@ class RedlandStore(object):
 
         result = temp_model.to_string(name=format, base_uri=None)
         return result
+
+    def query_sparql(self, query_string=None, results_format="json", **kwargs):
+        query = RDF.Query(querystring=query_string, query_language="sparql")
+        query_results = query.execute(self._model)
+        if query.get_limit < 0:
+            query.set_limit(50)
+
+        if results_format == "json":
+            format_uri = "http://www.mindswap.org/%7Ekendall/sparql-results-json/"
+        elif results_format == "n3":
+            format_uri = "http://www.w3.org/TeamSubmission/turtle/"
+        elif results_format == "html":
+            format_uri = "http://www.w3.org/1999/xhtml/"
+        else:
+            format_uri = "http://www.w3.org/TR/2008/REC-rdf-sparql-XMLres-20080115/"
+        return query_results.to_string(format_uri=format_uri)

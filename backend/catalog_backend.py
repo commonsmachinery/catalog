@@ -9,6 +9,7 @@
 from celery import Celery
 from celery import Task
 from celery import subtask
+from celery.utils.dispatch import Signal
 from celery.signals import worker_shutdown
 from celery.signals import task_success
 from catalog.store import RedlandStore, EntryNotFound
@@ -28,6 +29,8 @@ app.conf.update(
     CELERY_TASK_RESULT_DURABLE = False,
     CELERY_IMPORTS = ("catalog.store", "catalog.log", "catalog_backend"),
 )
+
+on_work_updated = Signal(providing_args=('task', 'update_subtask'))
 
 class FileLock(object):
     def __init__(self, id, timeout=15, lockdir = '.'):
@@ -111,7 +114,7 @@ def create_work(self, store='main', **kwargs):
     payload = json.dumps(work.get_data())
 
     log_event.apply_async(args=('create_work', time, user, resource, payload))
-    if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+    if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
     return work.get_data()
 
@@ -129,7 +132,7 @@ def update_work(self, store='main', **kwargs):
         payload = json.dumps(work.get_data())
 
         log_event.apply_async(args=('update_work', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         return work.get_data()
 
@@ -149,7 +152,7 @@ def delete_work(self, store='main', **kwargs):
         payload = None
 
         log_event.apply_async(args=('delete_work', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         return kwargs
 
@@ -183,7 +186,7 @@ def add_source(self, store='main', **kwargs):
             payload = json.dumps(source.get_data())
 
             log_event.apply_async(args=('add_source', time, user, resource, payload))
-            if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+            if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
             return source.get_data()
     else:
@@ -195,7 +198,7 @@ def add_source(self, store='main', **kwargs):
         payload = json.dumps(source.get_data())
 
         log_event.apply_async(args=('add_source', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         return source.get_data()
 
@@ -227,7 +230,7 @@ def update_source(self, store='main', **kwargs):
             payload = json.dumps(source.get_data())
 
             log_event.apply_async(args=('update_source', time, user, resource, payload))
-            if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+            if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
             return source.get_data()
     else:
@@ -239,7 +242,7 @@ def update_source(self, store='main', **kwargs):
         payload = json.dumps(source.get_data())
 
         log_event.apply_async(args=('update_source', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         return source.get_data()
 
@@ -264,7 +267,7 @@ def delete_source(self, store='main', **kwargs):
             payload = json.dumps(kwargs)
 
             log_event.apply_async(args=('delete_source', time, user, resource, payload))
-            if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+            if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
             return kwargs
     else:
@@ -276,7 +279,7 @@ def delete_source(self, store='main', **kwargs):
         payload = json.dumps(kwargs)
 
         log_event.apply_async(args=('delete_source', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         return kwargs
 
@@ -300,7 +303,7 @@ def add_post(self, store='main', **kwargs):
         payload = json.dumps(post.get_data())
 
         log_event.apply_async(args=('add_post', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         return post.get_data()
 
@@ -330,7 +333,7 @@ def delete_post(self, store='main', **kwargs):
         payload = None
 
         log_event.apply_async(args=('delete_post', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.apply_async(args=(self.subtask(kwargs=kwargs), ))
+        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
 
         store.delete_post(**kwargs)
         return kwargs
@@ -341,6 +344,10 @@ def get_complete_metadata(self, store='main', **kwargs):
     return store.get_complete_metadata(**kwargs)
 
 @app.task(base=StoreTask, bind=True)
+def query_sparql(self, **kwargs):
+    return self.public_store.query_sparql(**kwargs)
+
+@app.task(base=StoreTask, bind=True)
 def log_event(self, type, time, user, resource, data):
     self.log.log_event(type, time, user, resource, data)
 
@@ -348,26 +355,25 @@ def log_event(self, type, time, user, resource, data):
 def query_events(self, type=None, user=None, time_min=None, time_max=None, resource=None, limit=100, offset=0):
     return self.log.query_events(type, user, time_min, time_max, resource, limit, offset)
 
-@app.task(base=StoreTask, bind=True)
-def on_work_updated(self, update_subtask):
-    task = update_subtask['task']
-    kwargs = update_subtask['kwargs']
+@on_work_updated.connect
+def work_updated_handler(sender=None, task=None, update_subtask=None, **kwargs):
+    subtask_kwargs = update_subtask['kwargs']
 
-    if task == "catalog_backend.create_work":
-        visibility = kwargs.get('visibility', None)
+    if sender == create_work:
+        visibility = subtask_kwargs.get('visibility', None)
         if visibility != "public":
             return False
-    elif task == "catalog_backend.update_work":
-        work_id = kwargs['id']
-        work = self.main_store.get_work(user=kwargs['user'], id=work_id)
-        visibility = kwargs.get('visibility', work['visibility'])
+    elif sender == update_work:
+        work_id = subtask_kwargs['id']
+        work = task.main_store.get_work(user=subtask_kwargs['user'], id=work_id)
+        visibility = subtask_kwargs.get('visibility', work['visibility'])
         if visibility != "public":
             return False
-    elif task == "catalog_backend.add_source" or \
-            task == "catalog_backend.update_source" or \
-            task == "catalog_backend.add_post":
-        work_id = kwargs['work_id']
-        work = self.main_store.get_work(user=kwargs['user'], id=work_id)
+    elif sender == add_source or \
+            sender == update_source or \
+            sender == add_post:
+        work_id = subtask_kwargs['work_id']
+        work = task.main_store.get_work(user=subtask_kwargs['user'], id=work_id)
         if work['visibility'] != 'public':
             return False
 
