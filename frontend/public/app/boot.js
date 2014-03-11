@@ -5,6 +5,8 @@ requirejs.config({
 	paths: {
 		lib : '../lib',
 		models: '../app/models',
+		views: '../app/views',
+		collections: '../app/collections',
 		underscore: '../lib/underscore',
 		jquery : '../lib/jquery',
 	},
@@ -23,24 +25,25 @@ require(['lib/jquery', 'lib/backbone'], function($, Backbone){
 		routes: {
 			"": 'home',
 			"users/:id/sources/": 'sources',
-			"works/:id": 'work',
-			"works/:id/sources": 'sources',
+			"works/:id(/)": 'work',
+			"works/:id/sources(/)": 'sources',
 			"works(?:filters)(/)": 'works',
 		},
 		home: function() {
 			require(['home']);
 		},
 		sources: function(id){
-			require(['sourceCollection']);
+			require(['sources']);
 		},
 		works: function(filters) {
-			require(['workCollection']);
+			require(['browseWorks']);
 		},
 		work: function (id) {
 			require(['workPermalink']);
 		}
 	});
 	var app = new Router();
+	Backbone.history.start({pushState:true});
 	function _init(){
 		
 	}

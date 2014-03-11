@@ -36,6 +36,9 @@ nosetests.xml
 .project
 .pydevproject
 
+*.sublime-workspace
+*.sublime-project
+
 # Node.js
 lib-cov
 lcov.info

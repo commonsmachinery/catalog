@@ -89,7 +89,8 @@ function call (res, queryData, call, view, callback, errorCheck) {
             }
             return;
         }
-        console.log('/////////////////////////// DATA ////////////////////////// \n', data, ' \n\n', data);
+        
+        console.log('/////////////////////////// DATA ////////////////////////// \n', data, ' \n\n');
         if(callback){
             return callback(data)
         }
@@ -249,7 +250,6 @@ function postSource(req, res) {
         timestamp: Date.now(),
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
-        resource: req.body.resource,
         work_id: req.params.workID || null,
         user_id: req.params.userID || null,
     };
@@ -354,7 +354,7 @@ function getWorks(req, res) {
     var user = 'test';
     var queryData = req.query;
     queryData.user = user;
-    call(res, queryData, 'get_works', 'workCollection');
+    call(res, queryData, 'get_works', 'works');
     return;
 }
 
