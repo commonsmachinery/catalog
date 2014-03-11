@@ -927,7 +927,7 @@ class RedlandStore(object):
     def query_sparql(self, query_string=None, results_format="json", **kwargs):
         query = RDF.Query(querystring=query_string, query_language="sparql")
         query_results = query.execute(self._model)
-        if query.get_limit < 0:
+        if query.get_limit() < 0:
             query.set_limit(50)
 
         if results_format == "json":
