@@ -1,39 +1,42 @@
 {
-  "name": "catalog-frontend",
-  "version": "0.0.1",
-  "homepage": "https://github.com/commonsmachinery/catalog",
-  "author": "Commons Machinery <dev@commonsmachinery.se>",
-  "description": "Web/REST frontend to the catalog.",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/commonsmachinery/catalog.git"
-  },
-  "bin": "server.js",
-  "main": "./server",
-  "dependencies": {
-    "consolidate": "*",
-    "debug": "*",
-    "express": "3.x",
-    "jade": "*",
-    "node-celery": "*",
-    "redis": "*",
-    "stylus": "*",
-    "underscore": "*"
-  },
-  "devDependencies": {
-    "jslint": "*",
-    "nodemon": "*",
-    "volo": "*"
-  },
-  "license": "AGPLv3",
-  "amd": {},
-  "volo": {
-    "baseUrl": "./public/lib",
+    "name": "catalog-frontend",
+    "version": "0.0.1",
+    "homepage": "https://github.com/commonsmachinery/catalog",
+    "author": "Commons Machinery <dev@commonsmachinery.se>",
+    "description": "Web/REST frontend to the catalog.",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/commonsmachinery/catalog.git"
+    },
+    "bin": "server.js",
+    "main": "./server",
     "dependencies": {
-      "jquery": "github:jquery/jquery/2.1.0",
-      "popgen": "https://raw.github.com/Lexas/PopGen/master/popgen.js",
-      "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
-      "underscore": "github:amdjs/underscore/1.5.2"
+        "consolidate": "0.10.x",
+        "debug": "0.7.x",
+        "express": "3.x",
+        "jade": "1.1.x",
+        "node-celery": "0.1.x",
+        "redis": "0.10.0",
+        "stylus": "0.42.x",
+        "underscore": "1.6.x",
+        "connect-mongodb": "*",
+        "crypto": "1.1.x",
+        "mongoose": "3.8.x"
+    },
+    "devDependencies": {
+        "jslint": "*",
+        "nodemon": "*",
+        "volo": "0.3.x"
+    },
+    "license": "AGPLv3",
+    "amd": {},
+    "volo": {
+        "baseUrl": "./public/lib",
+        "dependencies": {
+            "jquery": "github:jquery/jquery/2.1.0",
+            "popgen": "https://raw.github.com/Lexas/PopGen/master/popgen.js",
+            "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
+            "underscore": "github:amdjs/underscore/1.5.2"
+        }
     }
-  }
 }

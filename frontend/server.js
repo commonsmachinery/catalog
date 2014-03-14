@@ -20,7 +20,7 @@ var express = require('express');
 var stylus = require('stylus');
 
 
-var main = function main(config) {
+function main(config) {
     if (!config.baseURI) {
         config.baseURI = 'http://localhost:' + config.port;
     }
@@ -29,7 +29,6 @@ var main = function main(config) {
 
     //var redisClient = redis.createClient();
     var app = express();
-
 
     // Middlewares
     app.use(express.logger());
@@ -44,6 +43,7 @@ var main = function main(config) {
         compress: true
     }));
     app.use(express.static(__dirname + '/public'));
+    require('./lib/sessions')(app, express);
 
 
     /* ============================== Backend Setup ============================== */
@@ -62,7 +62,6 @@ var main = function main(config) {
 
     // Link frontend logic to the backend
     require('./lib/rest')(app, backend, config.baseURI);
-    require('./lib/app')(app);
 
     // Kick everything off
     backend.once('connect', function() {
@@ -70,7 +69,7 @@ var main = function main(config) {
         app.listen(config.port);
         console.log('listening on port ' + config.port);
     });
-};
+}
 
 module.exports = main;
 
