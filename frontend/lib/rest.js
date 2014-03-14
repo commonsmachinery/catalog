@@ -62,6 +62,9 @@ function rest(app, localBackend, localBaseURI) {
     app.post('/works/:id/posts', postPost);
     app.delete('/works/:workID/posts/:postID', deletePost);
 
+    /* sparql */
+    app.get('/sparql', getSPARQL);
+
     return;
 };
 
@@ -436,6 +439,28 @@ function putWork(req, res) {
         visibility: req.body.visibility,
     };
     call(res, workData, 'update_work', null, respond, errors);
+    return;
+}
+
+function getSPARQL(req, res) {
+    var results_format;
+
+    if (req.get('Accept') == "application/json") {
+        results_format = "json";
+    } else {
+        results_format = "xml";
+    }
+
+
+    function respond(result, err) {
+        res.send(result);
+        return;
+    }
+    var queryData = {
+        query_string: req.query.query,
+        results_format: results_format
+    }
+    call(res, queryData, 'query_sparql', null, respond);
     return;
 }
 

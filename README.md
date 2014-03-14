@@ -108,3 +108,7 @@ Delete source or post:
 
      curl -v -X DELETE http://localhost:8004/works/1392318412903/sources/12345
      curl -v -X DELETE http://localhost:8004/works/1392318412903/posts/12345
+
+Query SPARQL endpoint:
+
+    curl -g -H 'Accept: application/json' 'http://localhost:8004/sparql?query=SELECT+?s+?p+?o+WHERE+{?s+?p+?o}+LIMIT+50'
