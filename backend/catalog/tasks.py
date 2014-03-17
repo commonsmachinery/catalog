@@ -14,6 +14,8 @@ import json
 from celery import subtask
 from catalog.celery import app, FileLock, StoreTask, on_work_updated
 
+import logging
+_log = logging.getLogger("catalog")
 
 @app.task(base=StoreTask, bind=True)
 def create_work(self, store='main', **kwargs):

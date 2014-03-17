@@ -13,6 +13,9 @@ import sqlite3
 import pymongo
 from pymongo import MongoClient
 
+import logging
+_log = logging.getLogger("catalog")
+
 class SqliteLog(object):
     def __init__(self, name):
         self._conn = sqlite3.connect('%s.db' % name)

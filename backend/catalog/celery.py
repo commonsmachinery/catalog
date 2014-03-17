@@ -18,6 +18,16 @@ from catalog.log import MongoDBLog
 import os, time
 import errno
 
+import logging.config
+import importlib
+
+import logging
+_log = logging.getLogger("catalog")
+
+
+APP_SETTINGS_FILENAME = "settings.py"
+LOG_SETTINGS_FILENAME = "logging.ini"
+
 app = Celery('catalog',
     broker='amqp://guest@localhost:5672//',
     include=['catalog.tasks'])
@@ -31,6 +41,15 @@ app.conf.update(
     CELERY_TASK_RESULT_DURABLE = False,
     #CELERY_IMPORTS = ("catalog.store", "catalog.log", "catalog.tasks"),
 )
+
+try:
+    confmodule = importlib.import_module(APP_SETTINGS_FILENAME)
+    app.config_from_object(confmodule.CeleryOptions)
+except ImportError as e:
+    pass
+
+if os.path.exists(LOG_SETTINGS_FILENAME):
+    logging.config.fileConfig(LOG_SETTINGS_FILENAME)
 
 
 on_work_updated = Signal(providing_args=('task', 'update_subtask'))

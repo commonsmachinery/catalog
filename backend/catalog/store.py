@@ -12,6 +12,9 @@ import time
 import re
 import RDF
 
+import logging
+_log = logging.getLogger("catalog")
+
 class ParamError(Exception): pass
 
 class EntryNotFound(Exception):
@@ -22,6 +25,7 @@ class EntryNotFound(Exception):
 valid_work_visibility = [ 'private', 'group', 'public' ]
 valid_work_state = [ 'draft', 'published' ]
 
+STORE_DATA_DIR = "data"
 
 NS_CATALOG = "http://catalog.commonsmachinery.se/ns#"
 NS_REM3 = "http://scam.sf.net/schema#"
@@ -419,7 +423,7 @@ ExternalSource.json_schema = schema2json(ExternalSource.schema)
 
 class RedlandStore(object):
     def __init__(self, name):
-        self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='.',contexts='yes'")
+        self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='%s',contexts='yes'" % STORE_DATA_DIR)
         self._model = RDF.Model(self._store)
 
     def _get_entry_id(self, subject):
