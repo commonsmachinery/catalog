@@ -25,14 +25,13 @@ import logging
 _log = logging.getLogger("catalog")
 
 
-APP_SETTINGS_FILENAME = "settings.py"
+APP_SETTINGS_FILENAME = "settings"
 LOG_SETTINGS_FILENAME = "logging.ini"
 
-app = Celery('catalog',
-    broker='amqp://guest@localhost:5672//',
-    include=['catalog.tasks'])
+app = Celery('catalog', include=['catalog.tasks'])
 
 app.conf.update(
+    BROKER_URL = os.getenv('CATALOG_BROKER_URL', 'amqp://guest@localhost:5672//'),
     CELERY_TASK_SERIALIZER='json',
     CELERY_ACCEPT_CONTENT = ['json'],
     CELERY_RESULT_SERIALIZER='json',
@@ -44,7 +43,7 @@ app.conf.update(
 
 try:
     confmodule = importlib.import_module(APP_SETTINGS_FILENAME)
-    app.config_from_object(confmodule.CeleryOptions)
+    app.config_from_object(confmodule)
 except ImportError as e:
     pass
 
