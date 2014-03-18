@@ -16,7 +16,7 @@ Installing prerequisites
 
 On Ubuntu:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev curl
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev swig autoconf automake libtool curl
 
 Make sure that Node.js is installed to run the frontend.
 
@@ -42,9 +42,9 @@ Install the backend inside virtualenv:
 
 Run `./run_local.sh` to simultaneously start frontend and backend, or run them separately:
 
-    celery -A catalog_backend worker --loglevel=info --workdir=data
+    celery -A catalog worker --loglevel=info
 
-Redland storage data will be saved under `./data`.
+Data and event log will be saved under `./data`.
 
 Frontend
 --------

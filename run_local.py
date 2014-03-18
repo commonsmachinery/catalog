@@ -2,7 +2,7 @@
 
 import subprocess, time, sys
 
-celery = subprocess.Popen(["celery", "-A", "catalog_backend", "worker", "--loglevel=info", "--workdir=data", "--autoreload"])
+celery = subprocess.Popen(["celery", "-A", "catalog_backend", "worker", "--loglevel=info", "--autoreload"])
 #redis = subprocess.Popen(["redis-server", "redis_local.conf"])
 frontend = subprocess.Popen(["node", "node_modules/nodemon/bin/nodemon.js", "server.js"], cwd="frontend")
 mongodb = subprocess.Popen(["mongod", "--dbpath", "data/db"])
