@@ -83,11 +83,16 @@ Some REST/web interfaces can be accessed on these URLS:
 
 Instead of building a full backend container or running in the host,
 you can set up a development container that directly uses the source
-code and properly links into the infrastructure containers.
+code and properly links into the infrastructure containers:
 
-The script `backend/setup_docker_dev.sh` creates an image for this and
-starts a container running celery.  It will auto-reload any changed
-files in the source directory.
+    sudo backend/setup_docker_dev.sh
+
+The script creates an image for local development and starts a
+container running celery.  If an image already exists, it will be
+dropped.  It will auto-reload changed files in the source directory.
+
+The image will store events in MongoDB, and use the BDB Redland store
+in /data/backend/data from the DATA container. 
 
 Useful commands:
 

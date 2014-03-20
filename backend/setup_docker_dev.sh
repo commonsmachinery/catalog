@@ -4,9 +4,12 @@ set -e
 
 cd `dirname "$0"`
 
+docker stop backend-dev || true
+docker rm backend-dev || true
+
 # Create temporary container with all dependencies installed
 
-sudo docker run \
+docker run \
     --name=backend-dev-tmp \
     -v "$PWD:/backend:rw" \
     -w /backend \
@@ -14,13 +17,13 @@ sudo docker run \
     python setup.py develop
 
 # Commit that to an image and set the run command
-sudo docker rmi local/backend-dev || true
-sudo docker commit \
+docker rmi local/backend-dev || true
+docker commit \
     --run='{"Entrypoint": ["/backend/docker_run.sh"]}' \
     backend-dev-tmp local/backend-dev
 
 # Drop the temporary container now
-sudo docker rm backend-dev-tmp
+docker rm backend-dev-tmp
 
 # Set up a permanent container with all correct links and start it.
 
@@ -32,7 +35,7 @@ echo "Read the output with:"
 echo "sudo docker logs -f backend-dev"
 echo
 
-sudo docker run -d \
+docker run -d \
     --name=backend-dev \
     -v "$PWD:/backend:rw" \
     --volumes-from=DATA \
