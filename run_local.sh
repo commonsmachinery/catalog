@@ -2,6 +2,9 @@
 
 BACKEND_DIR=$(pwd)/build/backend
 FRONTEND_DIR=$(pwd)/build/frontend
+environment=${1:-development}
+
+export NODE_ENV=$environment
 
 if [ ! -f "run_local.py" ]; then
   echo "This script must be run from the catalog source dir!"

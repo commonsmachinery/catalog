@@ -1,0 +1,41 @@
+//- 
+	Catalog web/view
+
+	Copyright 2014 Commons Machinery http://commonsmachinery.se/
+
+	Authors:
+		Elsa Balderrama <elsa@commonsmachinery.se>
+
+	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+- var work = data
+- var stringData = JSON.stringify(data);
+
+mixin workView(data)
+	- data = data || {}
+	div.work
+		h2: a(href="#{data.resource || ''}") #{data.id || ''}
+		span(name="visibility")
+		span(name="state")
+		| by 
+		span(name="creator") #{data.creator || ''} 
+		| on 
+		span(name="created") #{data.created || ''}
+		br
+		| last updated by 
+		span(name="updatedBy") #{data.updatedBy || ' --- '} 
+		| on 
+		span(name="updated") #{data.updated || ' --- '}
+		a(href="#{data.metadata || ''}" name="metadata") (see metadata...)
+		| Posted on: 
+		for post in (data.posts || {})
+			a(href="#{post}") #{post}
+		| Sources: 
+		for source in (data.sources || {})
+			a(href="#{source}") #{source}
+
+div.bootstrapData #{stringData}
+
+include includes/top
+	+workView(work)
+include includes/bottom
