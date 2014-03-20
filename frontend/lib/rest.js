@@ -152,10 +152,12 @@ function call (res, queryData, action, view, callback) {
 /* when we only need user and id */
 function commonData (req) { 
     var user = 'test';
+    var timestamp = Date.now().toString();
+    var id = req.params.id;
     var queryData =  {
-        id: req.params.id,
+        id: id,
         user: user,
-        timestamp: Date.now(),
+        timestamp: timestamp,
     };
     return queryData;
 }
@@ -205,7 +207,7 @@ function postPost(req, res) {
 
     var postData = {
         user: user,
-        timestamp: Date.now(),
+        timestamp: Date.now().toString(),
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
         resource: req.body.resource,
@@ -229,7 +231,7 @@ function deletePost (req, res) {
         user: user,
         work_id: req.params.workID,
         post_id: req.params.postID,
-        timestamp: Date.now()
+        timestamp: Date.now().toString()
     };
 
     call(res, queryData, 'delete_post', null, respond);
@@ -268,7 +270,7 @@ function postSource(req, res) {
 
     var sourceData = {
         user: user,
-        timestamp: Date.now(),
+        timestamp: Date.now().toString(),
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
         work_id: req.params.workID || null,
@@ -291,7 +293,7 @@ function putSource(req, res) {
 
     var sourceData = {
         user: user,
-        timestamp: Date.now(),
+        timestamp: Date.now().toString(),
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
         resource: req.body.resource,
@@ -318,7 +320,7 @@ function deleteSource (req, res) {
         work_id: req.params.workID,
         user_id: req.params.userID,
         source_id: req.params.sourceID,
-        timestamp: Date.now()
+        timestamp: Date.now().toString()
     };
 
     call(res, queryData, 'delete_source', null, respond);
@@ -410,7 +412,7 @@ function postWork(req, res) {
     }
 
     var user = 'test';
-    var timestamp = parseInt(Date.now()).toString();
+    var timestamp = Date.now().toString();
     var id = timestamp;
     var workData = {
         id: id,
