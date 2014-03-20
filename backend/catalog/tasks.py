@@ -13,6 +13,7 @@ from __future__ import absolute_import
 import json
 from celery import subtask
 from catalog.celery import app, FileLock, StoreTask, on_work_updated
+from catalog.log import LogNotAvailable
 
 import logging
 _log = logging.getLogger("catalog")
@@ -262,9 +263,16 @@ def get_complete_metadata(self, store='main', **kwargs):
 def query_sparql(self, **kwargs):
     return self.public_store.query_sparql(**kwargs)
 
-@app.task(base=StoreTask, bind=True)
+@app.task(base=StoreTask, bind=True,
+          ignore_result = True,
+          max_retries = None,
+          default_retry_delay = 15)
 def log_event(self, type, time, user, resource, data):
-    self.log.log_event(type, time, user, resource, data)
+    try:
+        self.log.log_event(type, time, user, resource, data)
+    except LogNotAvailable as e:
+        raise self.retry(exc = e)
+
 
 @app.task(base=StoreTask, bind=True)
 def query_events(self, type=None, user=None, time_min=None, time_max=None, resource=None, limit=100, offset=0):
