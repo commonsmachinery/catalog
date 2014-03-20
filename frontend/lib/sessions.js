@@ -25,13 +25,13 @@ function init (app, express) {
     var db = require('./wrappers/mongo'),
         user = require('./userSchema'),
         sessionStore = require('connect-mongodb')({ 
-            dbname: env.USERS_DB
+            dbname: env.CATALOG_USERS_DB
         });
 
     /* ToDo: not sure if this is a propper way to make functions available for the rest api */
     app.set('isLogged', isLogged);
     
-    db.connect(env.DB_URL + env.USERS_DB)
+    db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB)
     .then( function(conn){
             debug('Connected to mongoDB');
         }, function(err){
@@ -41,7 +41,7 @@ function init (app, express) {
     
     app.use(express.cookieParser());
     app.use(express.session({
-        secret: env.SECRET,
+        secret: env.CATALOG_SECRET,
         store: sessionStore
     }));
 

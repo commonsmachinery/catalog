@@ -74,7 +74,7 @@ function rest(app, localBackend) {
 
 
 function buildURI() {
-    return env.BASE_URL + '/' + Array.prototype.join.call(arguments, '/');
+    return env.CATALOG_BASE_URL + '/' + Array.prototype.join.call(arguments, '/');
 }
 
 function backendResult(result, callback) {
@@ -141,7 +141,7 @@ function call (res, queryData, action, view, callback) {
         return;
     }
     var result = backend.call(
-        'catalog_backend.' + action, 
+        'catalog.tasks.' + action,
         queryData, 
         cudCallOptions
     );

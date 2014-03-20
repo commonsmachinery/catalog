@@ -28,7 +28,7 @@ function setEnv (obj) {
     var envKey;
     for(key in obj){
         if (obj.hasOwnProperty(key)) {
-            envKey = key.toUpperCase();
+            envKey = 'CATALOG_' + key.toUpperCase();
             env[envKey] = env[envKey] || obj[key];
             debug('setting %s = %s', envKey, env[envKey]);
         }
@@ -57,21 +57,21 @@ function main() {
     app.engine('.jade', cons.jade);
     app.set('view engine', 'jade');
     app.use(stylus.middleware({
-        src: __dirname + env.STYLE_SRC,
-        dest: __dirname + env.STYLE_DEST,
+        src: __dirname + env.CATALOG_STYLE_SRC,
+        dest: __dirname + env.CATALOG_STYLE_DEST,
         compress: true
     }));
-    app.use(express.static(__dirname + env.STATIC));
+    app.use(express.static(__dirname + env.CATALOG_STATIC));
     require('./lib/sessions')(app, express);
 
 
     /* ============================== Backend Setup ============================== */
 
     backendClient({
-        CELERY_BROKER_URL: env.BROKER_URL,
-        CELERY_RESULT_BACKEND: env.CELERY_RESULT_BACKEND,
-        CELERY_TASK_RESULT_EXPIRES: env.CELERY_TASK_RESULT_EXPIRES,
-        CELERY_TASK_RESULT_DURABLE: env.CELERY_TASK_RESULT_DURABLE
+        CELERY_BROKER_URL: env.CATALOG_BROKER_URL,
+        CELERY_RESULT_BACKEND: 'amqp',
+        CELERY_TASK_RESULT_EXPIRES: 30,
+        CELERY_TASK_RESULT_DURABLE: false
     })
     .then(
         function(backend){ 
@@ -79,8 +79,8 @@ function main() {
             require('./lib/rest')(app, backend);
             /* Kick everything off */
             debug('celery is ready, starting web server');
-            app.listen(env.PORT);
-            console.log('listening on port %s', env.PORT);
+            app.listen(env.CATALOG_PORT);
+            console.log('listening on port %s', env.CATALOG_PORT);
             return;
         }, function(err){
             console.error('celery error: %s', err);
