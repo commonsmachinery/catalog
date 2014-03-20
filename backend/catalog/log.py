@@ -8,6 +8,7 @@
 #
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir.
 
+import os
 import sqlite3
 
 import pymongo
@@ -17,8 +18,8 @@ import logging
 _log = logging.getLogger("catalog")
 
 class SqliteLog(object):
-    def __init__(self, name):
-        self._conn = sqlite3.connect('%s.db' % name)
+    def __init__(self, dir):
+        self._conn = sqlite3.connect(os.path.join(dir, 'events.sqlite'))
         self._cur = self._conn.cursor()
 
         self._cur.execute("create table if not exists events (type, time, user, resource, data)")
@@ -66,9 +67,9 @@ class SqliteLog(object):
         return events
 
 class MongoDBLog(object):
-    def __init__(self):
-        self._client = MongoClient('mongodb://localhost:27017/')
-        self._db = self._client.catalog
+    def __init__(self, url, database):
+        self._client = MongoClient(url)
+        self._db = self._client[database]
         self._events = self._db.events
 
         self._events.ensure_index("user")
