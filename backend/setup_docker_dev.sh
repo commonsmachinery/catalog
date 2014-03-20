@@ -8,22 +8,21 @@ cd `dirname "$0"`
 
 sudo docker run \
     --name=backend-dev-tmp \
-    -v "$PWD:/backend:rw" -v /data \
+    -v "$PWD:/backend:rw" \
     -w /backend \
     commonsmachinery/backend-base \
     python setup.py develop
 
 # Commit that to an image and set the run command
+sudo docker rmi local/backend-dev || true
 sudo docker commit \
     --run='{"Entrypoint": ["/backend/docker_run.sh"]}' \
     backend-dev-tmp local/backend-dev
 
-# Drop the old container now
+# Drop the temporary container now
 sudo docker rm backend-dev-tmp
 
 # Set up a permanent container with all correct links and start it.
-
-set +x
 
 echo
 echo "Starting the backend container.  Restart it later with:"
@@ -35,8 +34,10 @@ echo
 
 sudo docker run -d \
     --name=backend-dev \
-    -v "$PWD:/backend:rw" -v /data \
-    --link=cat-rabbitmq:rabbitmq \
+    -v "$PWD:/backend:rw" \
+    --volumes-from=DATA \
     --link=cat-mongodb:mongodb \
+    --link=cat-rabbitmq:rabbitmq \
+    --link=cat-redis:redis \
     local/backend-dev
 
