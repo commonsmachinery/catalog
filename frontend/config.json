@@ -1,0 +1,33 @@
+
+{
+    "common": {
+        "style_dest": "/public",
+        "style_src": "/styles"
+    },
+    "development":{
+        "base_url": "http://localhost:8004",
+        "broker_url": "amqp://guest@localhost:5672//",
+        "mongodb_url": "mongodb://localhost/",
+        "port": "8004",
+        "secret": "rainbow pegasi",
+        "static": "/public",
+        "users_db": "users-dev"
+    },
+    "production":{
+        "base_url": "http://catalog.elog.io",
+        "broker_url": "amqp://guest@localhost:5672//",
+        "mongodb_url": "mongodb://localhost/",
+        "port": "80",
+        "secret": "can't touch this!",
+        "static": "/public/build",
+        "users_db": "users"
+    },
+    "test":{
+        "base_url": "http://localhost:8004",
+        "broker_url": "amqp://guest@localhost:5672//",
+        "mongodb_url": "mongodb://localhost/",
+        "secret": "rainbow pegasi",
+        "static": "/public",
+        "users_db": "users-dev"
+    }
+}
