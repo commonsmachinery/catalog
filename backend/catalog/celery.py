@@ -31,6 +31,8 @@ LOG_SETTINGS_FILENAME = "logging.ini"
 if os.path.exists(LOG_SETTINGS_FILENAME):
     logging.config.fileConfig(LOG_SETTINGS_FILENAME)
 else:
+    _log.setLevel(logging.DEBUG)
+    _log.addHandler(logging.StreamHandler())
     _log.warning('no %s, using default logging configuration', LOG_SETTINGS_FILENAME)
 
 
@@ -58,6 +60,10 @@ try:
 except ImportError as e:
     _log.warning('no %s.py module, using default configuration', APP_SETTINGS_FILENAME)
     config = DefaultConfig
+
+for _key, _value in config.__dict__.items():
+    if not _key.startswith('_') and _key != 'os':
+        _log.debug('Setting %s = %s', _key, _value)
 
 # Use configuration provided by user
 app.config_from_object(config)
