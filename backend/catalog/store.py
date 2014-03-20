@@ -422,8 +422,8 @@ ExternalSource.json_schema = schema2json(ExternalSource.schema)
 
 
 class RedlandStore(object):
-    def __init__(self, name):
-        self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='%s',contexts='yes'" % STORE_DATA_DIR)
+    def __init__(self, name, data_dir):
+        self._store = RDF.HashStorage(name, options="hash-type='bdb',dir='%s',contexts='yes'" % data_dir)
         self._model = RDF.Model(self._store)
 
     def _get_entry_id(self, subject):
