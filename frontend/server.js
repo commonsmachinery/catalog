@@ -30,12 +30,13 @@ function setEnv (obj) {
         if (obj.hasOwnProperty(key)) {
             envKey = key.toUpperCase();
             env[envKey] = env[envKey] || obj[key];
+            debug('setting %s = %s', envKey, env[envKey]);
         }
     }
     return;
 }
 setEnv(config.common);
-setEnv(config[process.env.NODE_ENV]);
+setEnv(config[process.env.NODE_ENV || 'development']);
 
 
 function main() {
@@ -79,7 +80,7 @@ function main() {
             /* Kick everything off */
             debug('celery is ready, starting web server');
             app.listen(env.PORT);
-            debug('listening on port ' + env.PORT);
+            console.log('listening on port %s', env.PORT);
             return;
         }, function(err){
             console.error('celery error: %s', err);
