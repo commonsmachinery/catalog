@@ -27,7 +27,7 @@ Run the following command to setup virtualenv under build/backend with all the r
 
     sh ./bootstrap.sh
 
-Backend
+Set up
 -------
 
 To enter virtualenv (set certain environment variables) use:
@@ -44,22 +44,9 @@ Run `./run_local.sh` to simultaneously start frontend and backend, or run them s
 
     celery -A catalog worker --loglevel=info
 
-Data and event log will be saved under `./data`.
-
-Frontend
---------
-
-Install all the frontend dependencies:
-
-    cd frontend
-    npm install
-    ./volo
-
-Run it using `./run_local.sh` to start the frontend together with backend or use the command below
-in a separate shell:
-
     node server.js
 
+Data and event log will be saved under `./data`.
 
 Using
 =====
