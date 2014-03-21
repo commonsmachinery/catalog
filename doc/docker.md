@@ -7,10 +7,11 @@ http://docs.docker.io/en/latest/use/basics/
 Getting third-party images
 --------------------------
 
-These seem to be good base images for the services:
+We don't use many third-party images directly.  This one is only
+needed if you want to build run the frontend in a container in
+development mode:
 
-    sudo docker pull dockerfile/mongodb
-    sudo docker pull dockerfile/redis
+    sudo docker pull dockerfile/nodejs
 
 
 Building catalog images
@@ -59,6 +60,9 @@ It can be backed up like this:
 
     sudo docker run --rm --volumes-from=DATA -v $(pwd):/backup busybox tar cvf /backup/backup.tar /data
 
+Multiple data containers can be set up to handle different tests.
+Remember to use the other container name in all the commands below.
+
 
 Development usage
 -----------------
@@ -71,32 +75,57 @@ Start the infrastructure containers:
 
 In development you might want to run the frontend and backend in the
 host environment, so `-p` here forwards the container ports.  The
-frontend and backend can then be run directly.
+frontend and backend can then be run directly as if the infrastructure
+was running on the host directly.
 
-Some REST/web interfaces can be accessed on these URLS:
+Admin REST/web interfaces can be accessed on these URLS:
 
 * MongoDB: http://127.0.0.1:28017/
 * RabbitMQ: http://127.0.0.1:15672/ (guest/guest)
 
 
-### Creating a backend development image
+### Running frontend and backend in docker
 
-Instead of building a full backend container or running in the host,
-you can set up a development container that directly uses the source
-code and properly links into the infrastructure containers:
+Instead of building full containers for the backend and frontend, or
+running in the host, you can run development containers that directly
+uses the source code and properly links into the infrastructure
+containers.
+
+Node keeps all the dependencies locally in `node_modules` for the
+frontend, so if you have node installed already you can just install
+the dependencies directly:
+    
+    cd frontend
+    npm install
+    ./volo_add.sh
+    
+Or do that via a the `dockerfile/nodejs` image:
+
+    ./frontend/docker_npm_install.sh
+    
+To run the frontend in a docker image, fully linked to the
+infrastructure images, do:
+
+    ./frontend/docker_nodemon.sh
+
+That will run the frontend attached to the terminal, so Ctrl-C will
+shut it down.
+
+The backend needs to run as a permanent container, since it's tricky
+to combine Python virtualenvs with the containers.  This is all set up
+by running this script:
 
     sudo backend/setup_docker_dev.sh
 
-The script creates an image for local development and starts a
-container running celery.  If an image already exists, it will be
-dropped.  It will auto-reload changed files in the source directory.
+The scripts creates an image running celery, using the backend code in
+the source directory.  It will auto-reload changed files.
 
-The image will store events in MongoDB, and use the BDB Redland store
+The images will store events in MongoDB, and use the BDB Redland store
 in /data/backend/data from the DATA container. 
 
-Useful commands:
+Useful commands for managing the backend:
 
-    sudo docker start backend-dev
+    sudo docker restart backend-dev
     sudo docker logs -f backend-dev
     sudo docker stop backend-dev
 
