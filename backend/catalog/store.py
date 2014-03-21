@@ -17,12 +17,13 @@ from urlparse import urlsplit, urlunsplit
 import logging
 _log = logging.getLogger("catalog")
 
-class ParamError(Exception): pass
+class CatalogError(Exception): pass
 
-class EntryAccessError(Exception):
-    pass
+class ParamError(CatalogError): pass
 
-class EntryNotFoundError(Exception):
+class EntryAccessError(CatalogError): pass
+
+class EntryNotFoundError(CatalogError):
     def __init__(self, context):
         super(Exception, self).__init__(self, 'Entry not found: {0}'.format(context))
 
@@ -49,7 +50,8 @@ class Entry(object):
         'updatedBy':    ('string',  NS_CATALOG  + "updatedBy"   ),
     }
 
-    def __init__(self, dict):
+    def __init__(self, uri, dict):
+        self._uri = uri
         self._dict = dict
 
     def __getitem__(self, name):
@@ -57,6 +59,10 @@ class Entry(object):
             return self._dict[name]
         else:
             raise AttributeError("Unknown entry property: %s" % name)
+
+    @property
+    def uri(self):
+        return self._uri
 
     def get_data(self):
         return self._dict
@@ -99,12 +105,12 @@ class Entry(object):
         return metadata_graph
 
     @classmethod
-    def from_model(cls, model, context):
+    def from_model(cls, model, uri):
         """
         Retrieve entry from the store
         """
         data = {}
-        context = RDF.Node(uri_string=context)
+        context = RDF.Node(uri_string=uri)
 
         if context is None:
             raise ValueError("null context")
@@ -146,10 +152,10 @@ class Entry(object):
         if len(data) == 0:
             raise EntryNotFoundError(context)
 
-        return cls(data)
+        return cls(uri, data)
 
     def to_model(self, model):
-        context = RDF.Node(uri_string=self._dict['resource'])
+        context = RDF.Node(uri_string=self._uri)
         statements = []
 
         for key, value in self.__class__.schema.iteritems():
@@ -158,7 +164,7 @@ class Entry(object):
 
             # make sure graph fields exist, even if the graph is empty
             if property_type == "graph" and not self._dict.has_key(property_name):
-                self._dict[key] = self._dict['resource'] + "/" + property_name
+                self._dict[key] = self._uri + "/" + property_name
 
             if property_type == "graph" and not self._dict.has_key(property_name + "Graph"):
                 self._dict[property_name + "Graph"] = {}
@@ -261,7 +267,6 @@ Work.json_schema = schema2json(Work.schema)
 class Source(Entry):
     schema = {
         'id':           ('number',  NS_CATALOG  + "id"          ),
-        'resource':     ('resource', NS_REM3    + "resource"    ),
         'metadata':     ('graph',   NS_REM3     + "metadata"    ),
         'cachedExternalMetadata': ('graph', NS_REM3 + "cachedExternalMetadata" ),
         'added':        ('string',  NS_CATALOG  + "added"       ),
@@ -274,14 +279,14 @@ Source.json_schema = schema2json(Source.schema)
 
 class CatalogSource(Source):
     schema = dict(Source.schema, **{
-        'sourceResource': ('resource', NS_REM3 + "sourceResource"),
+        'resource': ('resource', NS_REM3 + "resource"),
     })
 
 CatalogSource.json_schema = schema2json(CatalogSource.schema)
 
 class ExternalSource(Source):
     schema = dict(Source.schema, **{
-        'sourceResource': ('resource', NS_REM3 + "sourceResource"),
+        'resource': ('resource', NS_REM3 + "resource"),
     })
 
 ExternalSource.json_schema = schema2json(ExternalSource.schema)
@@ -290,7 +295,6 @@ class Post(Entry):
     schema = {
         'id':           ('number',    NS_CATALOG  + "id"            ),
         'resource':     ('resource',  NS_REM3     + "resource"      ),
-        'postResource': ('resource',  NS_REM3     + "postResource"  ),
         'metadata':     ('graph',     NS_REM3     + "metadata"      ),
         'cachedExternalMetadata': ('graph', NS_REM3 + "cachedExternalMetadata" ),
         'posted':       ('string',    NS_CATALOG  + "posted"        ),
@@ -355,9 +359,9 @@ class RedlandStore(object):
 
     def _can_read(self, user, entry):
         if entry.__class__ == Work:
-            return entry['creator'] == user
+            return entry['creator'] == user or entry['visibility'] == 'public'
         elif issubclass(entry.__class__, Source):
-            work = self._get_linked_work(NS_CATALOG + "source", entry['resource'])
+            work = self._get_linked_work(NS_CATALOG + "source", entry.uri)
             if work:
                 # linked source
                 return work['creator'] == user or work['visibility'] == 'public'
@@ -365,7 +369,7 @@ class RedlandStore(object):
                 # source without work
                 return entry['addedBy'] == user
         elif entry.__class__ == Post:
-            work = self._get_linked_work(NS_CATALOG + "post", entry['resource'])
+            work = self._get_linked_work(NS_CATALOG + "post", entry.uri)
             return work['creator'] == user or work['visibility'] == 'public'
         else:
             raise TypeError("Invalid entry type: {0}".format(entry.__class__))
@@ -374,7 +378,7 @@ class RedlandStore(object):
         if entry.__class__ == Work:
             return entry['creator'] == user
         elif issubclass(entry.__class__, Source):
-            work = self._get_linked_work(NS_CATALOG + "source", entry['resource'])
+            work = self._get_linked_work(NS_CATALOG + "source", entry.uri)
             if work:
                 # linked source
                 return work['creator'] == user and entry['addedBy'] == user
@@ -382,229 +386,200 @@ class RedlandStore(object):
                 # source without work
                 return entry['addedBy'] == user
         elif entry.__class__ == Post:
-            work = self._get_linked_work(NS_CATALOG + "post", entry['resource'])
+            work = self._get_linked_work(NS_CATALOG + "post", entry.uri)
             return work['creator'] == user
         else:
             raise TypeError("Invalid entry type: {0}".format(entry.__class__))
 
-    def create_work(self, **kwargs):
-        # TODO: later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-            id = kwargs['id']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
+    def _entry_exists(self, entry_uri):
+        query_statement = RDF.Statement(subject=RDF.Node(uri_string=entry_uri),
+            predicate=RDF.Node(uri_string=NS_CATALOG + "id"),
+            object=None)
 
-        kwargs.setdefault('visibility', 'private')
-        kwargs.setdefault('state', 'draft')
-        kwargs.setdefault('timestamp', int(time.time()))
-        kwargs.setdefault('metadataGraph', {})
+        for statement, context in self._model.find_statements_context(query_statement):
+            return True
 
-        if kwargs.get('visibility') not in valid_work_visibility:
+    def create_work(self, user, work_uri, work_data):
+        if self._entry_exists(work_uri):
+            raise CatalogError("Entry {0} already exists".format(work_uri))
+
+        work_data.setdefault('visibility', 'private')
+        work_data.setdefault('state', 'draft')
+        work_data.setdefault('timestamp', int(time.time()))
+        work_data.setdefault('metadataGraph', {})
+
+        if work_data['visibility'] not in valid_work_visibility:
             raise ParamError('invalid visibility: {0}'.format(visibility))
-        if kwargs.get('state') not in valid_work_state:
+        if work_data['state'] not in valid_work_state:
             raise ParamError('invalid state: {0}'.format(state))
 
-        work = Work({
-            'id': id,
-            'resource': resource,
-            'created': kwargs['timestamp'],
+        work = Work(work_uri, {
+            'id': work_data['id'],
+            'resource': work_uri,
+            'created': work_data['timestamp'],
             'creator': user,
-            'visibility': kwargs['visibility'],
-            'state': kwargs['state'],
-            'metadataGraph': kwargs['metadataGraph'],
+            'visibility': work_data['visibility'],
+            'state': work_data['state'],
+            'metadataGraph': work_data['metadataGraph'],
         })
 
         work.to_model(self._model)
         self._model.sync()
-        return work
+        return work.get_data()
 
-    def update_work(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-
-        timestamp = kwargs.pop('timestamp', int(time.time()))
-
-        work = Work.from_model(self._model, resource)
+    def update_work(self, user, work_uri, work_data):
+        work = Work.from_model(self._model, work_uri)
 
         if not self._can_modify(user, work):
-            raise EntryAccessError("Work {0} can't be modified by {1}".format(resource, user))
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
 
-        work_data = work.get_data()
-
-        # TODO: deal with created/timestamp name difference in the frontend
-        #work_data['timestamp'] = work_data['created']
-
-        new_data = kwargs.copy()
-        new_data['updated'] = timestamp
+        old_data = work.get_data()
+        new_data = work_data.copy()
+        new_data['updated'] = new_data.pop('timestamp', int(time.time()))
         new_data['updatedBy'] = user
-        work_data.update(new_data)
+        old_data.update(new_data)
 
         # use None, for deleting a key
         # TODO: will we ever need this?
-        for (key, value) in work_data.iteritems():
-            if not value: del work_data[key]
+        for (key, value) in old_data.iteritems():
+            if not value: del old_data[key]
 
-        new_work = Work(work_data)
-        self.delete_work(user=user, resource=resource)
+        new_work = Work(work_uri, old_data)
+        self.delete_work(user=user, work_uri=work_uri)
 
         new_work.to_model(self._model)
         self._model.sync()
-        return new_work
+        return new_work.get_data()
 
-    def delete_work(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-
-        work = Work.from_model(self._model, resource)
+    def delete_work(self, user, work_uri, linked_entries=False):
+        work = Work.from_model(self._model, work_uri)
 
         if not self._can_modify(user, work):
-            raise EntryAccessError("Work {0} can't be modified by {1}".format(resource, user))
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
+
+        if linked_entries:
+            for source_uri in work.get('source', []):
+                self.delete_source(user=user, source_uri=source_uri, unlink=True)
+
+            for post_uri in work.get('post', []):
+                self.delete_post(user=user, post_uri=post_uri)
 
         for subgraph_uri in work.get_subgraphs():
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
 
-        resource_context = RDF.Node(uri_string=resource)
-        self._model.remove_statements_with_context(resource_context)
+        work_context = RDF.Node(uri_string=work_uri)
+        self._model.remove_statements_with_context(work_context)
 
-        # TODO: figure out how to close the store on shutdown instead
         self._model.sync()
 
-    def get_work(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-        subgraph = kwargs.pop('subgraph', None)
-
-        work = Work.from_model(self._model, resource)
+    def get_work(self, user, work_uri, subgraph=None):
+        work = Work.from_model(self._model, work_uri)
 
         if not self._can_read(user, work):
-            raise EntryAccessError("Can't access work {0}".format(resource))
+            raise EntryAccessError("Can't access work {0}".format(work_uri))
 
         if not subgraph:
             return work.get_data()
         else:
             return work.get_data().get(subgraph + "Graph", {})
 
-    def create_source(self, **kwargs):
-        # TODO: later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-            id = kwargs['id']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
+    def create_work_source(self, user, work_uri, source_uri, source_data):
+        if self._entry_exists(source_uri):
+            raise CatalogError("Entry {0} already exists".format(source_uri))
 
-        kwargs.setdefault('timestamp', int(time.time()))
-        kwargs.setdefault('metadataGraph', {})
-        kwargs.setdefault('cachedExternalMetadataGraph', {})
+        work = Work.from_model(self._model, work_uri)
 
-        source = CatalogSource({
-            'id': id,
-            'resource': resource,
-            'metadataGraph': kwargs['metadataGraph'],
-            'cachedExternalMetadataGraph': kwargs['cachedExternalMetadataGraph'],
+        if not self._can_modify(user, work):
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
+
+        source_data.setdefault('timestamp', int(time.time()))
+        source_data.setdefault('metadataGraph', {})
+        source_data.setdefault('cachedExternalMetadataGraph', {})
+
+        source = CatalogSource(source_uri, {
+            'id': source_data['id'],
+            'metadataGraph': source_data['metadataGraph'],
+            'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
             'addedBy': user,
-            'added': kwargs['timestamp'],
-            'sourceResource': kwargs['sourceResource'],
+            'added': source_data['timestamp'],
+            'resource': source_data['resource'],
         })
 
         source.to_model(self._model)
 
-        # how else can we figure out the work id?
-        scheme, netloc, path, query, fragment = urlsplit(resource)
-        if path.startswith("/works/"):
-            path = "/".join(path.split("/")[0:3])
+        # link the source to work
+        work_subject = RDF.Node(uri_string=work_uri)
 
-            work_resource = urlunsplit((scheme, netloc, path, query, fragment))
-            work_subject = RDF.Node(uri_string=work_resource)
+        statement = RDF.Statement(work_subject,
+            RDF.Node(uri_string=NS_CATALOG + "source"),
+            RDF.Node(uri_string=source_uri))
 
-            statement = RDF.Statement(work_subject,
-                RDF.Node(uri_string=NS_CATALOG + "source"),
-                RDF.Node(uri_string=resource))
-
-            if (statement, work_subject) not in self._model:
-                self._model.append(statement, context=work_subject)
-        elif path.startswith("/users/"):
-            pass
-        else:
-            raise ParamError("Resource {0} doesn't look like a source URI".format(resource))
+        if (statement, work_subject) not in self._model:
+            self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return source
+        return source.get_data()
 
-    def update_source(self, **kwargs):
-        # TODO: later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-        timestamp = kwargs.pop('timestamp', int(time.time()))
+    def create_stock_source(self, user, source_uri, source_data):
+        if self._entry_exists(source_uri):
+            raise CatalogError("Entry {0} already exists".format(source_uri))
 
-        source = CatalogSource.from_model(self._model, resource)
+        source_data.setdefault('timestamp', int(time.time()))
+        source_data.setdefault('metadataGraph', {})
+        source_data.setdefault('cachedExternalMetadataGraph', {})
+
+        source = CatalogSource(source_uri, {
+            'id': source_data['id'],
+            'metadataGraph': source_data['metadataGraph'],
+            'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
+            'addedBy': user,
+            'added': source_data['timestamp'],
+            'resource': source_data['resource'],
+        })
+
+        source.to_model(self._model)
+
+        self._model.sync()
+        return source.get_data()
+
+    def update_source(self, user, source_uri, source_data):
+        source = CatalogSource.from_model(self._model, source_uri)
 
         if not self._can_modify(user, source):
-            raise EntryAccessError("Source {0} can't be modified by {1}".format(resource, user))
+            raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user))
 
-        source_data = source.get_data()
-        new_data = kwargs.copy()
-        new_data['updated'] = timestamp
+        old_data = source.get_data()
+        new_data = source_data.copy()
+        new_data['updated'] = new_data.pop('timestamp', int(time.time()))
         new_data['updatedBy'] = user
-        source_data.update(new_data)
+        old_data.update(new_data)
 
         # use None, for deleting a key
         # TODO: will we ever need this?
-        for (key, value) in source_data.iteritems():
-            if not value: del source_data[key]
+        for (key, value) in old_data.iteritems():
+            if not value: del old_data[key]
 
-        new_source = CatalogSource(source_data)
-        self.delete_source(user=user, resource=resource)
+        new_source = CatalogSource(source_uri, old_data)
+        self.delete_source(user=user, source_uri=source_uri, unlink=False)
 
         new_source.to_model(self._model)
         self._model.sync()
-        return new_source
+        return new_source.get_data()
 
-    def delete_source(self, unlink=False, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-
-        source = CatalogSource.from_model(self._model, resource)
+    def delete_source(self, user, source_uri, unlink=True):
+        source = CatalogSource.from_model(self._model, source_uri)
 
         if not self._can_modify(user, source):
-            raise EntryAccessError("Source {0} can't be modified by {1}".format(resource, user))
+            raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user))
 
-        # delete any links to this source
+        # delete the link to work, if exists
         if unlink:
             # is it safe to assume that catalog:source will precisely
             # enumerate works derived from this source?
             query_statement = RDF.Statement(subject=None,
                 predicate=RDF.Node(uri_string=NS_CATALOG + "source"),
-                object=RDF.Node(uri_string=resource))
+                object=RDF.Node(uri_string=source_uri))
 
             for statement, context in self._model.find_statements_context(query_statement):
                 self._model.remove_statement(statement, context)
@@ -613,133 +588,98 @@ class RedlandStore(object):
         for subgraph_uri in source.get_subgraphs():
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
-        self._model.remove_statements_with_context(RDF.Node(uri_string=resource))
+        self._model.remove_statements_with_context(RDF.Node(uri_string=source_uri))
         self._model.sync()
 
-    def get_source(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-        subgraph = kwargs.pop('subgraph', None)
-
-        source = CatalogSource.from_model(self._model, resource)
+    def get_source(self, user, source_uri, subgraph=None):
+        source = CatalogSource.from_model(self._model, source_uri)
 
         if not self._can_read(user, source):
-            raise EntryAccessError("Can't access source {0}".format(resource))
+            raise EntryAccessError("Can't access source {0}".format(source_uri))
 
         if not subgraph:
             return source.get_data()
         else:
             return source.get_data().get(subgraph + "Graph", {})
 
-    def get_sources(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-
+    def get_work_sources(self, user, work_uri):
         sources = []
 
-        # how else can we figure out the work/user id?
-        scheme, netloc, path, query, fragment = urlsplit(resource)
-        if path.startswith("/works"):
-            path = "/".join(path.split("/")[0:3])
-
-            work_resource = urlunsplit((scheme, netloc, path, query, fragment))
-            work = self.get_work(user=user, resource=work_resource)
-            for source_uri in work.get('source', []):
-                source = self.get_source(user=user, resource=source_uri)
-                sources.append(source)
-        elif path.startswith("/users"):
-            user_id = path.split("/")[2]
-            # TODO: addedBy is an attribute specific to sources
-            # but relying on it is a hack
-            query_statement = RDF.Statement(subject=None,
-                predicate=RDF.Node(uri_string=NS_CATALOG + "addedBy"),
-                object=RDF.Node(literal=user_id))
-
-            for statement in self._model.find_statements(query_statement):
-                source_uri = statement.subject
-                source = self.get_source(user=user, resource=str(source_uri))
-                sources.append(source)
-        else:
-            raise ParamError("Resource {0} doesn't look like a source URI".format(resource))
-
+        work = self.get_work(user=user, work_uri=work_uri)
+        for source_uri in work.get('source', []):
+            source = self.get_source(user=user, source_uri=source_uri)
+            sources.append(source)
         return sources
 
-    def create_post(self, **kwargs):
-        # TODO: later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-            id = kwargs['id']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
+    def get_stock_sources(self, user):
+        sources = []
 
-        kwargs.setdefault('timestamp', int(time.time()))
-        kwargs.setdefault('metadataGraph', {})
-        kwargs.setdefault('cachedExternalMetadataGraph', {})
+        # TODO: this is slow, so the list should be fetched from the user Entry
+        # once we start to use them
+        query_statement = RDF.Statement(subject=None,
+            predicate=RDF.Node(uri_string=NS_CATALOG + "addedBy"),
+            object=RDF.Node(literal=user))
 
-        post = Post({
-            'id': id,
-            'resource': resource,
+        for statement in self._model.find_statements(query_statement):
+            source_uri = str(statement.subject)
+
+            query_statement2 = RDF.Statement(subject=None,
+                predicate=RDF.Node(uri_string=NS_CATALOG + "source"),
+                object=RDF.Node(uri_string=source_uri))
+
+            linked = False
+            for statement, context in self._model.find_statements_context(query_statement2):
+                linked = True
+
+            if not linked:
+                source = self.get_source(user=user, source_uri=source_uri)
+                sources.append(source)
+        return sources
+
+    def create_post(self, user, work_uri, post_uri, post_data):
+        if self._entry_exists(post_uri):
+            raise CatalogError("Entry {0} already exists".format(post_uri))
+
+        post_data.setdefault('timestamp', int(time.time()))
+        post_data.setdefault('metadataGraph', {})
+        post_data.setdefault('cachedExternalMetadataGraph', {})
+
+        post = Post(post_uri, {
+            'id': post_data['id'],
+            'resource': post_uri,
             'postedBy': user,
-            'posted': kwargs['timestamp'],
-            'metadataGraph': kwargs['metadataGraph'],
-            'cachedExternalMetadataGraph': kwargs['cachedExternalMetadataGraph'],
-            'postResource': kwargs['postResource'],
+            'posted': post_data['timestamp'],
+            'metadataGraph': post_data['metadataGraph'],
+            'cachedExternalMetadataGraph': post_data['cachedExternalMetadataGraph'],
+            'resource': post_data['resource'],
         })
 
         post.to_model(self._model)
 
-        # how else can we figure out the work id?
-        scheme, netloc, path, query, fragment = urlsplit(resource)
-        if path.startswith("/works/"):
-            path = "/".join(path.split("/")[0:3])
+        work_subject = RDF.Node(uri_string=work_uri)
 
-            work_resource = urlunsplit((scheme, netloc, path, query, fragment))
-            work_subject = RDF.Node(uri_string=work_resource)
+        statement = RDF.Statement(work_subject,
+            RDF.Node(uri_string=NS_CATALOG + "post"),
+            RDF.Node(uri_string=post_uri))
 
-            statement = RDF.Statement(work_subject,
-                RDF.Node(uri_string=NS_CATALOG + "post"),
-                RDF.Node(uri_string=resource))
-
-            if (statement, work_subject) not in self._model:
-                self._model.append(statement, context=work_subject)
-        else:
-            raise ParamError("Resource {0} doesn't look like a source URI".format(resource))
+        if (statement, work_subject) not in self._model:
+            self._model.append(statement, context=work_subject)
 
         self._model.sync()
-        return post
+        return post.get_data()
 
-    def delete_post(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-
-        post = Post.from_model(self._model, resource)
+    def delete_post(self, user, post_uri):
+        post = Post.from_model(self._model, post_uri)
 
         if not self._can_modify(user, post):
-            raise EntryAccessError("Post {0} can't be modified by {1}".format(resource, user))
+            raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user))
 
         # delete any links to this post
         # is it safe to assume that catalog:post will precisely
         # enumerate works linked to the post?
         query_statement = RDF.Statement(subject=None,
             predicate=RDF.Node(uri_string=NS_CATALOG + "post"),
-            object=RDF.Node(uri_string=resource))
+            object=RDF.Node(uri_string=post_uri))
 
         for statement, context in self._model.find_statements_context(query_statement):
             self._model.remove_statement(statement, context)
@@ -748,67 +688,35 @@ class RedlandStore(object):
         for subgraph_uri in post.get_subgraphs():
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
-        self._model.remove_statements_with_context(RDF.Node(uri_string=resource))
+        self._model.remove_statements_with_context(RDF.Node(uri_string=post_uri))
         self._model.sync()
 
-    def get_post(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-        subgraph = kwargs.pop('subgraph', None)
-
-        post = Post.from_model(self._model, resource)
+    def get_post(self, user, post_uri, subgraph=None):
+        post = Post.from_model(self._model, post_uri)
 
         if not self._can_read(user, post):
-            raise EntryAccessError("Can't access post {0}".format(resource))
+            raise EntryAccessError("Can't access post {0}".format(post_uri))
 
         if not subgraph:
             return post.get_data()
         else:
             return post.get_data().get(subgraph + "Graph", {})
 
-    def get_posts(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-
+    def get_posts(self, user, work_uri):
         posts = []
 
-        # how else can we figure out the work/user id?
-        scheme, netloc, path, query, fragment = urlsplit(resource)
-        if path.startswith("/works/"):
-            path = "/".join(path.split("/")[0:3])
+        work = self.get_work(user=user, work_uri=work_uri)
+        for post_uri in work.get('post', []):
+            post = self.get_post(user=user, post_uri=post_uri)
+            posts.append(post)
 
-            work_resource = urlunsplit((scheme, netloc, path, query, fragment))
-            work = self.get_work(user=user, resource=work_resource)
-            for post_uri in work.get('post', []):
-                post = self.get_post(user=user, resource=post_uri)
-                posts.append(post)
-        else:
-            raise ParamError("Resource {0} doesn't look like a post URI".format(resource))
         return posts
 
-    def get_complete_metadata(self, **kwargs):
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs['user']
-            resource = kwargs['resource']
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
-        format = kwargs.pop('format', 'json')
+    def get_complete_metadata(self, user, work_uri, format='json'):
+        work = Work.from_model(self._model, work_uri)
 
-        work = self.get_work(user=user, resource=resource)
         if not self._can_read(user, work):
-            raise EntryAccessError("Can't access work {0}".format(resource))
+            raise EntryAccessError("Can't access work {0}".format(work_uri))
 
         query_format = """
             PREFIX dc: <http://purl.org/dc/elements/1.1/>
@@ -828,7 +736,7 @@ class RedlandStore(object):
                 ?work catalog:visibility ?visibility .
                 ?work rem3:metadata ?workMetadata .
                 ?work catalog:source ?sourceRef .
-                ?sourceRef rem3:sourceResource ?sourceWork .
+                ?sourceRef rem3:resource ?sourceWork .
 
                 { ?sourceWork rem3:metadata ?sourceMetadata . }
                 UNION
@@ -842,7 +750,7 @@ class RedlandStore(object):
             }
         """
 
-        query_string = query_format % (resource, user)
+        query_string = query_format % (work_uri, user)
         query = RDF.Query(query_string)
 
         query_results = query.execute(self._model)
@@ -856,25 +764,18 @@ class RedlandStore(object):
         result = temp_model.to_string(name=format, base_uri=None)
         return result
 
-    def query_works_simple(self, **kwargs):
+    def query_works_simple(self, user, **kwargs):
         """
         Query works using a dictionary of key=value parameter pairs to match works.
         Parameters can be given as JSON properties or predicates
         ("http://purl.org/dc/terms/title").
 
         Reserved kwargs:
-            user
             offset
             limit
         """
-        # TODO: handle this properly, later there should be proper ACLs
-        try:
-            user = kwargs.pop('user', None)
-            offset = kwargs.pop("offset", 0)
-            limit = kwargs.pop("limit", 0)
-        except KeyError as e:
-            key = e.args[0]
-            raise ParamError("{0} not provided".format(key))
+        offset = kwargs.pop("offset", 0)
+        limit = kwargs.pop("limit", 0)
 
         # parse query params and convert them to predicates
         params = []
@@ -934,18 +835,18 @@ class RedlandStore(object):
         results = []
         for result in query_results:
             work_subject = result['s']
-            results.append(self.get_work(user=user, resource=str(work_subject)))
+            results.append(self.get_work(user=user, work_uri=str(work_subject)))
         return results
 
 
 class PublicStore(RedlandStore):
-    def _can_read(user, entry):
+    def _can_read(self, user, entry):
         return True
 
-    def _can_modify(user, entry):
+    def _can_modify(self, user, entry):
         return True
 
-    def query_sparql(self, query_string=None, results_format="json", **kwargs):
+    def query_sparql(self, query_string=None, results_format="json"):
         query = RDF.Query(querystring=query_string, query_language="sparql")
         query_results = query.execute(self._model)
         if query.get_limit() < 0:
