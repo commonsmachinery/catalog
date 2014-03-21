@@ -9,14 +9,15 @@ if [ ! -d "$DOWNLOAD_DIR" ]; then
   mkdir -p "$DOWNLOAD_DIR"
 fi
 
-if [ -f $BACKEND_DIR/bin/celery ];
+if [ -f $BACKEND_DIR/bin/python ];
 then
     echo "Python already installed, skipping installation."
 else
     echo "Python not installed in the backend directory, setting up virtualenv..."
     virtualenv $BACKEND_DIR
-    #$BACKEND_DIR/bin/pip install -r requirements_backend.txt
 fi
+
+(cd backend; $BACKEND_DIR/bin/python setup.py develop)
 
 #if [ -f $FRONTEND_DIR/bin/npm ];
 #then
@@ -49,7 +50,7 @@ then
 else
     echo "Redland not installed, downloading..."
     cd "$DOWNLOAD_DIR"
-    git clone https://github.com/dajobe/redland-bindings.git
+    git clone --depth 1 https://github.com/commonsmachinery/redland-bindings.git
     cd redland-bindings
     ./autogen.sh --prefix=$BACKEND_DIR --with-python=$BACKEND_DIR/bin/python
     cd python
