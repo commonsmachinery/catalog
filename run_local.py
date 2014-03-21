@@ -1,11 +1,12 @@
 #! /usr/bin/env python
 
-import subprocess, time, sys
+import subprocess, time, sys, os
 
-celery = subprocess.Popen(["celery", "-A", "catalog_backend", "worker", "--loglevel=info", "--autoreload"])
+celery = subprocess.Popen(["celery", "-A", "catalog", "worker", "--loglevel=info", "--autoreload"], cwd="backend")
 #redis = subprocess.Popen(["redis-server", "redis_local.conf"])
 frontend = subprocess.Popen(["node", "node_modules/nodemon/bin/nodemon.js", "server.js"], cwd="frontend")
-mongodb = subprocess.Popen(["mongod", "--dbpath", "data/db"])
+mongodb = subprocess.Popen(["mongod", "--smallfiles", "--dbpath",
+                            os.path.join(os.getenv("CATALOG_DATA_DIR", "data"), "db")])
 
 while True:
     try:

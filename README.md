@@ -27,26 +27,27 @@ Run the following command to setup virtualenv under build/backend with all the r
 
     sh ./bootstrap.sh
 
-Set up
+Running
 -------
 
-To enter virtualenv (set certain environment variables) use:
+All the components can be started by just running `./run_local.sh`.
 
-    source build/backend/bin/activate
+Data and event log will be saved under `./data/db` which is created by
+`run_local.sh` if it doesn't already exist.
 
-Install the backend inside virtualenv:
+To run the backend manually:
 
+    mkdir -p data
+    export CATALOG_DATA_DIR="$PWD/data"
+    
     cd backend
-    python setup.py install
-    cd ..
+    ../build/backend/bin/celery -A catalog worker --loglevel=info
 
-Run `./run_local.sh` to simultaneously start frontend and backend, or run them separately:
+To run the frontend manually:
 
-    celery -A catalog worker --loglevel=info
-
+    cd frontend
     node server.js
 
-Data and event log will be saved under `./data`.
 
 Using
 =====

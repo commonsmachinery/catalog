@@ -38,7 +38,8 @@
       "popgen": "https://raw.github.com/Lexas/PopGen/master/popgen.js",
       "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
       "underscore": "github:amdjs/underscore/1.5.2",
-      "backbone": "github:jashkenas/backbone/1.1.2"
+      "backbone": "github:jashkenas/backbone/1.1.2",
+      "Backbone.ModelBinder": "https://raw.github.com/theironcook/Backbone.ModelBinder/master/Backbone.ModelBinder.js"
     }
   }
 }
