@@ -8,6 +8,7 @@
 #
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir.
 
+import os
 import sqlite3
 
 import pymongo
@@ -16,16 +17,26 @@ from pymongo import MongoClient
 import logging
 _log = logging.getLogger("catalog")
 
-class SqliteLog(object):
-    def __init__(self, name):
-        self._conn = sqlite3.connect('%s.db' % name)
-        self._cur = self._conn.cursor()
+class LogNotAvailable(Exception): pass
 
-        self._cur.execute("create table if not exists events (type, time, user, resource, data)")
+class SqliteLog(object):
+    def __init__(self, dir):
+        try:
+            self._conn = sqlite3.connect(os.path.join(dir, 'events.sqlite'))
+            self._cur = self._conn.cursor()
+
+            self._cur.execute("create table if not exists events (type, time, user, resource, data)")
+        except sqlite3.DatabaseError, e:
+            raise LogNotAvailable('error opening sqlite db: %s' % e)
+
 
     def log_event(self, type, time, user, resource, data):
-        self._cur.execute("insert into events values (?, ?, ?, ?, ?)", (type, time, user, resource, data))
-        self._conn.commit()
+        try:
+            self._cur.execute("insert into events values (?, ?, ?, ?, ?)", (type, time, user, resource, data))
+            self._conn.commit()
+        except sqlite3.DatabaseError, e:
+            raise LogNotAvailable('error storing event: %s' % e)
+
 
     def query_events(self, type=None, time_min=None, time_max=None, user=None, resource=None, limit=100, offset=0):
         where_keys = []
@@ -66,14 +77,17 @@ class SqliteLog(object):
         return events
 
 class MongoDBLog(object):
-    def __init__(self):
-        self._client = MongoClient('mongodb://localhost:27017/')
-        self._db = self._client.catalog
-        self._events = self._db.events
+    def __init__(self, url, database):
+        try:
+            self._client = MongoClient(url)
+            self._db = self._client[database]
+            self._events = self._db.events
 
-        self._events.ensure_index("user")
-        self._events.ensure_index("resource")
-        self._events.ensure_index([("resource", pymongo.ASCENDING), ("time", pymongo.ASCENDING)])
+            self._events.ensure_index("user")
+            self._events.ensure_index("resource")
+            self._events.ensure_index([("resource", pymongo.ASCENDING), ("time", pymongo.ASCENDING)])
+        except pymongo.errors.PyMongoError as e:
+            raise LogNotAvailable('error connecting to MongoDB: %s' % e)
 
     def log_event(self, type, time, user, resource, data):
         event = {
@@ -83,7 +97,10 @@ class MongoDBLog(object):
             'resource': resource,
             'payload': data,
         }
-        self._events.insert(event)
+        try:
+            self._events.insert(event)
+        except pymongo.errors.PyMongoError as e:
+            raise LogNotAvailable('error storing event: %s' % e)
 
     def query_events(self, type=None, time_min=None, time_max=None, user=None, resource=None, limit=100, offset=0):
         spec = {}
