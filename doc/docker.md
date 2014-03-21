@@ -26,6 +26,11 @@ proper backend image.
 
     sudo docker build -t commonsmachinery/backend-base docker/backend-base
 
+The actual frontend and backend images can then be built:
+
+    sudo docker build -t commonsmachinery/backend backend
+    sudo docker build -t commonsmachinery/frontend frontend
+
 We also have some infrastructure images:
 
     sudo docker build -t commonsmachinery/rabbitmq docker/rabbitmq
@@ -137,6 +142,34 @@ indicate that it is running ok.
 Production usage
 ----------------
 
+TODO: describe infrastructure container deployment in production.  For
+now, the development startup above should work.
+
+TODO: handle account setup and configuration for production.
+
+Start the backend:
+
+    sudo docker run -d \
+        --name=backend \
+        --volumes-from=DATA \
+        --link=cat-mongodb:mongodb \
+        --link=cat-rabbitmq:rabbitmq \
+        --link=cat-redis:redis \
+        commonsmachinery/backend
+
+
+Start the frontend, listening and exposing port 80 (the base URL
+should be set in a more stable way than this, but it's good enough for
+now):
+
+    sudo docker run -d \
+        --name=frontend \
+        --link=cat-mongodb:mongodb \
+        --link=cat-rabbitmq:rabbitmq \
+        --link=cat-redis:redis \
+        -e "CATALOG_BASE_URL=http://$HOSTNAME" \
+        -p 80:8004 \
+        commonsmachinery/frontend
 
 
 Useful commands

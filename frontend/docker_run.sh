@@ -9,7 +9,7 @@ export CATALOG_MONGODB_URL="mongodb://$MONGODB_PORT_27017_TCP_ADDR:$MONGODB_PORT
 cd /frontend
 if [ $# -gt 0 ]
 then
-    node $@
+    exec node $@
 else
-    node server.js
+    exec node server.js
 fi
