@@ -15,16 +15,18 @@ var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
 var backend;
 var env, error;
+var cluster;
 
 var cudCallOptions = { };
 
 /* API functions */
-var deletePost, deleteSource, deleteSource, deleteWork, getCompleteMetadata, getMetadata, getMetadata, getMetadata, getPost, getPosts, getSource, getSource, getSourceCEM, getSourceCEM, getSources, getSources, getSPARQL, getWork, getWorks, getWorks, patchSource, patchSource, postPost, postSource, postSource, postWork, putSource, putSource, putWork; 
+var deletePost, deleteSource, deleteWork, getCompleteMetadata, getMetadata, getMetadata, getPost, getSource, getSourceCEM, getSourceCEM, getSources, getSPARQL, getWork, getWorks, patchSource, postPost, postSource, postWork, putSource, putWork; 
 
-function rest(app, localBackend) {
+function rest(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
     error = app.get('err');
+    cluster = localCluster;
 
     // TODO: add request ID checking
     // TODO: add request sanity checking
@@ -204,6 +206,7 @@ function postPost(req, res) {
     }
 
     var user = 'test';
+    var work = req.params.id;
 
     var postData = {
         user: user,
@@ -211,10 +214,18 @@ function postPost(req, res) {
         metadataGraph: req.body.metadataGraph,
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
         resource: req.body.resource,
-        work_id: req.params.id,
+        work_id: work
     };
 
-    call(res, postData, 'add_post', null, respond);
+    cluster.incr('posts')
+    .then(
+        function(count){
+            postData.post_id = count;
+            call(res, postData, 'add_post', null, respond);
+            return;
+        }
+    );
+
     return;
 }
 
@@ -254,8 +265,8 @@ function getSource (req, res) {
 
 function postSource(req, res) {
     function respond(source, err) {
-        var sourceURI;
 
+        var sourceURI;
         if (source.user_id) {
             sourceURI = buildURI('users', source.user_id, 'sources', source.id);
         } else {
@@ -275,10 +286,18 @@ function postSource(req, res) {
         cachedExternalMetadataGraph: req.body.cachedExternalMetadataGraph,
         work_id: req.params.workID || null,
         user_id: req.params.userID || null,
-        resource: buildURI(this.work_id)
+        resource: req.params.resource
     };
 
-    call(res, sourceData, 'add_source', null, respond);
+    cluster.incr('sources')
+    .then(
+        function(count){
+            sourceData.source_id = count;
+            call(res, sourceData, 'add_source', null, respond);
+            return;
+        }
+    );
+
     return;
 }
 
@@ -413,10 +432,8 @@ function postWork(req, res) {
 
     var user = 'test';
     var timestamp = Date.now().toString();
-    var id = timestamp;
+
     var workData = {
-        id: id,
-        resource: buildURI('works', id),
         metadataGraph: req.body.metadataGraph,
         state: req.body.state,
         timestamp: timestamp,
@@ -424,7 +441,15 @@ function postWork(req, res) {
         visibility: req.body.visibility,
     };
 
-    call(res, workData, 'create_work', null, respond);
+    cluster.incr('works')
+    .then(
+        function(count){
+            workData.id = count;
+            workData.resource = buildURI('works', count);
+            call(res, workData, 'create_work', null, respond);
+            return;
+        }
+    );
     return;
 }
 

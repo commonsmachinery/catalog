@@ -20,6 +20,7 @@ var express = require('express');
 var stylus = require('stylus');
 var config = require('./config.json');
 var err = require('./err.json');
+var cluster = require('./lib/cluster');
 
 /*  Override config.json with enviroment variables  */
 function setEnv (obj) {
@@ -64,7 +65,6 @@ function main() {
     app.use(express.static(__dirname + env.CATALOG_STATIC));
     require('./lib/sessions')(app, express);
 
-
     /* ============================== Backend Setup ============================== */
 
     backendClient({
@@ -75,12 +75,20 @@ function main() {
     })
     .then(
         function(backend){ 
-            /* Load REST API */
-            require('./lib/rest')(app, backend);
-            /* Kick everything off */
-            debug('celery is ready, starting web server');
-            app.listen(env.CATALOG_PORT);
-            console.log('listening on port %s', env.CATALOG_PORT);
+            /* ========================= Cluster Setup =========================== */
+            cluster.connect(env.CATALOG_CLUSTER)
+            .then(
+                function(conn){
+
+                    /* Load REST API */
+                    require('./lib/rest')(app, backend, cluster);
+                    /* Kick everything off */
+                    debug('celery is ready, starting web server');
+                    app.listen(env.CATALOG_PORT);
+                    console.log('listening on port %s', env.CATALOG_PORT);
+                    return;
+                }
+            );
             return;
         }, function(err){
             console.error('celery error: %s', err);
