@@ -14,7 +14,7 @@ from celery import Celery
 from celery import Task
 from celery.utils.dispatch import Signal
 from catalog.store import RedlandStore
-from catalog.log import MongoDBLog
+from catalog.log import SqliteLog, MongoDBLog
 import os, time
 import errno
 
@@ -28,27 +28,55 @@ _log = logging.getLogger("catalog")
 APP_SETTINGS_FILENAME = "settings"
 LOG_SETTINGS_FILENAME = "logging.ini"
 
+if os.path.exists(LOG_SETTINGS_FILENAME):
+    logging.config.fileConfig(LOG_SETTINGS_FILENAME)
+else:
+    _log.setLevel(logging.DEBUG)
+    _log.addHandler(logging.StreamHandler())
+    _log.warning('no %s, using default logging configuration', LOG_SETTINGS_FILENAME)
+
+
+# Default configuration if there is no settings.py
+class DefaultConfig:
+    # Infrastructure paths and URLS
+    BROKER_URL = os.getenv('CATALOG_BROKER_URL', 'amqp://guest@localhost:5672//')
+    MONGODB_URL = os.getenv('CATALOG_MONGODB_URL', 'mongodb://localhost:27017/')
+
+    # Used for sqlite and Redland local storage, typically only used in devevelopment
+    DATA_DIR = os.getenv('CATALOG_DATA_DIR', './data')
+
+    # Event log type: sqlite or mongodb
+    EVENT_LOG_TYPE = os.getenv('CATALOG_EVENT_LOG_TYPE', 'sqlite')
+
+    # Name of event log DB (when using MongoDB)
+    EVENT_LOG_DB = 'events'
+
+
 app = Celery('catalog', include=['catalog.tasks'])
 
+# Attempt to read configuration from settings module
+try:
+    config = importlib.import_module(APP_SETTINGS_FILENAME)
+except ImportError as e:
+    _log.warning('no %s.py module, using default configuration', APP_SETTINGS_FILENAME)
+    config = DefaultConfig
+
+for _key, _value in config.__dict__.items():
+    if not _key.startswith('_') and _key != 'os':
+        _log.debug('Setting %s = %s', _key, _value)
+
+# Use configuration provided by user
+app.config_from_object(config)
+
+# And set some technical stuff that the user shouldn't be allowed to touch
 app.conf.update(
-    BROKER_URL = os.getenv('CATALOG_BROKER_URL', 'amqp://guest@localhost:5672//'),
     CELERY_TASK_SERIALIZER='json',
     CELERY_ACCEPT_CONTENT = ['json'],
     CELERY_RESULT_SERIALIZER='json',
     CELERY_RESULT_BACKEND = 'amqp',
     CELERY_TASK_RESULT_EXPIRES = 30,
     CELERY_TASK_RESULT_DURABLE = False,
-    #CELERY_IMPORTS = ("catalog.store", "catalog.log", "catalog.tasks"),
 )
-
-try:
-    confmodule = importlib.import_module(APP_SETTINGS_FILENAME)
-    app.config_from_object(confmodule)
-except ImportError as e:
-    pass
-
-if os.path.exists(LOG_SETTINGS_FILENAME):
-    logging.config.fileConfig(LOG_SETTINGS_FILENAME)
 
 
 on_work_updated = Signal(providing_args=('task', 'update_subtask'))
@@ -121,7 +149,13 @@ class StoreTask(app.Task):
     @property
     def log(self):
         if self._log is None:
-            self._log = MongoDBLog()
+            if config.EVENT_LOG_TYPE == 'sqlite':
+                self._log = SqliteLog(config.DATA_DIR)
+            elif config.EVENT_LOG_TYPE == 'mongodb':
+                self._log = MongoDBLog(config.MONGODB_URL, config.EVENT_LOG_DB)
+            else:
+                raise RuntimeError('invalid event log configuration: %s' % config.EVENT_LOG_TYPE)
+
         return self._log
 
 
