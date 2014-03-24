@@ -1,8 +1,13 @@
 Deploying the catalog with Docker
 =================================
 
-Get started with Docker here:
+Get started with Docker here, including installation instructions:
 http://docs.docker.io/en/latest/use/basics/
+
+There's currently a bug on Ubuntu/Debian in the default Docker setup
+resulting in `Error resize: Error: bad file descriptor`.  Workaround:
+https://github.com/dotcloud/docker/pull/4574
+
 
 Getting third-party images
 --------------------------
