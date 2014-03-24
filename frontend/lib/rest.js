@@ -217,7 +217,7 @@ function postPost(req, res) {
         work_id: work
     };
 
-    cluster.incr('posts')
+    cluster.nextSourceID('posts')
     .then(
         function(count){
             postData.post_id = count;
@@ -289,7 +289,7 @@ function postSource(req, res) {
         resource: req.params.resource
     };
 
-    cluster.incr('sources')
+    cluster.nextSourceID('sources')
     .then(
         function(count){
             sourceData.source_id = count;
@@ -441,7 +441,7 @@ function postWork(req, res) {
         visibility: req.body.visibility,
     };
 
-    cluster.incr('works')
+    cluster.nextSourceID('works')
     .then(
         function(count){
             workData.id = count;

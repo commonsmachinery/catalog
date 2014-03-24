@@ -15,8 +15,8 @@ function connect (opt) {
                 resolve(cluster);
                 return;
             }, function(err){
-                console.error('redis error: %s', err);
-                reject(err) || null;
+                console.error('redis connection error: %s', err);
+                reject(err);
                 return;
             }
         );
@@ -25,7 +25,7 @@ function connect (opt) {
     return new Promise(promise);
 }
 
-function increment(key) {
+function nextSourceID(key) {
     function promise (resolve, reject) {
         cluster.incr(key)
         .then(
@@ -45,4 +45,4 @@ function increment(key) {
 }
 
 module.exports.connect = connect;
-module.exports.incr = increment;
+module.exports.nextSourceID = nextSourceID;
