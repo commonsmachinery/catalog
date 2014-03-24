@@ -32,17 +32,17 @@ fi
 #    cd "$BASE_DIR"
 #fi
 
-#if [ -f $BACKEND_DIR/bin/redis-server ];
-#then
-#    echo "Redis already installed, skipping installation."
-#else
-#    cd "$DOWNLOAD_DIR"
-#    echo "Redis not installed, downloading..."
-#    curl http://download.redis.io/releases/redis-stable.tar.gz | tar -xzv
-#    cd redis-stable
-#    make install PREFIX=$BACKEND_DIR
-#    cd $BASE_DIR""
-#fi
+if [ -f $BACKEND_DIR/bin/redis-server ];
+then
+   echo "Redis already installed, skipping installation."
+else
+   cd "$DOWNLOAD_DIR"
+   echo "Redis not installed, downloading..."
+   curl http://download.redis.io/releases/redis-stable.tar.gz | tar -xzv
+   cd redis-stable
+   make install PREFIX=$BACKEND_DIR
+   cd $BASE_DIR""
+fi
 
 if [ -f $BACKEND_DIR/lib/python2.7/site-packages/RDF.py ];
 then

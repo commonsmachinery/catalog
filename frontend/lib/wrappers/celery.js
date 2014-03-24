@@ -8,9 +8,13 @@ module.exports = function backendClient(options) {
     return new Promise(function(resolve, reject){
         var backend = celery.createClient(options);
         backend.on('connect', function(){
+            debug('Connected to celery');
         	resolve(backend);
         });
-        backend.on('error', reject);
+        backend.on('error', function(err){
+            console.log('celery connection error: %s', err);
+            reject(err);
+        });
         return;
     });
 };

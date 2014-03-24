@@ -12,14 +12,16 @@
 
 'use strict';
 
-//var redis = require('redis');
 var backendClient = require('./lib/wrappers/celery');
+var db = require('./lib/wrappers/mongo');
 var cons = require('consolidate');
 var debug = require('debug')('frontend:server');
 var express = require('express');
 var stylus = require('stylus');
 var config = require('./config.json');
 var err = require('./err.json');
+var cluster = require('./lib/cluster');
+var Promise = require('bluebird');
 
 /*  Override config.json with enviroment variables  */
 function setEnv (obj) {
@@ -62,31 +64,40 @@ function main() {
         compress: true
     }));
     app.use(express.static(__dirname + env.CATALOG_STATIC));
-    require('./lib/sessions')(app, express);
 
+    /* ======================= Connect services and start ======================= */
 
-    /* ============================== Backend Setup ============================== */
+    function connectServices () {
+        return new Promise.join(
+            backendClient({
+                CELERY_BROKER_URL: env.CATALOG_BROKER_URL,
+                CELERY_RESULT_BACKEND: 'amqp',
+                CELERY_TASK_RESULT_EXPIRES: 30,
+                CELERY_TASK_RESULT_DURABLE: false
+            }), 
+            cluster.connect(env.CATALOG_REDIS_URL), 
+            db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB)
+        );
+    }
 
-    backendClient({
-        CELERY_BROKER_URL: env.CATALOG_BROKER_URL,
-        CELERY_RESULT_BACKEND: 'amqp',
-        CELERY_TASK_RESULT_EXPIRES: 30,
-        CELERY_TASK_RESULT_DURABLE: false
-    })
-    .then(
-        function(backend){ 
+    connectServices().spread(
+        function(backend, redis, mongo){
+            console.log('Services connected... starting server...');
+
             /* Load REST API */
-            require('./lib/rest')(app, backend);
-            /* Kick everything off */
-            debug('celery is ready, starting web server');
+            require('./lib/rest')(app, backend, cluster);
+            require('./lib/sessions')(app, express, db);
+
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);
+
             return;
         }, function(err){
-            console.error('celery error: %s', err);
+            console.error('Services connection error: %s', err);
             return;
         }
     );
+
     return;
 }
 

@@ -22,7 +22,8 @@
     "connect-mongodb": "1.1.x",
     "crypto": "0.0.x",
     "mongoose": "3.8.x",
-    "bluebird": "1.1.x"
+    "bluebird": "1.1.x",
+    "then-redis": "0.3.x"
   },
   "devDependencies": {
     "jslint": "*",

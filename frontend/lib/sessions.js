@@ -8,36 +8,26 @@
 
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
-/*global debug */
 
 'use strict';
 
-
+var debug = require('debug')('frontend:sessions')
 var User;
 var env;
 
 var isLogged, loginScreen, logout, newSession, newUser, signupScreen; 
 
-function init (app, express) {
+function init (app, express, db) {
 
     env = process.env;
 
-    var db = require('./wrappers/mongo'),
-        user = require('./userSchema'),
+    var user = require('./userSchema'),
         sessionStore = require('connect-mongodb')({ 
             dbname: env.CATALOG_USERS_DB
         });
 
     /* ToDo: not sure if this is a propper way to make functions available for the rest api */
     app.set('isLogged', isLogged);
-    
-    db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB)
-    .then( function(conn){
-            debug('Connected to mongoDB');
-        }, function(err){
-            console.error('connection error:', err);
-        }
-    );
     
     app.use(express.cookieParser());
     app.use(express.session({
