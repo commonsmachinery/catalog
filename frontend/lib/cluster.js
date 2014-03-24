@@ -25,7 +25,7 @@ function connect (opt) {
     return new Promise(promise);
 }
 
-function nextSourceID(key) {
+function increment(key) {
     function promise (resolve, reject) {
         cluster.incr(key)
         .then(
@@ -45,4 +45,4 @@ function nextSourceID(key) {
 }
 
 module.exports.connect = connect;
-module.exports.nextSourceID = nextSourceID;
+module.exports.nextSourceID = increment;
