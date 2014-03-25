@@ -74,12 +74,13 @@ def update_work(self, user, work_uri, work_data):
 @app.task(base=StoreTask, bind=True)
 def delete_work(self, user, work_uri):
     try:
-        timestamp = int(time.time())
-        self.main_store.delete_work(user, work_uri)
+        with RedisLock(work_uri):
+            timestamp = int(time.time())
+            self.main_store.delete_work(user, work_uri)
 
-        log_event.apply_async(args=('delete_work', timestamp, user, work_uri, None, None))
+            log_event.apply_async(args=('delete_work', timestamp, user, work_uri, None, None))
 
-        on_delete_work.send(sender=self, user=user, work_uri=work_uri)
+            on_delete_work.send(sender=self, user=user, work_uri=work_uri)
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:
@@ -88,14 +89,15 @@ def delete_work(self, user, work_uri):
 @app.task(base=StoreTask, bind=True)
 def create_work_source(self, user, work_uri, source_uri, source_data):
     try:
-        timestamp = int(time.time())
-        source_data = self.main_store.create_work_source(user, work_uri, source_uri, source_data)
+        with RedisLock(work_uri):
+            timestamp = int(time.time())
+            source_data = self.main_store.create_work_source(user, work_uri, source_uri, source_data)
 
-        log_data = json.dumps(source_data)
-        log_event.apply_async(args=('create_work_source', timestamp, user, work_uri, source_uri, log_data))
+            log_data = json.dumps(source_data)
+            log_event.apply_async(args=('create_work_source', timestamp, user, work_uri, source_uri, log_data))
 
-        on_create_work_source.send(sender=self, user=user, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
-        return source_data
+            on_create_work_source.send(sender=self, user=user, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
+            return source_data
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:
@@ -104,14 +106,15 @@ def create_work_source(self, user, work_uri, source_uri, source_data):
 @app.task(base=StoreTask, bind=True)
 def create_stock_source(self, user, source_uri, source_data):
     try:
-        timestamp = int(time.time())
-        source_data = self.main_store.create_stock_source(user, source_uri, source_data)
+        with RedisLock(user):
+            timestamp = int(time.time())
+            source_data = self.main_store.create_stock_source(user, source_uri, source_data)
 
-        log_data = json.dumps(source_data)
-        log_event.apply_async(args=('create_stock_source', timestamp, user, None, source_uri, log_data))
+            log_data = json.dumps(source_data)
+            log_event.apply_async(args=('create_stock_source', timestamp, user, None, source_uri, log_data))
 
-        on_create_stock_source.send(sender=self, user=user, source_uri=source_uri, source_data=source_data)
-        return source_data
+            on_create_stock_source.send(sender=self, user=user, source_uri=source_uri, source_data=source_data)
+            return source_data
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:
@@ -120,14 +123,15 @@ def create_stock_source(self, user, source_uri, source_data):
 @app.task(base=StoreTask, bind=True)
 def update_source(self, user, source_uri, source_data):
     try:
-        timestamp = int(time.time())
-        source_data = self.main_store.update_source(user, source_uri, source_data)
+        with RedisLock(source_uri):
+            timestamp = int(time.time())
+            source_data = self.main_store.update_source(user, source_uri, source_data)
 
-        log_data = json.dumps(source_data)
-        log_event.apply_async(args=('update_source', timestamp, user, None, source_uri, log_data))
+            log_data = json.dumps(source_data)
+            log_event.apply_async(args=('update_source', timestamp, user, None, source_uri, log_data))
 
-        on_update_source.send(sender=self, user=user, source_uri=source_uri, source_data=source_data)
-        return source_data
+            on_update_source.send(sender=self, user=user, source_uri=source_uri, source_data=source_data)
+            return source_data
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:
@@ -136,12 +140,13 @@ def update_source(self, user, source_uri, source_data):
 @app.task(base=StoreTask, bind=True)
 def delete_source(self, user, source_uri):
     try:
-        timestamp = int(time.time())
-        self.main_store.delete_source(user, source_uri)
+        with RedisLock(source_uri):
+            timestamp = int(time.time())
+            self.main_store.delete_source(user, source_uri)
 
-        log_event.apply_async(args=('delete_source', timestamp, user, None, source_uri, None))
+            log_event.apply_async(args=('delete_source', timestamp, user, None, source_uri, None))
 
-        on_delete_source.send(sender=self, user=user, source_uri=source_uri)
+            on_delete_source.send(sender=self, user=user, source_uri=source_uri)
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:
@@ -150,14 +155,15 @@ def delete_source(self, user, source_uri):
 @app.task(base=StoreTask, bind=True)
 def create_post(self, user, work_uri, post_uri, post_data):
     try:
-        timestamp = int(time.time())
-        post_data = self.main_store.create_post(user, work_uri, post_uri, post_data)
+        with RedisLock(work_uri):
+            timestamp = int(time.time())
+            post_data = self.main_store.create_post(user, work_uri, post_uri, post_data)
 
-        log_data = json.dumps(post_data)
-        log_event.apply_async(args=('create_post', timestamp, user, work_uri, post_uri, log_data))
+            log_data = json.dumps(post_data)
+            log_event.apply_async(args=('create_post', timestamp, user, work_uri, post_uri, log_data))
 
-        on_create_post.send(sender=self, user=user, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
-        return post_data
+            on_create_post.send(sender=self, user=user, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
+            return post_data
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:
@@ -166,12 +172,13 @@ def create_post(self, user, work_uri, post_uri, post_data):
 @app.task(base=StoreTask, bind=True)
 def delete_post(self, user, post_uri):
     try:
-        timestamp = int(time.time())
-        self.main_store.delete_post(user, post_uri)
+        with RedisLock(post_uri):
+            timestamp = int(time.time())
+            self.main_store.delete_post(user, post_uri)
 
-        log_event.apply_async(args=('delete_post', timestamp, user, None, post_uri, None))
+            log_event.apply_async(args=('delete_post', timestamp, user, None, post_uri, None))
 
-        on_delete_post.send(sender=self, user=user, post_uri=post_uri)
+            on_delete_post.send(sender=self, user=user, post_uri=post_uri)
     except CatalogError as e:
         return {'error': {'type': e.__class__.__name__, 'message': e.message}}
     except LockTimeoutError as e:

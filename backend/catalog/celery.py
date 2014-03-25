@@ -43,6 +43,7 @@ class DefaultConfig:
     # Infrastructure paths and URLS
     BROKER_URL = os.getenv('CATALOG_BROKER_URL', 'amqp://guest@localhost:5672//')
     MONGODB_URL = os.getenv('CATALOG_MONGODB_URL', 'mongodb://localhost:27017/')
+    REDIS_URL = os.getenv('CATALOG_REDIS_URL', 'localhost')
 
     # Used for sqlite and Redland local storage, typically only used in devevelopment
     DATA_DIR = os.getenv('CATALOG_DATA_DIR', './data')
@@ -144,7 +145,7 @@ class FileLock(object):
 class RedisLock(object):
     def __init__(self, id, timeout=15):
         self._key = "lock." + id
-        self._conn = redis.Redis()
+        self._conn = redis.Redis(config.REDIS_URL)
         self._timeout = timeout
         self._locked = False
 
