@@ -12,16 +12,20 @@
 
 'use strict';
 
-var backendClient = require('./lib/wrappers/celery');
-var db = require('./lib/wrappers/mongo');
-var cons = require('consolidate');
 var debug = require('debug')('frontend:server');
+
+var cons = require('consolidate');
 var express = require('express');
 var stylus = require('stylus');
+var Promise = require('bluebird');
+
+var backend = require('./lib/backend');
+var db = require('./lib/wrappers/mongo');
+var cluster = require('./lib/cluster');
+
 var config = require('./config.json');
 var err = require('./err.json');
-var cluster = require('./lib/cluster');
-var Promise = require('bluebird');
+
 
 /*  Override config.json with enviroment variables  */
 function setEnv (obj) {
@@ -69,13 +73,8 @@ function main() {
 
     function connectServices () {
         return new Promise.join(
-            backendClient({
-                CELERY_BROKER_URL: env.CATALOG_BROKER_URL,
-                CELERY_RESULT_BACKEND: 'amqp',
-                CELERY_TASK_RESULT_EXPIRES: 30,
-                CELERY_TASK_RESULT_DURABLE: false
-            }), 
-            cluster.connect(env.CATALOG_REDIS_URL), 
+            backend.connect(env.CATALOG_BROKER_URL),
+            cluster.connect(env.CATALOG_REDIS_URL),
             db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB)
         );
     }

@@ -13,11 +13,19 @@
 
 var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
+
+var BackendError = require('./backend').BackendError;
+
 var backend;
-var env, error;
+var env;
 var cluster;
 
-var cudCallOptions = { };
+// TODO: this should perhaps go into a json file instead
+var errorMap = {
+    // TODO: get real error types from backend tasks
+    'not_found': 404,
+};
+
 
 /* API functions */
 var deletePost, deleteSource, deleteWork, getCompleteMetadata, getMetadata, getMetadata, getPost, getSource, getSourceCEM, getSourceCEM, getSources, getSPARQL, getWork, getWorks, patchSource, postPost, postSource, postWork, putSource, putWork; 
@@ -25,7 +33,6 @@ var deletePost, deleteSource, deleteWork, getCompleteMetadata, getMetadata, getM
 function rest(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
-    error = app.get('err');
     cluster = localCluster;
 
     // TODO: add request ID checking
@@ -79,76 +86,49 @@ function buildURI() {
     return env.CATALOG_BASE_URL + '/' + Array.prototype.join.call(arguments, '/');
 }
 
-function backendResult(result, callback) {
-    result.on('ready', function(message) {
-        if (message.status === 'SUCCESS') {
-            debug('task result: %j', message.result);
-            callback(message.result);
-        }
-        else {
-            var e = { 
-                status: message.status, 
-                exception: message.result.exc_type 
-            };
-            console.error('backend task failed: %j', message);
-            callback(null, e);
-        }
-    });
-    return;
-}
 
 function call (res, queryData, action, view, callback) {
-    function checkResponse(data, err) {
-        /* ToDo: Recieve error codes only, handle error message here*/
-        if (err) {
-            var code = err.exception;
-            if (error.indexOf(code) >= 0) {
-                res.send("error [%s]: %s", code, error[code]);
+    backend.call(action, queryData).
+        then(function(data) {
+            var owner = false;
+
+            if (callback) {
+                return callback(data);
             }
-            else if (!data){
-                res.send("error [%s]: %s", 404, error[404]);
+
+            if (queryData.user) {
+                if (queryData.user_id && queryData.user_id === queryData.user) {
+                    owner = true;
+                }
+                else if (data.creator && data.creator === queryData.user) {
+                    owner = true;
+                }
             }
-            else {
-                res.send("error [%s]: %s", 500, error[500]);
-            }
-            return;
-        }
-        
-        if(callback){
-            return callback(data);
-        }
-        var owner = false;
-        if(queryData.user){
-            if(queryData.user_id && queryData.user_id === queryData.user){
-                owner = true;
-            }
-            else if (data.creator && data.creator === queryData.user){
-                owner = true;
-            }
-        }
-        else {
-            queryData.store = 'public';
-        }
-        res.format({
-            'text/html': function(){
-                res.render(view, {
-                    data: data, 
-                    owner: owner
-                });
-            },
-            'application/json': function(){
-                res.send(data);
-            }
-        });
-        return;
-    }
-    var result = backend.call(
-        'catalog.tasks.' + action,
-        queryData, 
-        cudCallOptions
-    );
-    backendResult(result, checkResponse);
-    return;
+
+            res.format({
+                'text/html': function(){
+                    res.render(view, {
+                        data: data,
+                        owner: owner
+                    });
+                },
+                'application/json': function(){
+                    res.send(data);
+                }
+            });
+        }).
+        error(function(error) {
+            res.send(errorMap[error.type] || 500, error);
+        }).
+        catch(BackendError, function(e) {
+            // It's already been logged
+            res.send(503, env.NODE_ENV === 'production' ? 'Temporary internal error' : e.message);
+        }).
+        catch(function(e) {
+            console.error('exception in task %s: %s', action, e.stack);
+            res.send(500, env.NODE_ENV === 'production' ? 'Internal error' : e.stack);
+        }).
+        done();
 }
 
 /* when we only need user and id */
