@@ -305,7 +305,6 @@ class Post(Entry):
 
 Post.json_schema = schema2json(Post.schema)
 
-
 class MainStore(object):
     @staticmethod
     def get_store_config(name):

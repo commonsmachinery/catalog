@@ -182,13 +182,13 @@ class StoreTask(app.Task):
     @property
     def main_store(self):
         if self._main_store is None:
-            self._main_store = MainStore("works")
+            self._main_store = MainStore("works", config.DATA_DIR)
         return self._main_store
 
     @property
     def public_store(self):
         if self._public_store is None:
-            self._public_store = PublicStore("public")
+            self._public_store = PublicStore("public", config.DATA_DIR)
         return self._public_store
 
     @property

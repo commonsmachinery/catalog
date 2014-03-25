@@ -9,14 +9,15 @@ if [ ! -d "$DOWNLOAD_DIR" ]; then
   mkdir -p "$DOWNLOAD_DIR"
 fi
 
-if [ -f $BACKEND_DIR/bin/celery ];
+if [ -f $BACKEND_DIR/bin/python ];
 then
     echo "Python already installed, skipping installation."
 else
     echo "Python not installed in the backend directory, setting up virtualenv..."
     virtualenv $BACKEND_DIR
-    #$BACKEND_DIR/bin/pip install -r requirements_backend.txt
 fi
+
+(cd backend; $BACKEND_DIR/bin/python setup.py develop)
 
 #if [ -f $FRONTEND_DIR/bin/npm ];
 #then
@@ -31,17 +32,17 @@ fi
 #    cd "$BASE_DIR"
 #fi
 
-#if [ -f $BACKEND_DIR/bin/redis-server ];
-#then
-#    echo "Redis already installed, skipping installation."
-#else
-#    cd "$DOWNLOAD_DIR"
-#    echo "Redis not installed, downloading..."
-#    curl http://download.redis.io/releases/redis-stable.tar.gz | tar -xzv
-#    cd redis-stable
-#    make install PREFIX=$BACKEND_DIR
-#    cd $BASE_DIR""
-#fi
+if [ -f $BACKEND_DIR/bin/redis-server ];
+then
+   echo "Redis already installed, skipping installation."
+else
+   cd "$DOWNLOAD_DIR"
+   echo "Redis not installed, downloading..."
+   curl http://download.redis.io/releases/redis-stable.tar.gz | tar -xzv
+   cd redis-stable
+   make install PREFIX=$BACKEND_DIR
+   cd $BASE_DIR""
+fi
 
 if [ -f $BACKEND_DIR/lib/python2.7/site-packages/RDF.py ];
 then
@@ -49,7 +50,7 @@ then
 else
     echo "Redland not installed, downloading..."
     cd "$DOWNLOAD_DIR"
-    git clone https://github.com/dajobe/redland-bindings.git
+    git clone --depth 1 https://github.com/commonsmachinery/redland-bindings.git
     cd redland-bindings
     ./autogen.sh --prefix=$BACKEND_DIR --with-python=$BACKEND_DIR/bin/python
     cd python
@@ -76,14 +77,9 @@ fi
 # Frontend
 #
 
-VOLO=node_modules/volo/bin/volo
 
 echo "Getting frontend dependencies..."
 cd frontend
     npm install
-    node $VOLO add
-    # Hard dependencies can't be set in package.json
-    node $VOLO add -amd github:amdjs/underscore/1.5.2 exports=_
-    node $VOLO add -amd github:jashkenas/backbone/1.1.2 depends=jquery,underscore exports=Backbone
-    node $VOLO add -amd https://raw.github.com/theironcook/Backbone.ModelBinder/master/Backbone.ModelBinder.js depends=backbone
+    ./volo_add.sh
 cd ..

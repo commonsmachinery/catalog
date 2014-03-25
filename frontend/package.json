@@ -22,7 +22,8 @@
     "connect-mongodb": "1.1.x",
     "crypto": "0.0.x",
     "mongoose": "3.8.x",
-    "bluebird": "1.1.x"
+    "bluebird": "1.1.x",
+    "then-redis": "0.3.x"
   },
   "devDependencies": {
     "jslint": "*",
@@ -38,7 +39,8 @@
       "popgen": "https://raw.github.com/Lexas/PopGen/master/popgen.js",
       "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
       "underscore": "github:amdjs/underscore/1.5.2",
-      "backbone": "github:jashkenas/backbone/1.1.2"
+      "backbone": "github:jashkenas/backbone/1.1.2",
+      "Backbone.ModelBinder": "https://raw.github.com/theironcook/Backbone.ModelBinder/master/Backbone.ModelBinder.js"
     }
   }
 }
