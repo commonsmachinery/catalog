@@ -45,4 +45,4 @@ function increment(key) {
 }
 
 module.exports.connect = connect;
-module.exports.nextSourceID = increment;
+module.exports.increment = increment;
