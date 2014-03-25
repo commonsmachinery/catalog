@@ -13,8 +13,10 @@ from __future__ import absolute_import
 from celery import Celery
 from celery import Task
 from celery.utils.dispatch import Signal
-from catalog.store import RedlandStore
 from catalog.log import SqliteLog, MongoDBLog
+from catalog.store import MainStore, PublicStore
+
+import redis
 import os, time
 import errno
 
@@ -76,10 +78,22 @@ app.conf.update(
     CELERY_RESULT_BACKEND = 'amqp',
     CELERY_TASK_RESULT_EXPIRES = 30,
     CELERY_TASK_RESULT_DURABLE = False,
+    CELERY_DISABLE_RATE_LIMITS = True,
 )
 
+on_create_work          = Signal(providing_args=('user', 'work_uri', 'work_data'))
+on_update_work          = Signal(providing_args=('user', 'work_uri', 'work_data'))
+on_delete_work          = Signal(providing_args=('user', 'work_uri'))
+on_create_work_source   = Signal(providing_args=('user', 'work_uri', 'source_uri', 'source_data'))
+on_create_stock_source  = Signal(providing_args=('user', 'source_uri', 'source_data'))
+on_update_source        = Signal(providing_args=('user', 'source_uri', 'source_data'))
+on_delete_source        = Signal(providing_args=('user', 'source_uri'))
+on_create_post          = Signal(providing_args=('user', 'work_uri', 'post_uri', 'post_data'))
+on_delete_post          = Signal(providing_args=('user', 'post_uri'))
 
-on_work_updated = Signal(providing_args=('task', 'update_subtask'))
+
+class LockTimeoutError(Exception):
+    pass
 
 
 class FileLock(object):
@@ -108,13 +122,12 @@ class FileLock(object):
                         time.sleep(1)
                         timeout -= 1
                     else:
-                        raise RuntimeError("Timeout error while trying to lock access to work")
+                        raise LockTimeoutError("Timeout error while trying to lock access to work")
                 else:
                     raise
             else:
                 self._locked = True
                 return
-
 
     def __exit__(self, *args):
         if self._locked:
@@ -122,9 +135,41 @@ class FileLock(object):
                 os.remove(self._filename)
             except OSError, e:
                 if e.errno == errno.ENOENT:
-                    print('warning: lock file unexpectedly removed')
+                    _log.warning('warning: lock file unexpectedly removed')
                 else:
                     raise
+            self._locked = False
+
+
+class RedisLock(object):
+    def __init__(self, id, timeout=15):
+        self._key = "lock." + id
+        self._conn = redis.Redis()
+        self._timeout = timeout
+        self._locked = False
+
+    def __enter__(self):
+        assert not self._locked
+
+        pid = str(os.getpid())
+        timeout = self._timeout
+
+        while True:
+            if self._conn.setnx(self._key, pid):
+                self._locked = True
+                return
+            else:
+                if timeout > 0:
+                    time.sleep(1)
+                    timeout -= 1
+                else:
+                    raise LockTimeoutError("Timeout error while trying to lock access to work")
+
+    def __exit__(self, *args):
+        if self._locked:
+            result = self._conn.delete(self._key)
+            if not result:
+                _log.warning('warning: lock file unexpectedly removed')
             self._locked = False
 
 
@@ -137,13 +182,13 @@ class StoreTask(app.Task):
     @property
     def main_store(self):
         if self._main_store is None:
-            self._main_store = RedlandStore("works")
+            self._main_store = MainStore("works")
         return self._main_store
 
     @property
     def public_store(self):
         if self._public_store is None:
-            self._public_store = RedlandStore("public")
+            self._public_store = PublicStore("public")
         return self._public_store
 
     @property

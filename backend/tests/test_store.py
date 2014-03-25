@@ -11,7 +11,7 @@
 import RDF
 import pytest, os
 import catalog.store
-from catalog.store import RedlandStore, PublicStore
+from catalog.store import MainStore, PublicStore
 
 os.environ['CATALOG_BACKEND_STORE_TYPE'] = 'memory'
 
@@ -22,7 +22,7 @@ def serialize_model(store):
 
 @pytest.fixture
 def store():
-    return RedlandStore('memory')
+    return MainStore('memory')
 
 @pytest.fixture
 def public_store():
@@ -267,6 +267,14 @@ def test_create_post_data(store):
         'id': 1,
         'posted': 5}
     assert post == expected
+
+def test_delete_post(store):
+    store.create_work(user='test', work_uri=work1_uri, work_data=work1_data)
+    store.create_post(user='test', work_uri=work1_uri, post_uri=post1_uri, post_data=post1_data)
+    store.delete_post(user='test', post_uri=post1_uri)
+    result = serialize_model(store)
+    expected = load_testdata('work1.nt')
+    assert result == expected
 
 def test_get_post(store):
     store.create_work(user='test', work_uri=work1_uri, work_data=work1_data)

@@ -51,7 +51,7 @@ class Entry(object):
     }
 
     def __init__(self, uri, dict):
-        self._uri = uri
+        self._uri = str(uri)
         self._dict = dict
 
     def __getitem__(self, name):
@@ -107,10 +107,10 @@ class Entry(object):
     @classmethod
     def from_model(cls, model, uri):
         """
-        Retrieve entry from the store
+        Construct an entry from the store.
         """
+        context = RDF.Node(RDF.Uri(uri))
         data = {}
-        context = RDF.Node(uri_string=uri)
 
         if context is None:
             raise ValueError("null context")
@@ -155,7 +155,7 @@ class Entry(object):
         return cls(uri, data)
 
     def to_model(self, model):
-        context = RDF.Node(uri_string=self._uri)
+        context = RDF.Node(RDF.Uri(self._uri))
         statements = []
 
         for key, value in self.__class__.schema.iteritems():
@@ -306,7 +306,7 @@ class Post(Entry):
 Post.json_schema = schema2json(Post.schema)
 
 
-class RedlandStore(object):
+class MainStore(object):
     @staticmethod
     def get_store_config(name):
         storage_type = os.getenv('CATALOG_BACKEND_STORE_TYPE', 'hashes')
@@ -348,9 +348,7 @@ class RedlandStore(object):
         """
         Return linked work for a source or post (Entry type defined by predicate)
         """
-        query_statement = RDF.Statement(subject=None,
-            predicate=RDF.Node(uri_string=predicate),
-            object=RDF.Node(uri_string=str(object))) # no unicode allowed
+        query_statement = RDF.Statement(None, RDF.Uri(predicate), RDF.Uri(object))
 
         for statement, context in self._model.find_statements_context(query_statement):
             return Work.from_model(self._model, str(statement.subject))
@@ -392,9 +390,7 @@ class RedlandStore(object):
             raise TypeError("Invalid entry type: {0}".format(entry.__class__))
 
     def _entry_exists(self, entry_uri):
-        query_statement = RDF.Statement(subject=RDF.Node(uri_string=entry_uri),
-            predicate=RDF.Node(uri_string=NS_CATALOG + "id"),
-            object=None)
+        query_statement = RDF.Statement(RDF.Uri(entry_uri), RDF.Uri(NS_CATALOG + "id"), None)
 
         for statement, context in self._model.find_statements_context(query_statement):
             return True
@@ -403,9 +399,16 @@ class RedlandStore(object):
         if self._entry_exists(work_uri):
             raise CatalogError("Entry {0} already exists".format(work_uri))
 
+        work_data = work_data.copy()
+
+        if work_data.has_key('timestamp'):
+            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
+            work_data.setdefault('created', work_data.pop('timestamp'))
+        else:
+            work_data.setdefault('created', int(time.time()))
+
         work_data.setdefault('visibility', 'private')
         work_data.setdefault('state', 'draft')
-        work_data.setdefault('timestamp', int(time.time()))
         work_data.setdefault('metadataGraph', {})
 
         if work_data['visibility'] not in valid_work_visibility:
@@ -416,7 +419,7 @@ class RedlandStore(object):
         work = Work(work_uri, {
             'id': work_data['id'],
             'resource': work_uri,
-            'created': work_data['timestamp'],
+            'created': work_data['created'],
             'creator': user,
             'visibility': work_data['visibility'],
             'state': work_data['state'],
@@ -435,14 +438,20 @@ class RedlandStore(object):
 
         old_data = work.get_data()
         new_data = work_data.copy()
-        new_data['updated'] = new_data.pop('timestamp', int(time.time()))
+
+        if new_data.has_key('timestamp'):
+            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
+            new_data.setdefault('updated', new_data.pop('timestamp'))
+        else:
+            new_data.setdefault('updated', int(time.time()))
+
         new_data['updatedBy'] = user
         old_data.update(new_data)
 
         # use None, for deleting a key
         # TODO: will we ever need this?
         for (key, value) in old_data.iteritems():
-            if not value: del old_data[key]
+            if value is None: del old_data[key]
 
         new_work = Work(work_uri, old_data)
         self.delete_work(user=user, work_uri=work_uri)
@@ -465,10 +474,10 @@ class RedlandStore(object):
                 self.delete_post(user=user, post_uri=post_uri)
 
         for subgraph_uri in work.get_subgraphs():
-            subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
+            subgraph_context = RDF.Node(RDF.Uri(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
 
-        work_context = RDF.Node(uri_string=work_uri)
+        work_context = RDF.Node(RDF.Uri(work_uri))
         self._model.remove_statements_with_context(work_context)
 
         self._model.sync()
@@ -484,6 +493,13 @@ class RedlandStore(object):
         else:
             return work.get_data().get(subgraph + "Graph", {})
 
+    def get_linked_work(self, entry_uri):
+        # TODO: implement in SPARQL and unify with _get_linked_work above
+        work = self._get_linked_work(NS_CATALOG + "source", entry_uri)
+        if not work:
+            work = self._get_linked_work(NS_CATALOG + "post", entry_uri)
+        return work
+
     def create_work_source(self, user, work_uri, source_uri, source_data):
         if self._entry_exists(source_uri):
             raise CatalogError("Entry {0} already exists".format(source_uri))
@@ -493,7 +509,14 @@ class RedlandStore(object):
         if not self._can_modify(user, work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
 
-        source_data.setdefault('timestamp', int(time.time()))
+        source_data = source_data.copy()
+
+        if source_data.has_key('timestamp'):
+            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
+            source_data.setdefault('added', source_data.pop('timestamp'))
+        else:
+            source_data.setdefault('added', int(time.time()))
+
         source_data.setdefault('metadataGraph', {})
         source_data.setdefault('cachedExternalMetadataGraph', {})
 
@@ -502,18 +525,16 @@ class RedlandStore(object):
             'metadataGraph': source_data['metadataGraph'],
             'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
             'addedBy': user,
-            'added': source_data['timestamp'],
+            'added': source_data['added'],
             'resource': source_data['resource'],
         })
 
         source.to_model(self._model)
 
         # link the source to work
-        work_subject = RDF.Node(uri_string=work_uri)
+        work_subject = RDF.Node(RDF.Uri(work_uri))
 
-        statement = RDF.Statement(work_subject,
-            RDF.Node(uri_string=NS_CATALOG + "source"),
-            RDF.Node(uri_string=source_uri))
+        statement = RDF.Statement(work_subject, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
 
         if (statement, work_subject) not in self._model:
             self._model.append(statement, context=work_subject)
@@ -525,7 +546,14 @@ class RedlandStore(object):
         if self._entry_exists(source_uri):
             raise CatalogError("Entry {0} already exists".format(source_uri))
 
-        source_data.setdefault('timestamp', int(time.time()))
+        source_data = source_data.copy()
+
+        if source_data.has_key('timestamp'):
+            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
+            source_data.setdefault('added', source_data.pop('timestamp'))
+        else:
+            source_data.setdefault('added', int(time.time()))
+
         source_data.setdefault('metadataGraph', {})
         source_data.setdefault('cachedExternalMetadataGraph', {})
 
@@ -534,7 +562,7 @@ class RedlandStore(object):
             'metadataGraph': source_data['metadataGraph'],
             'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
             'addedBy': user,
-            'added': source_data['timestamp'],
+            'added': source_data['added'],
             'resource': source_data['resource'],
         })
 
@@ -551,14 +579,20 @@ class RedlandStore(object):
 
         old_data = source.get_data()
         new_data = source_data.copy()
-        new_data['updated'] = new_data.pop('timestamp', int(time.time()))
+
+        if new_data.has_key('timestamp'):
+            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
+            new_data.setdefault('updated', new_data.pop('timestamp'))
+        else:
+            new_data.setdefault('updated', int(time.time()))
+
         new_data['updatedBy'] = user
         old_data.update(new_data)
 
         # use None, for deleting a key
         # TODO: will we ever need this?
         for (key, value) in old_data.iteritems():
-            if not value: del old_data[key]
+            if value is None: del old_data[key]
 
         new_source = CatalogSource(source_uri, old_data)
         self.delete_source(user=user, source_uri=source_uri, unlink=False)
@@ -577,9 +611,7 @@ class RedlandStore(object):
         if unlink:
             # is it safe to assume that catalog:source will precisely
             # enumerate works derived from this source?
-            query_statement = RDF.Statement(subject=None,
-                predicate=RDF.Node(uri_string=NS_CATALOG + "source"),
-                object=RDF.Node(uri_string=source_uri))
+            query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
 
             for statement, context in self._model.find_statements_context(query_statement):
                 self._model.remove_statement(statement, context)
@@ -588,7 +620,7 @@ class RedlandStore(object):
         for subgraph_uri in source.get_subgraphs():
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
-        self._model.remove_statements_with_context(RDF.Node(uri_string=source_uri))
+        self._model.remove_statements_with_context(RDF.Node(RDF.Uri(source_uri)))
         self._model.sync()
 
     def get_source(self, user, source_uri, subgraph=None):
@@ -616,16 +648,12 @@ class RedlandStore(object):
 
         # TODO: this is slow, so the list should be fetched from the user Entry
         # once we start to use them
-        query_statement = RDF.Statement(subject=None,
-            predicate=RDF.Node(uri_string=NS_CATALOG + "addedBy"),
-            object=RDF.Node(literal=user))
+        query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "addedBy"), RDF.Node(literal=user))
 
         for statement in self._model.find_statements(query_statement):
             source_uri = str(statement.subject)
 
-            query_statement2 = RDF.Statement(subject=None,
-                predicate=RDF.Node(uri_string=NS_CATALOG + "source"),
-                object=RDF.Node(uri_string=source_uri))
+            query_statement2 = RDF.Statement(None, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
 
             linked = False
             for statement, context in self._model.find_statements_context(query_statement2):
@@ -640,7 +668,14 @@ class RedlandStore(object):
         if self._entry_exists(post_uri):
             raise CatalogError("Entry {0} already exists".format(post_uri))
 
-        post_data.setdefault('timestamp', int(time.time()))
+        post_data = post_data.copy()
+
+        if post_data.has_key('timestamp'):
+            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
+            post_data.setdefault('posted', post_data.pop('timestamp'))
+        else:
+            post_data.setdefault('posted', int(time.time()))
+
         post_data.setdefault('metadataGraph', {})
         post_data.setdefault('cachedExternalMetadataGraph', {})
 
@@ -648,7 +683,7 @@ class RedlandStore(object):
             'id': post_data['id'],
             'resource': post_uri,
             'postedBy': user,
-            'posted': post_data['timestamp'],
+            'posted': post_data['posted'],
             'metadataGraph': post_data['metadataGraph'],
             'cachedExternalMetadataGraph': post_data['cachedExternalMetadataGraph'],
             'resource': post_data['resource'],
@@ -656,11 +691,9 @@ class RedlandStore(object):
 
         post.to_model(self._model)
 
-        work_subject = RDF.Node(uri_string=work_uri)
+        work_subject = RDF.Node(RDF.Uri(work_uri))
 
-        statement = RDF.Statement(work_subject,
-            RDF.Node(uri_string=NS_CATALOG + "post"),
-            RDF.Node(uri_string=post_uri))
+        statement = RDF.Statement(work_subject, RDF.Uri(NS_CATALOG + "post"), RDF.Uri(post_uri))
 
         if (statement, work_subject) not in self._model:
             self._model.append(statement, context=work_subject)
@@ -677,9 +710,7 @@ class RedlandStore(object):
         # delete any links to this post
         # is it safe to assume that catalog:post will precisely
         # enumerate works linked to the post?
-        query_statement = RDF.Statement(subject=None,
-            predicate=RDF.Node(uri_string=NS_CATALOG + "post"),
-            object=RDF.Node(uri_string=post_uri))
+        query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "post"), RDF.Uri(post_uri))
 
         for statement, context in self._model.find_statements_context(query_statement):
             self._model.remove_statement(statement, context)
@@ -688,7 +719,7 @@ class RedlandStore(object):
         for subgraph_uri in post.get_subgraphs():
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
-        self._model.remove_statements_with_context(RDF.Node(uri_string=post_uri))
+        self._model.remove_statements_with_context(RDF.Node(RDF.Uri(post_uri)))
         self._model.sync()
 
     def get_post(self, user, post_uri, subgraph=None):
@@ -839,7 +870,7 @@ class RedlandStore(object):
         return results
 
 
-class PublicStore(RedlandStore):
+class PublicStore(MainStore):
     def _can_read(self, user, entry):
         return True
 

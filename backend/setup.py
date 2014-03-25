@@ -35,6 +35,7 @@ setup(
         'celery>=3.0',
         'pytest',
         'pymongo',
+        'redis',
     ],
     tests_require=['pytest'],
     cmdclass = {'test': PyTest},
