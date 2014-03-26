@@ -14,6 +14,7 @@
 
 var backendClient = require('./lib/wrappers/celery');
 var db = require('./lib/wrappers/mongo');
+var sessionStore = require('./lib/wrappers/sessionStore');
 var cons = require('consolidate');
 var debug = require('debug')('frontend:server');
 var express = require('express');
@@ -64,6 +65,9 @@ function main() {
         compress: true
     }));
     app.use(express.static(__dirname + env.CATALOG_STATIC));
+    
+    app.use(express.cookieParser());
+
 
     /* ======================= Connect services and start ======================= */
 
@@ -76,17 +80,24 @@ function main() {
                 CELERY_TASK_RESULT_DURABLE: false
             }), 
             cluster.connect(env.CATALOG_REDIS_URL), 
-            db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB)
+            db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB),
+            sessionStore(env.CATALOG_USERS_DB)
         );
     }
 
-    connectServices().spread(
-        function(backend, redis, mongo){
+    connectServices()
+    .spread(
+        function(backend, redis, mongo, sessionstore){
             console.log('Services connected... starting server...');
+
+            app.use(express.session({
+                secret: env.CATALOG_SECRET,
+                store: sessionstore
+            }));
 
             /* Load REST API */
             require('./lib/rest')(app, backend, cluster);
-            require('./lib/sessions')(app, express, db);
+            require('./lib/sessions').start(app, express, db);
 
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);
