@@ -85,7 +85,7 @@ Backend.prototype.call = function(name, params) {
             if (message.status === 'SUCCESS') {
                 debug('result of %s: %j', name, message.result);
 
-                if (message.result.error) {
+                if (message.result && message.result.error) {
                     // Expected errors such as access violations,
                     // resource not found etc
                     reject(message.result.error);
