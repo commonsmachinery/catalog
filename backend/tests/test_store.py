@@ -55,7 +55,6 @@ work2_data = {
 work_update_data = {
     'state': 'published',
     'visibility': 'public',
-    'timestamp': 2,
 }
 
 source1_uri = 'http://src/works/1/sources/1'
@@ -201,7 +200,6 @@ def test_update_source_model(store):
     store.create_work_source(timestamp=3, user_uri='http://src/users/test', work_uri=work1_uri, source_uri=source1_uri, source_data=source1_data)
     store.update_source(timestamp=4, user_uri='http://src/users/test', source_uri=source1_uri, source_data=source_update_data)
     result = serialize_model(store)
-    print result
     expected = load_testdata('source1_updated.nt')
     assert result == expected
 
@@ -243,7 +241,6 @@ def test_get_source(store):
 def test_create_stock_source_model(store):
     store.create_stock_source(timestamp=3, user_uri='http://src/users/test', source_uri=source1_uri_user, source_data=source1_data)
     result = serialize_model(store)
-    print result
     expected = load_testdata('source1_stock.nt')
     assert result == expected
 

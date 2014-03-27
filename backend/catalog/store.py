@@ -430,8 +430,14 @@ class MainStore(object):
         if not self._can_modify(user_uri, work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
+        if work_data['visibility'] not in valid_work_visibility:
+            raise ParamError('invalid visibility: {0}'.format(visibility))
+        if work_data['state'] not in valid_work_state:
+            raise ParamError('invalid state: {0}'.format(state))
+
         old_data = work.get_data()
-        new_data = work_data.copy()
+        editable_keys = ['metadataGraph', 'visibility', 'state']
+        new_data = {key: work_data[key] for key in editable_keys if key in work_data}
 
         new_data['updated'] = timestamp
         new_data['updatedBy'] = user_uri
@@ -559,7 +565,8 @@ class MainStore(object):
             raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
 
         old_data = source.get_data()
-        new_data = source_data.copy()
+        editable_keys = ['metadataGraph', 'cachedExternalMetadataGraph', 'resource']
+        new_data = {key: source_data[key] for key in editable_keys if key in source_data}
 
         new_data['updated'] = timestamp
         new_data['updatedBy'] = user_uri
