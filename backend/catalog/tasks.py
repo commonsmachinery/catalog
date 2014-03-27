@@ -32,6 +32,8 @@ import logging
 _log = logging.getLogger('catalog')
 
 
+def error(e):
+    return {'error': {'type': e.__class__.__name__, 'message': str(e)}}
 #
 # main store update tasks
 #
@@ -49,7 +51,7 @@ def create_work(self, user_uri, work_uri, work_data):
             on_create_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
             return work_data
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
@@ -67,7 +69,7 @@ def update_work(self, user_uri, work_uri, work_data):
             on_update_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
             return work_data
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
@@ -82,7 +84,7 @@ def delete_work(self, user_uri, work_uri):
 
             on_delete_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
@@ -99,14 +101,14 @@ def create_work_source(self, user_uri, work_uri, source_uri, source_data):
             on_create_work_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
             return source_data
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
 @app.task(base=StoreTask, bind=True)
 def create_stock_source(self, user_uri, source_uri, source_data):
     try:
-        with RedisLock(user_uri):
+        with RedisLock(self.lock_db, user_uri):
             timestamp = int(time.time())
             source_data = self.main_store.create_stock_source(timestamp, user_uri, source_uri, source_data)
 
@@ -116,14 +118,14 @@ def create_stock_source(self, user_uri, source_uri, source_data):
             on_create_stock_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
             return source_data
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
 @app.task(base=StoreTask, bind=True)
 def update_source(self, user_uri, source_uri, source_data):
     try:
-        with RedisLock(source_uri):
+        with RedisLock(self.lock_db, source_uri):
             timestamp = int(time.time())
             source_data = self.main_store.update_source(timestamp, user_uri, source_uri, source_data)
 
@@ -133,14 +135,14 @@ def update_source(self, user_uri, source_uri, source_data):
             on_update_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
             return source_data
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
 @app.task(base=StoreTask, bind=True)
 def delete_source(self, user_uri, source_uri):
     try:
-        with RedisLock(source_uri):
+        with RedisLock(self.lock_db, source_uri):
             timestamp = int(time.time())
             self.main_store.delete_source(user_uri, source_uri)
 
@@ -148,7 +150,7 @@ def delete_source(self, user_uri, source_uri):
 
             on_delete_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri)
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
@@ -165,14 +167,14 @@ def create_post(self, user_uri, work_uri, post_uri, post_data):
             on_create_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
             return post_data
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
 @app.task(base=StoreTask, bind=True)
 def delete_post(self, user_uri, post_uri):
     try:
-        with RedisLock(post_uri):
+        with RedisLock(self.lock_db, post_uri):
             timestamp = int(time.time())
             self.main_store.delete_post(user_uri, post_uri)
 
@@ -180,7 +182,7 @@ def delete_post(self, user_uri, post_uri):
 
             on_delete_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, post_uri=post_uri)
     except CatalogError as e:
-        return {'error': {'type': e.__class__.__name__, 'message': e.message}}
+        return error(e)
     except LockedError as e:
         raise self.retry(exc=e, countdown=1)
 
@@ -191,7 +193,7 @@ def delete_post(self, user_uri, post_uri):
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_create_work(self, timestamp, user_uri, work_uri, work_data):
     try:
-        with RedisLock("public." + work_uri):
+        with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.create_work(timestamp, user_uri, work_uri, work_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
@@ -199,7 +201,7 @@ def public_create_work(self, timestamp, user_uri, work_uri, work_data):
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_update_work(self, timestamp, user_uri, work_uri, work_data):
     try:
-        with RedisLock("public." + work_uri):
+        with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.update_work(timestamp, user_uri, work_uri, work_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
@@ -207,7 +209,7 @@ def public_update_work(self, timestamp, user_uri, work_uri, work_data):
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_delete_work(self, timestamp, user_uri, work_uri):
     try:
-        with RedisLock("public." + work_uri):
+        with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.delete_work(user_uri, work_uri, linked_entries=True)
     except EntryNotFoundError:
         pass
@@ -217,7 +219,7 @@ def public_delete_work(self, timestamp, user_uri, work_uri):
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_create_work_source(self, timestamp, user_uri, work_uri, source_uri, source_data):
     try:
-        with RedisLock("public." + work_uri):
+        with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
@@ -229,7 +231,7 @@ def public_create_work_source(self, timestamp, user_uri, work_uri, source_uri, s
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_update_source(self, timestamp, user_uri, source_uri, source_data):
     try:
-        with RedisLock("public." + source_uri):
+        with RedisLock(self.lock_db, "public." + source_uri):
             self.public_store.update_source(timestamp, user_uri, source_uri, source_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
@@ -237,7 +239,7 @@ def public_update_source(self, timestamp, user_uri, source_uri, source_data):
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_delete_source(self, timestamp, user_uri, source_uri, unlink=True):
     try:
-        with RedisLock("public." + source_uri):
+        with RedisLock(self.lock_db, "public." + source_uri):
             self.public_store.delete_source(user_uri, source_uri)
     except EntryNotFoundError:
         pass
@@ -247,7 +249,7 @@ def public_delete_source(self, timestamp, user_uri, source_uri, unlink=True):
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data):
     try:
-        with RedisLock("public." + work_uri):
+        with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
@@ -255,7 +257,7 @@ def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data)
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_delete_post(self, timestamp, user_uri, post_uri):
     try:
-        with RedisLock("public." + post_uri):
+        with RedisLock(self.lock_db, "public." + post_uri):
             self.public_store.delete_post(user_uri, post_uri)
     except EntryNotFoundError:
         pass
@@ -269,47 +271,74 @@ def public_delete_post(self, timestamp, user_uri, post_uri):
 @app.task(base=StoreTask, bind=True)
 def get_work(self, user_uri, work_uri, subgraph=None):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_work(user_uri, work_uri, subgraph)
+    try:
+        return store.get_work(user_uri, work_uri, subgraph)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def get_work_sources(self, user_uri, work_uri):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_work_sources(user_uri, work_uri)
+    try:
+        return store.get_work_sources(user_uri, work_uri)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def get_stock_sources(self, user_uri):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_stock_sources(user_uri)
+    try:
+        return store.get_stock_sources(user_uri)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def get_source(self, user_uri, source_uri, subgraph=None):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_source(user_uri, source_uri, subgraph)
+    try:
+        return store.get_source(user_uri, source_uri, subgraph)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def get_post(self, user_uri, post_uri, subgraph=None):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_post(user_uri, post_uri, subgraph)
+    try:
+        return store.get_post(user_uri, post_uri, subgraph)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def get_posts(self, user_uri, work_uri):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_posts(work_uri)
+    try:
+        return store.get_posts(user_uri, work_uri)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def get_complete_metadata(self, user_uri, work_uri, format='json'):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.get_complete_metadata(user_uri, work_uri, format)
+    try:
+        return store.get_complete_metadata(user_uri, work_uri, format)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
-def query_works_simple(self, user_uri, **kwargs):
+def query_works_simple(self, user_uri=None, offset=0, limit=0, query=None):
     store = self.main_store if user_uri is not None else self.public_store
-    return store.query_works_simple(user_uri, **kwargs)
+    try:
+        return store.query_works_simple(user_uri, offset, limit, query)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True)
 def query_sparql(self, query_string=None, results_format='json'):
     store = self.public_store
-    return store.query_sparql(query_string, results_format)
+    try:
+        return store.query_sparql(query_string, results_format)
+    except CatalogError as e:
+        return error(e)
 
 @app.task(base=StoreTask, bind=True, ignore_result=True, max_retries=None, default_retry_delay=15)
 def log_event(self, type, time, user, resource, entry, data):

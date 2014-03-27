@@ -25,7 +25,7 @@ class EntryAccessError(CatalogError): pass
 
 class EntryNotFoundError(CatalogError):
     def __init__(self, context):
-        super(Exception, self).__init__(self, 'Entry not found: {0}'.format(context))
+        super(EntryNotFoundError, self).__init__('Entry not found: {0}'.format(context))
 
 valid_work_visibility = [ 'private', 'group', 'public' ]
 valid_work_state = [ 'draft', 'published' ]
@@ -490,19 +490,20 @@ class MainStore(object):
         if not self._can_modify(user_uri, work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
-        source_data = source_data.copy()
-
-        source_data['added'] = timestamp
-        source_data.setdefault('metadataGraph', {})
-        source_data.setdefault('cachedExternalMetadataGraph', {})
+        try:
+            metadataGraph = source_data.get('metadataGraph', {})
+            cemGraph = source_data.get('cachedExternalMetadataGraph', {})
+            resource = source_data['resource']
+        except KeyError, e:
+            raise ParamError(str(e))
 
         source = Source(source_uri, {
             'id': source_data['id'],
-            'metadataGraph': source_data['metadataGraph'],
-            'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
+            'metadataGraph': metadataGraph,
+            'cachedExternalMetadataGraph': cemGraph,
             'addedBy': user_uri,
-            'added': source_data['added'],
-            'resource': source_data['resource'],
+            'added': timestamp,
+            'resource': resource,
         })
 
         source.to_model(self._model)
@@ -629,20 +630,25 @@ class MainStore(object):
         if self._entry_exists(post_uri):
             raise CatalogError("Entry {0} already exists".format(post_uri))
 
-        post_data = post_data.copy()
+        work = Work.from_model(self._model, work_uri)
 
-        post_data['posted'] = timestamp
-        post_data.setdefault('metadataGraph', {})
-        post_data.setdefault('cachedExternalMetadataGraph', {})
+        if not self._can_modify(user_uri, work):
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
+
+        try:
+            metadataGraph = post_data.get('metadataGraph', {})
+            cemGraph = post_data.get('cachedExternalMetadataGraph', {})
+            resource = post_data['resource']
+        except KeyError, e:
+            raise ParamError(str(e))
 
         post = Post(post_uri, {
             'id': post_data['id'],
-            'resource': post_uri,
             'postedBy': user_uri,
-            'posted': post_data['posted'],
-            'metadataGraph': post_data['metadataGraph'],
-            'cachedExternalMetadataGraph': post_data['cachedExternalMetadataGraph'],
-            'resource': post_data['resource'],
+            'posted': timestamp,
+            'metadataGraph': metadataGraph,
+            'cachedExternalMetadataGraph': cemGraph,
+            'resource': resource,
         })
 
         post.to_model(self._model)
@@ -751,32 +757,27 @@ class MainStore(object):
         result = temp_model.to_string(name=format, base_uri=None)
         return result
 
-    def query_works_simple(self, user_uri, **kwargs):
+    def query_works_simple(self, user_uri, offset, limit, query):
         """
         Query works using a dictionary of key=value parameter pairs to match works.
-        Parameters can be given as JSON properties or predicates
+        Query parameters can be given as JSON properties or predicates
         ("http://purl.org/dc/terms/title").
-
-        Reserved kwargs:
-            offset
-            limit
         """
-        offset = kwargs.pop("offset", 0)
-        limit = kwargs.pop("limit", 0)
 
         # parse query params and convert them to predicates
         params = []
-        # TODO: support resources in property values
-        for key, value in kwargs.iteritems():
-            url_re = "^https?:"
-            if re.match(url_re, key):
-                param_name = key
-            else:
-                if key not in Work.schema:
-                    #raise RuntimeError("Unknown work property %s" % key)
-                    _log.warning("Unknown work property used in query {0}".format(key))
-                param_name = Work.schema[key][1]
-            params.append((param_name, value))
+        if query:
+            # TODO: support resources in property values
+            for key, value in query.iteritems():
+                url_re = "^https?:"
+                if re.match(url_re, key):
+                    param_name = key
+                else:
+                    if key not in Work.schema:
+                        #raise RuntimeError("Unknown work property %s" % key)
+                        _log.warning("Unknown work property used in query {0}".format(key))
+                    param_name = Work.schema[key][1]
+                params.append((param_name, value))
 
         query_string = "SELECT ?s WHERE { \n"
 

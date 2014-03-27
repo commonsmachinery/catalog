@@ -43,7 +43,6 @@ work1_data = {
 work2_uri = 'http://src/works/2'
 work2_data = {
     'id': 2,
-    'timestamp': 1,
     'metadataGraph': {
         'about:resource': {
             'http://purl.org/dc/terms/title': [ { 'value': 'Second Work',
@@ -62,7 +61,6 @@ source1_uri_user = 'http://src/users/test/sources/1'
 source1_data = {
     'resource': 'http://src/works/2',
     'id': 1,
-    'timestamp': 3,
     'user_uri': 'http://src/users/test',
     'metadataGraph': {
         'about:resource': {
@@ -78,13 +76,11 @@ source1_data = {
 
 source_update_data = {
     'resource': 'http://src/works/3',
-    'timestamp': 4,
 }
 
 post1_uri = 'http://src/works/1/post/1'
 post1_data = {
     'id': 1,
-    'timestamp': 5,
     'resource': 'http://example.com/post1',
     'metadataGraph': {
         'about:resource': {
@@ -335,7 +331,7 @@ def test_get_complete_metadata(store):
 def test_query_simple(store):
     work = store.create_work(timestamp=0, user_uri='http://src/users/test', work_uri=work1_uri, work_data=work1_data)
     work = store.create_work(timestamp=1, user_uri='http://src/users/test', work_uri=work2_uri, work_data=work2_data)
-    result = store.query_works_simple(user_uri='http://src/users/test', **{
+    result = store.query_works_simple(user_uri='http://src/users/test', offset=0, limit=0, query={
         "http://purl.org/dc/terms/title": "First Work"
     })
     assert len(result) == 1 and result[0]['id'] == 1
