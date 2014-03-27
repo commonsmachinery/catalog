@@ -70,6 +70,10 @@ class Entry(object):
     def get_data(self):
         return self._dict
 
+    # TODO: check the usage of this method below and consider alternatives
+    def get(self, key, default=None):
+        return self._dict.get(key, default)
+
     @classmethod
     def from_json(cls, dict):
         return cls(dict)

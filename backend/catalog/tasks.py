@@ -208,7 +208,7 @@ def public_update_work(self, timestamp, user_uri, work_uri, work_data):
 def public_delete_work(self, timestamp, user_uri, work_uri):
     try:
         with RedisLock("public." + work_uri):
-            self.public_store.delete_work(user_uri, work_uri)
+            self.public_store.delete_work(user_uri, work_uri, linked_entries=True)
     except EntryNotFoundError:
         pass
     except LockedError as e:
@@ -342,12 +342,20 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
 
     elif sender == update_work:
         visibility = work_data.get('visibility')
+        # visibility values should be valid here, since this
+        # is called after a successful main store update
         if visibility == 'public':
             try:
                 task.public_store.get_work(user_uri, work_uri)
                 public_update_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
             except EntryNotFoundError:
                 public_create_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+        else:
+            try:
+                task.public_store.get_work(user_uri, work_uri)
+                public_delete_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
+            except EntryNotFoundError:
+                pass
 
     elif sender == delete_work:
         public_delete_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
