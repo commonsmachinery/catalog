@@ -33,6 +33,7 @@ valid_work_state = [ 'draft', 'published' ]
 NS_CATALOG = "http://catalog.commonsmachinery.se/ns#"
 NS_REM3 = "http://scam.sf.net/schema#"
 NS_XSD = "http://www.w3.org/2001/XMLSchema#"
+NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
 CREATE_WORK_SUBJECT = "about:resource"
 
@@ -46,13 +47,15 @@ def schema2json(s):
 
 class Entry(object):
     schema = {
-        'updated':      ('string',  NS_CATALOG  + "updated"     ),
-        'updatedBy':    ('string',  NS_CATALOG  + "updatedBy"   ),
+        'type':         ('string',   NS_RDF      + 'type'        ),
+        'updated':      ('string',   NS_CATALOG  + 'updated'     ),
+        'updatedBy':    ('resource', NS_CATALOG  + 'updatedBy'   ),
     }
 
     def __init__(self, uri, dict):
         self._uri = str(uri)
         self._dict = dict
+        self._dict['type'] = self.__class__.__name__
 
     def __getitem__(self, name):
         if self._dict.has_key(name):
@@ -248,81 +251,75 @@ Entry.json_schema = schema2json(Entry.schema)
 
 
 class Work(Entry):
-    schema = {
-        'id':           ('number',    NS_CATALOG  + "id"          ),
-        'resource':     ('resource',  NS_REM3     + "resource"    ),
-        'metadata':     ('graph',     NS_REM3     + "metadata"    ),
-        'created':      ('string',    NS_CATALOG  + "created"     ),
-        'creator':      ('string',    NS_CATALOG  + "creator"     ),
-        'updated':      ('string',    NS_CATALOG  + "updated"     ),
-        'updatedBy':    ('string',    NS_CATALOG  + "updatedBy"   ),
-        'visibility':   ('string',    NS_CATALOG  + "visibility"  ),
-        'state':        ('string',    NS_CATALOG  + "state"       ),
-        'post':         ('uri_list',  NS_CATALOG  + "post"        ),
-        'source':       ('uri_list',  NS_CATALOG  + "source"      ),
-    }
+    schema = dict(Entry.schema, **{
+        'id':           ('number',    NS_CATALOG  + 'id'          ),
+        'resource':     ('resource',  NS_REM3     + 'resource'    ),
+        'metadata':     ('graph',     NS_REM3     + 'metadata'    ),
+        'created':      ('string',    NS_CATALOG  + 'created'     ),
+        'creator':      ('resource',  NS_CATALOG  + 'creator'     ),
+        'visibility':   ('string',    NS_CATALOG  + 'visibility'  ),
+        'state':        ('string',    NS_CATALOG  + 'state'       ),
+        'post':         ('uri_list',  NS_CATALOG  + 'post'        ),
+        'source':       ('uri_list',  NS_CATALOG  + 'source'      ),
+    })
 
 Work.json_schema = schema2json(Work.schema)
 
 class Source(Entry):
-    schema = {
-        'id':           ('number',  NS_CATALOG  + "id"          ),
-        'metadata':     ('graph',   NS_REM3     + "metadata"    ),
-        'cachedExternalMetadata': ('graph', NS_REM3 + "cachedExternalMetadata" ),
-        'added':        ('string',  NS_CATALOG  + "added"       ),
-        'addedBy':      ('string',  NS_CATALOG  + "addedBy"     ),
-        'updated':      ('string',  NS_CATALOG  + "updated"     ),
-        'updatedBy':    ('string',  NS_CATALOG  + "updatedBy"   ),
-    }
+    schema = dict(Entry.schema, **{
+        'id':           ('number',   NS_CATALOG  + 'id'          ),
+        'metadata':     ('graph',    NS_REM3     + 'metadata'    ),
+        'cachedExternalMetadata': ('graph', NS_REM3 + 'cachedExternalMetadata' ),
+        'added':        ('string',   NS_CATALOG  + 'added'       ),
+        'addedBy':      ('resource', NS_CATALOG  + 'addedBy'     ),
+    })
 
 Source.json_schema = schema2json(Source.schema)
 
 class CatalogSource(Source):
     schema = dict(Source.schema, **{
-        'resource': ('resource', NS_REM3 + "resource"),
+        'resource': ('resource', NS_REM3 + 'resource'),
     })
 
 CatalogSource.json_schema = schema2json(CatalogSource.schema)
 
 class ExternalSource(Source):
     schema = dict(Source.schema, **{
-        'resource': ('resource', NS_REM3 + "resource"),
+        'resource': ('resource', NS_REM3 + 'resource'),
     })
 
 ExternalSource.json_schema = schema2json(ExternalSource.schema)
 
 class Post(Entry):
-    schema = {
-        'id':           ('number',    NS_CATALOG  + "id"            ),
-        'resource':     ('resource',  NS_REM3     + "resource"      ),
-        'metadata':     ('graph',     NS_REM3     + "metadata"      ),
-        'cachedExternalMetadata': ('graph', NS_REM3 + "cachedExternalMetadata" ),
-        'posted':       ('string',    NS_CATALOG  + "posted"        ),
-        'postedBy':     ('string',    NS_CATALOG  + "postedBy"      ),
-        'updated':      ('string',    NS_CATALOG  + "updated"       ),
-        'updatedBy':    ('string',    NS_CATALOG  + "updatedBy"     ),
-    }
+    schema = dict(Entry.schema, **{
+        'id':           ('number',    NS_CATALOG  + 'id'            ),
+        'resource':     ('resource',  NS_REM3     + 'resource'      ),
+        'metadata':     ('graph',     NS_REM3     + 'metadata'      ),
+        'cachedExternalMetadata': ('graph', NS_REM3 + 'cachedExternalMetadata' ),
+        'posted':       ('string',    NS_CATALOG  + 'posted'        ),
+        'postedBy':     ('resource',  NS_CATALOG  + 'postedBy'      ),
+    })
 
 Post.json_schema = schema2json(Post.schema)
 
 class MainStore(object):
     @staticmethod
-    def get_store_config(name):
-        storage_type = os.getenv('CATALOG_BACKEND_STORE_TYPE', 'hashes')
+    def get_store_options(name, config):
+        storage_type = config.BACKEND_STORE_TYPE
         if storage_type == 'hashes':
             options = "hash-type='{hash_type}',dir='{dir}',contexts='yes'".format(
-                hash_type = os.getenv('CATALOG_BACKEND_STORE_HASH_TYPE', 'bdb'),
-                dir = os.getenv('CATALOG_BACKEND_STORE_DIR', '.'),
+                hash_type = config.BACKEND_STORE_HASH_TYPE,
+                dir = config.BACKEND_STORE_DIR,
             )
 
         elif storage_type in ('postgresql', 'mysql'):
             options = "host='{host}',port='{port}',database='{database}_{name}',user='{user}',password='{password}'".format(
-                host = os.getenv('CATALOG_BACKEND_STORE_DB_HOST', 'localhost'),
-                port = os.getenv('CATALOG_BACKEND_STORE_DB_PORT', '5432'),
-                database = os.getenv('CATALOG_BACKEND_STORE_DB_NAME', 'catalog'),
+                host = config.BACKEND_STORE_DB_HOST,
+                port = config.BACKEND_STORE_DB_PORT,
+                database = config.BACKEND_STORE_DB_NAME,
                 name = name,
-                user = os.getenv('CATALOG_BACKEND_STORE_DB_USER', 'postgres'),
-                password = os.getenv('CATALOG_BACKEND_STORE_DB_PASSWORD', ''),
+                user = config.BACKEND_STORE_DB_USER,
+                password = config.BACKEND_STORE_DB_PASSWORD,
             )
 
         elif storage_type == 'memory':
@@ -333,8 +330,8 @@ class MainStore(object):
 
         return storage_type, options
 
-    def __init__(self, name):
-        storage_type, options = self.get_store_config(name)
+    def __init__(self, name, config):
+        storage_type, options = self.get_store_options(name, config)
 
         self._store = RDF.Storage(
             storage_name = storage_type,
@@ -350,43 +347,46 @@ class MainStore(object):
         query_statement = RDF.Statement(None, RDF.Uri(predicate), RDF.Uri(object))
 
         for statement, context in self._model.find_statements_context(query_statement):
-            return Work.from_model(self._model, str(statement.subject))
+            entry_type = self._model.get_targets(statement.subject, RDF.Uri(NS_RDF + 'type')).current()
+            # we don't have User entries yet, so type is None occassionally
+            if entry_type is not None and entry_type.literal[0] == 'Work':
+                return Work.from_model(self._model, str(statement.subject))
 
         return None
 
-    def _can_read(self, user, entry):
-        if entry.__class__ == Work:
-            return entry['creator'] == user or entry['visibility'] == 'public'
-        elif issubclass(entry.__class__, Source):
+    def _can_read(self, user_uri, entry):
+        if isinstance(entry, Work):
+            return entry['creator'] == user_uri or entry['visibility'] == 'public'
+        elif isinstance(entry, Source):
             work = self._get_linked_work(NS_CATALOG + "source", entry.uri)
             if work:
                 # linked source
-                return work['creator'] == user or work['visibility'] == 'public'
+                return work['creator'] == user_uri or work['visibility'] == 'public'
             else:
                 # source without work
-                return entry['addedBy'] == user
-        elif entry.__class__ == Post:
+                return entry['addedBy'] == user_uri
+        elif isinstance(entry, Post):
             work = self._get_linked_work(NS_CATALOG + "post", entry.uri)
-            return work['creator'] == user or work['visibility'] == 'public'
+            return work['creator'] == user_uri or work['visibility'] == 'public'
         else:
-            raise TypeError("Invalid entry type: {0}".format(entry.__class__))
+            raise TypeError("Invalid entry type: {0}".format(entry.__class__.__name__))
 
-    def _can_modify(self, user, entry):
-        if entry.__class__ == Work:
-            return entry['creator'] == user
-        elif issubclass(entry.__class__, Source):
+    def _can_modify(self, user_uri, entry):
+        if isinstance(entry, Work):
+            return entry['creator'] == user_uri
+        elif isinstance(entry, Source):
             work = self._get_linked_work(NS_CATALOG + "source", entry.uri)
             if work:
                 # linked source
-                return work['creator'] == user and entry['addedBy'] == user
+                return work['creator'] == user_uri and entry['addedBy'] == user_uri
             else:
                 # source without work
-                return entry['addedBy'] == user
-        elif entry.__class__ == Post:
+                return entry['addedBy'] == user_uri
+        elif isinstance(entry, Post):
             work = self._get_linked_work(NS_CATALOG + "post", entry.uri)
-            return work['creator'] == user
+            return work['creator'] == user_uri
         else:
-            raise TypeError("Invalid entry type: {0}".format(entry.__class__))
+            raise TypeError("Invalid entry type: {0}".format(entry.__class__.__name__))
 
     def _entry_exists(self, entry_uri):
         query_statement = RDF.Statement(RDF.Uri(entry_uri), RDF.Uri(NS_CATALOG + "id"), None)
@@ -394,18 +394,13 @@ class MainStore(object):
         for statement, context in self._model.find_statements_context(query_statement):
             return True
 
-    def create_work(self, user, work_uri, work_data):
+    def create_work(self, timestamp, user_uri, work_uri, work_data):
         if self._entry_exists(work_uri):
             raise CatalogError("Entry {0} already exists".format(work_uri))
 
         work_data = work_data.copy()
 
-        if work_data.has_key('timestamp'):
-            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
-            work_data.setdefault('created', work_data.pop('timestamp'))
-        else:
-            work_data.setdefault('created', int(time.time()))
-
+        work_data['created'] = timestamp
         work_data.setdefault('visibility', 'private')
         work_data.setdefault('state', 'draft')
         work_data.setdefault('metadataGraph', {})
@@ -419,7 +414,7 @@ class MainStore(object):
             'id': work_data['id'],
             'resource': work_uri,
             'created': work_data['created'],
-            'creator': user,
+            'creator': user_uri,
             'visibility': work_data['visibility'],
             'state': work_data['state'],
             'metadataGraph': work_data['metadataGraph'],
@@ -429,48 +424,38 @@ class MainStore(object):
         self._model.sync()
         return work.get_data()
 
-    def update_work(self, user, work_uri, work_data):
+    def update_work(self, timestamp, user_uri, work_uri, work_data):
         work = Work.from_model(self._model, work_uri)
 
-        if not self._can_modify(user, work):
-            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
+        if not self._can_modify(user_uri, work):
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         old_data = work.get_data()
         new_data = work_data.copy()
 
-        if new_data.has_key('timestamp'):
-            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
-            new_data.setdefault('updated', new_data.pop('timestamp'))
-        else:
-            new_data.setdefault('updated', int(time.time()))
-
-        new_data['updatedBy'] = user
+        new_data['updated'] = timestamp
+        new_data['updatedBy'] = user_uri
         old_data.update(new_data)
 
-        # use None, for deleting a key
-        # TODO: will we ever need this?
-        for (key, value) in old_data.iteritems():
-            if value is None: del old_data[key]
-
         new_work = Work(work_uri, old_data)
-        self.delete_work(user=user, work_uri=work_uri)
+        self.delete_work(user_uri=user_uri, work_uri=work_uri)
 
         new_work.to_model(self._model)
         self._model.sync()
         return new_work.get_data()
 
-    def delete_work(self, user, work_uri, linked_entries=False):
+    def delete_work(self, user_uri, work_uri, linked_entries=False):
         work = Work.from_model(self._model, work_uri)
 
-        if not self._can_modify(user, work):
-            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
+        if not self._can_modify(user_uri, work):
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         if linked_entries:
             for source_uri in work.get('source', []):
-                self.delete_source(user=user, source_uri=source_uri, unlink=True)
+                self.delete_source(user_uri=user_uri, source_uri=source_uri, unlink=True)
 
             for post_uri in work.get('post', []):
-                self.delete_post(user=user, post_uri=post_uri)
+                self.delete_post(user_uri=user_uri, post_uri=post_uri)
 
         for subgraph_uri in work.get_subgraphs():
             subgraph_context = RDF.Node(RDF.Uri(subgraph_uri))
@@ -481,10 +466,10 @@ class MainStore(object):
 
         self._model.sync()
 
-    def get_work(self, user, work_uri, subgraph=None):
+    def get_work(self, user_uri, work_uri, subgraph=None):
         work = Work.from_model(self._model, work_uri)
 
-        if not self._can_read(user, work):
+        if not self._can_read(user_uri, work):
             raise EntryAccessError("Can't access work {0}".format(work_uri))
 
         if not subgraph:
@@ -499,23 +484,18 @@ class MainStore(object):
             work = self._get_linked_work(NS_CATALOG + "post", entry_uri)
         return work
 
-    def create_work_source(self, user, work_uri, source_uri, source_data):
+    def create_work_source(self, timestamp, user_uri, work_uri, source_uri, source_data):
         if self._entry_exists(source_uri):
             raise CatalogError("Entry {0} already exists".format(source_uri))
 
         work = Work.from_model(self._model, work_uri)
 
-        if not self._can_modify(user, work):
-            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user))
+        if not self._can_modify(user_uri, work):
+            raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         source_data = source_data.copy()
 
-        if source_data.has_key('timestamp'):
-            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
-            source_data.setdefault('added', source_data.pop('timestamp'))
-        else:
-            source_data.setdefault('added', int(time.time()))
-
+        source_data['added'] = timestamp
         source_data.setdefault('metadataGraph', {})
         source_data.setdefault('cachedExternalMetadataGraph', {})
 
@@ -523,7 +503,7 @@ class MainStore(object):
             'id': source_data['id'],
             'metadataGraph': source_data['metadataGraph'],
             'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
-            'addedBy': user,
+            'addedBy': user_uri,
             'added': source_data['added'],
             'resource': source_data['resource'],
         })
@@ -532,7 +512,6 @@ class MainStore(object):
 
         # link the source to work
         work_subject = RDF.Node(RDF.Uri(work_uri))
-
         statement = RDF.Statement(work_subject, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
 
         if (statement, work_subject) not in self._model:
@@ -541,18 +520,13 @@ class MainStore(object):
         self._model.sync()
         return source.get_data()
 
-    def create_stock_source(self, user, source_uri, source_data):
+    def create_stock_source(self, timestamp, user_uri, source_uri, source_data):
         if self._entry_exists(source_uri):
             raise CatalogError("Entry {0} already exists".format(source_uri))
 
         source_data = source_data.copy()
 
-        if source_data.has_key('timestamp'):
-            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
-            source_data.setdefault('added', source_data.pop('timestamp'))
-        else:
-            source_data.setdefault('added', int(time.time()))
-
+        source_data['added'] = timestamp
         source_data.setdefault('metadataGraph', {})
         source_data.setdefault('cachedExternalMetadataGraph', {})
 
@@ -560,56 +534,54 @@ class MainStore(object):
             'id': source_data['id'],
             'metadataGraph': source_data['metadataGraph'],
             'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
-            'addedBy': user,
+            'addedBy': user_uri,
             'added': source_data['added'],
             'resource': source_data['resource'],
         })
 
         source.to_model(self._model)
 
+        # link the source to user
+        user_subject = RDF.Node(RDF.Uri(user_uri))
+        statement = RDF.Statement(user_subject, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
+
+        if (statement, user_subject) not in self._model:
+            # TODO: do we need context for user-related stuff?
+            self._model.append(statement, context=user_subject)
+
         self._model.sync()
         return source.get_data()
 
-    def update_source(self, user, source_uri, source_data):
+    def update_source(self, timestamp, user_uri, source_uri, source_data):
         source = CatalogSource.from_model(self._model, source_uri)
 
-        if not self._can_modify(user, source):
-            raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user))
+        if not self._can_modify(user_uri, source):
+            raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
 
         old_data = source.get_data()
         new_data = source_data.copy()
 
-        if new_data.has_key('timestamp'):
-            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
-            new_data.setdefault('updated', new_data.pop('timestamp'))
-        else:
-            new_data.setdefault('updated', int(time.time()))
-
-        new_data['updatedBy'] = user
+        new_data['updated'] = timestamp
+        new_data['updatedBy'] = user_uri
         old_data.update(new_data)
 
-        # use None, for deleting a key
-        # TODO: will we ever need this?
-        for (key, value) in old_data.iteritems():
-            if value is None: del old_data[key]
-
         new_source = CatalogSource(source_uri, old_data)
-        self.delete_source(user=user, source_uri=source_uri, unlink=False)
+        self.delete_source(user_uri=user_uri, source_uri=source_uri, unlink=False)
 
         new_source.to_model(self._model)
         self._model.sync()
         return new_source.get_data()
 
-    def delete_source(self, user, source_uri, unlink=True):
+    def delete_source(self, user_uri, source_uri, unlink=True):
         source = CatalogSource.from_model(self._model, source_uri)
 
-        if not self._can_modify(user, source):
-            raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user))
+        if not self._can_modify(user_uri, source):
+            raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
 
         # delete the link to work, if exists
         if unlink:
             # is it safe to assume that catalog:source will precisely
-            # enumerate works derived from this source?
+            # enumerate works and users linked to this source?
             query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
 
             for statement, context in self._model.find_statements_context(query_statement):
@@ -622,10 +594,10 @@ class MainStore(object):
         self._model.remove_statements_with_context(RDF.Node(RDF.Uri(source_uri)))
         self._model.sync()
 
-    def get_source(self, user, source_uri, subgraph=None):
+    def get_source(self, user_uri, source_uri, subgraph=None):
         source = CatalogSource.from_model(self._model, source_uri)
 
-        if not self._can_read(user, source):
+        if not self._can_read(user_uri, source):
             raise EntryAccessError("Can't access source {0}".format(source_uri))
 
         if not subgraph:
@@ -633,55 +605,42 @@ class MainStore(object):
         else:
             return source.get_data().get(subgraph + "Graph", {})
 
-    def get_work_sources(self, user, work_uri):
+    def get_work_sources(self, user_uri, work_uri):
         sources = []
 
-        work = self.get_work(user=user, work_uri=work_uri)
+        work = self.get_work(user_uri=user_uri, work_uri=work_uri)
         for source_uri in work.get('source', []):
-            source = self.get_source(user=user, source_uri=source_uri)
+            source = self.get_source(user_uri=user_uri, source_uri=source_uri)
             sources.append(source)
         return sources
 
-    def get_stock_sources(self, user):
+    def get_stock_sources(self, user_uri):
         sources = []
 
-        # TODO: this is slow, so the list should be fetched from the user Entry
-        # once we start to use them
-        query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "addedBy"), RDF.Node(literal=user))
+
+        query_statement = RDF.Statement(RDF.Uri(user_uri), RDF.Uri(NS_CATALOG + "source"), None)
 
         for statement in self._model.find_statements(query_statement):
-            source_uri = str(statement.subject)
+            source_uri = str(statement.object)
 
-            query_statement2 = RDF.Statement(None, RDF.Uri(NS_CATALOG + "source"), RDF.Uri(source_uri))
-
-            linked = False
-            for statement, context in self._model.find_statements_context(query_statement2):
-                linked = True
-
-            if not linked:
-                source = self.get_source(user=user, source_uri=source_uri)
-                sources.append(source)
+            source = self.get_source(user_uri=user_uri, source_uri=source_uri)
+            sources.append(source)
         return sources
 
-    def create_post(self, user, work_uri, post_uri, post_data):
+    def create_post(self, timestamp, user_uri, work_uri, post_uri, post_data):
         if self._entry_exists(post_uri):
             raise CatalogError("Entry {0} already exists".format(post_uri))
 
         post_data = post_data.copy()
 
-        if post_data.has_key('timestamp'):
-            _log.warning("Warning: timestamp property shouldn't really be here in the entry data")
-            post_data.setdefault('posted', post_data.pop('timestamp'))
-        else:
-            post_data.setdefault('posted', int(time.time()))
-
+        post_data['posted'] = timestamp
         post_data.setdefault('metadataGraph', {})
         post_data.setdefault('cachedExternalMetadataGraph', {})
 
         post = Post(post_uri, {
             'id': post_data['id'],
             'resource': post_uri,
-            'postedBy': user,
+            'postedBy': user_uri,
             'posted': post_data['posted'],
             'metadataGraph': post_data['metadataGraph'],
             'cachedExternalMetadataGraph': post_data['cachedExternalMetadataGraph'],
@@ -700,11 +659,11 @@ class MainStore(object):
         self._model.sync()
         return post.get_data()
 
-    def delete_post(self, user, post_uri):
+    def delete_post(self, user_uri, post_uri):
         post = Post.from_model(self._model, post_uri)
 
-        if not self._can_modify(user, post):
-            raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user))
+        if not self._can_modify(user_uri, post):
+            raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user_uri))
 
         # delete any links to this post
         # is it safe to assume that catalog:post will precisely
@@ -721,10 +680,10 @@ class MainStore(object):
         self._model.remove_statements_with_context(RDF.Node(RDF.Uri(post_uri)))
         self._model.sync()
 
-    def get_post(self, user, post_uri, subgraph=None):
+    def get_post(self, user_uri, post_uri, subgraph=None):
         post = Post.from_model(self._model, post_uri)
 
-        if not self._can_read(user, post):
+        if not self._can_read(user_uri, post):
             raise EntryAccessError("Can't access post {0}".format(post_uri))
 
         if not subgraph:
@@ -732,20 +691,20 @@ class MainStore(object):
         else:
             return post.get_data().get(subgraph + "Graph", {})
 
-    def get_posts(self, user, work_uri):
+    def get_posts(self, user_uri, work_uri):
         posts = []
 
-        work = self.get_work(user=user, work_uri=work_uri)
+        work = self.get_work(user_uri=user_uri, work_uri=work_uri)
         for post_uri in work.get('post', []):
-            post = self.get_post(user=user, post_uri=post_uri)
+            post = self.get_post(user_uri=user_uri, post_uri=post_uri)
             posts.append(post)
 
         return posts
 
-    def get_complete_metadata(self, user, work_uri, format='json'):
+    def get_complete_metadata(self, user_uri, work_uri, format='json'):
         work = Work.from_model(self._model, work_uri)
 
-        if not self._can_read(user, work):
+        if not self._can_read(user_uri, work):
             raise EntryAccessError("Can't access work {0}".format(work_uri))
 
         query_format = """
@@ -760,7 +719,7 @@ class MainStore(object):
             WHERE
             {
                 BIND (<%s> AS ?work)
-                BIND ("%s" AS ?user)
+                BIND (<%s> AS ?user)
 
                 ?work catalog:creator ?creator .
                 ?work catalog:visibility ?visibility .
@@ -780,7 +739,7 @@ class MainStore(object):
             }
         """
 
-        query_string = query_format % (work_uri, user)
+        query_string = query_format % (work_uri, user_uri)
         query = RDF.Query(query_string)
 
         query_results = query.execute(self._model)
@@ -794,7 +753,7 @@ class MainStore(object):
         result = temp_model.to_string(name=format, base_uri=None)
         return result
 
-    def query_works_simple(self, user, **kwargs):
+    def query_works_simple(self, user_uri, **kwargs):
         """
         Query works using a dictionary of key=value parameter pairs to match works.
         Parameters can be given as JSON properties or predicates
@@ -829,12 +788,12 @@ class MainStore(object):
             query_params_all.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
 
         # query params, part 1 - private works owned by user
-        if user:
+        if user_uri:
             query_string += "{\n"
             query_params_1 = query_params_all[:]
 
-            p, o = Work.schema['creator'][1], user
-            query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
+            p, o = Work.schema['creator'][1], user_uri
+            query_params_1.append('{ ?s <%s> <%s> }' % (p, o.replace('"', '\\"')))
             p, o = Work.schema['visibility'][1], "private"
             query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
 
@@ -865,15 +824,15 @@ class MainStore(object):
         results = []
         for result in query_results:
             work_subject = result['s']
-            results.append(self.get_work(user=user, work_uri=str(work_subject)))
+            results.append(self.get_work(user_uri=user_uri, work_uri=str(work_subject)))
         return results
 
 
 class PublicStore(MainStore):
-    def _can_read(self, user, entry):
+    def _can_read(self, user_uri, entry):
         return True
 
-    def _can_modify(self, user, entry):
+    def _can_modify(self, user_uri, entry):
         return True
 
     def query_sparql(self, query_string=None, results_format="json"):

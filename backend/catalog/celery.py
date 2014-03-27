@@ -54,6 +54,19 @@ class DefaultConfig:
     # Name of event log DB (when using MongoDB)
     EVENT_LOG_DB = 'events'
 
+    # backend store type: hashes, postgres or memory
+    BACKEND_STORE_TYPE = 'hashes'
+
+    # hash store options
+    BACKEND_STORE_HASH_TYPE = os.getenv('CATALOG_BACKEND_STORE_HASH_TYPE', 'bdb')
+    BACKEND_STORE_DIR = os.getenv('CATALOG_BACKEND_STORE_DIR', 'data')
+
+    # postgres store options
+    BACKEND_STORE_DB_HOST = os.getenv('CATALOG_BACKEND_STORE_DB_HOST', 'localhost')
+    BACKEND_STORE_DB_PORT = os.getenv('CATALOG_BACKEND_STORE_DB_PORT', '5432')
+    BACKEND_STORE_DB_NAME = os.getenv('CATALOG_BACKEND_STORE_DB_NAME', 'catalog')
+    BACKEND_STORE_DB_USER = os.getenv('CATALOG_BACKEND_STORE_DB_USER', 'postgres')
+    BACKEND_STORE_DB_PASSWORD = os.getenv('CATALOG_BACKEND_STORE_DB_PASSWORD', '')
 
 app = Celery('catalog', include=['catalog.tasks'])
 
@@ -82,16 +95,19 @@ app.conf.update(
     CELERY_DISABLE_RATE_LIMITS = True,
 )
 
-on_create_work          = Signal(providing_args=('user', 'work_uri', 'work_data'))
-on_update_work          = Signal(providing_args=('user', 'work_uri', 'work_data'))
-on_delete_work          = Signal(providing_args=('user', 'work_uri'))
-on_create_work_source   = Signal(providing_args=('user', 'work_uri', 'source_uri', 'source_data'))
-on_create_stock_source  = Signal(providing_args=('user', 'source_uri', 'source_data'))
-on_update_source        = Signal(providing_args=('user', 'source_uri', 'source_data'))
-on_delete_source        = Signal(providing_args=('user', 'source_uri'))
-on_create_post          = Signal(providing_args=('user', 'work_uri', 'post_uri', 'post_data'))
-on_delete_post          = Signal(providing_args=('user', 'post_uri'))
+on_create_work          = Signal(providing_args=('timestamp', 'user_uri', 'work_uri', 'work_data'))
+on_update_work          = Signal(providing_args=('timestamp', 'user_uri', 'work_uri', 'work_data'))
+on_delete_work          = Signal(providing_args=('timestamp', 'user_uri', 'work_uri'))
+on_create_work_source   = Signal(providing_args=('timestamp', 'user_uri', 'work_uri', 'source_uri', 'source_data'))
+on_create_stock_source  = Signal(providing_args=('timestamp', 'user_uri', 'source_uri', 'source_data'))
+on_update_source        = Signal(providing_args=('timestamp', 'user_uri', 'source_uri', 'source_data'))
+on_delete_source        = Signal(providing_args=('timestamp', 'user_uri', 'source_uri'))
+on_create_post          = Signal(providing_args=('timestamp', 'user_uri', 'work_uri', 'post_uri', 'post_data'))
+on_delete_post          = Signal(providing_args=('timestamp', 'user_uri', 'post_uri'))
 
+
+class LockedError(Exception):
+    pass
 
 class LockTimeoutError(Exception):
     pass
@@ -143,39 +159,34 @@ class FileLock(object):
 
 
 class RedisLock(object):
-    def __init__(self, id, timeout=15):
+    def __init__(self, id):
         self._key = "lock." + id
-        self._conn = redis.Redis(config.REDIS_URL)
-        self._timeout = timeout
+        self._conn = redis.Redis("localhost")
         self._locked = False
 
     def __enter__(self):
         assert not self._locked
 
         pid = str(os.getpid())
-        timeout = self._timeout
 
-        while True:
-            if self._conn.setnx(self._key, pid):
-                self._locked = True
-                return
-            else:
-                if timeout > 0:
-                    time.sleep(1)
-                    timeout -= 1
-                else:
-                    raise LockTimeoutError("Timeout error while trying to lock access to work")
+        #  let locks expire after 60 seconds to avoid leaving stuff locked if things crash.
+        if self._conn.setex(self._key, pid, 60):
+            self._locked = True
+            return
+        else:
+            raise LockedError(self._key)
 
     def __exit__(self, *args):
         if self._locked:
             result = self._conn.delete(self._key)
             if not result:
-                _log.warning('warning: lock file unexpectedly removed')
+                _log.warning('warning: lock unexpectedly removed')
             self._locked = False
 
 
 class StoreTask(app.Task):
     abstract = True
+    max_retries = 5
     _main_store = None
     _public_store = None
     _log = None
@@ -183,13 +194,13 @@ class StoreTask(app.Task):
     @property
     def main_store(self):
         if self._main_store is None:
-            self._main_store = MainStore("works", config.DATA_DIR)
+            self._main_store = MainStore("works", config)
         return self._main_store
 
     @property
     def public_store(self):
         if self._public_store is None:
-            self._public_store = PublicStore("public", config.DATA_DIR)
+            self._public_store = PublicStore("public", config)
         return self._public_store
 
     @property

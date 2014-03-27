@@ -1,11 +1,12 @@
 
 <http://src/works/1> <http://catalog.commonsmachinery.se/ns#created> "0" .
-<http://src/works/1> <http://catalog.commonsmachinery.se/ns#creator> "test" .
+<http://src/works/1> <http://catalog.commonsmachinery.se/ns#creator> <http://src/users/test> .
 <http://src/works/1> <http://catalog.commonsmachinery.se/ns#id> "1" .
 <http://src/works/1> <http://catalog.commonsmachinery.se/ns#state> "published" .
 <http://src/works/1> <http://catalog.commonsmachinery.se/ns#updated> "2" .
-<http://src/works/1> <http://catalog.commonsmachinery.se/ns#updatedBy> "test" .
+<http://src/works/1> <http://catalog.commonsmachinery.se/ns#updatedBy> <http://src/users/test> .
 <http://src/works/1> <http://catalog.commonsmachinery.se/ns#visibility> "public" .
 <http://src/works/1> <http://purl.org/dc/terms/title> "First Work" .
 <http://src/works/1> <http://scam.sf.net/schema#metadata> <http://src/works/1/metadata> .
 <http://src/works/1> <http://scam.sf.net/schema#resource> <http://src/works/1> .
+<http://src/works/1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "Work" .
