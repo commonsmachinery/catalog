@@ -7,5 +7,5 @@
 <http://src/users/test/sources/1> <http://scam.sf.net/schema#cachedExternalMetadata> <http://src/users/test/sources/1/cachedExternalMetadata> .
 <http://src/users/test/sources/1> <http://scam.sf.net/schema#metadata> <http://src/users/test/sources/1/metadata> .
 <http://src/users/test/sources/1> <http://scam.sf.net/schema#resource> <http://src/works/2> .
-<http://src/users/test/sources/1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "CatalogSource" .
+<http://src/users/test/sources/1> <http://www.w3.org/1999/02/22-rdf-syntax-ns#type> "Source" .
 <http://src/users/test> <http://catalog.commonsmachinery.se/ns#source> <http://src/users/test/sources/1> .

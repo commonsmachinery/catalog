@@ -276,23 +276,10 @@ class Source(Entry):
         'cachedExternalMetadata': ('graph', NS_REM3 + 'cachedExternalMetadata' ),
         'added':        ('string',   NS_CATALOG  + 'added'       ),
         'addedBy':      ('resource', NS_CATALOG  + 'addedBy'     ),
+        'resource':     ('resource', NS_REM3     + 'resource'    ),
     })
 
 Source.json_schema = schema2json(Source.schema)
-
-class CatalogSource(Source):
-    schema = dict(Source.schema, **{
-        'resource': ('resource', NS_REM3 + 'resource'),
-    })
-
-CatalogSource.json_schema = schema2json(CatalogSource.schema)
-
-class ExternalSource(Source):
-    schema = dict(Source.schema, **{
-        'resource': ('resource', NS_REM3 + 'resource'),
-    })
-
-ExternalSource.json_schema = schema2json(ExternalSource.schema)
 
 class Post(Entry):
     schema = dict(Entry.schema, **{
@@ -509,7 +496,7 @@ class MainStore(object):
         source_data.setdefault('metadataGraph', {})
         source_data.setdefault('cachedExternalMetadataGraph', {})
 
-        source = CatalogSource(source_uri, {
+        source = Source(source_uri, {
             'id': source_data['id'],
             'metadataGraph': source_data['metadataGraph'],
             'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
@@ -540,7 +527,7 @@ class MainStore(object):
         source_data.setdefault('metadataGraph', {})
         source_data.setdefault('cachedExternalMetadataGraph', {})
 
-        source = CatalogSource(source_uri, {
+        source = Source(source_uri, {
             'id': source_data['id'],
             'metadataGraph': source_data['metadataGraph'],
             'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
@@ -563,7 +550,7 @@ class MainStore(object):
         return source.get_data()
 
     def update_source(self, timestamp, user_uri, source_uri, source_data):
-        source = CatalogSource.from_model(self._model, source_uri)
+        source = Source.from_model(self._model, source_uri)
 
         if not self._can_modify(user_uri, source):
             raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
@@ -576,7 +563,7 @@ class MainStore(object):
         new_data['updatedBy'] = user_uri
         old_data.update(new_data)
 
-        new_source = CatalogSource(source_uri, old_data)
+        new_source = Source(source_uri, old_data)
         self.delete_source(user_uri=user_uri, source_uri=source_uri, unlink=False)
 
         new_source.to_model(self._model)
@@ -584,7 +571,7 @@ class MainStore(object):
         return new_source.get_data()
 
     def delete_source(self, user_uri, source_uri, unlink=True):
-        source = CatalogSource.from_model(self._model, source_uri)
+        source = Source.from_model(self._model, source_uri)
 
         if not self._can_modify(user_uri, source):
             raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
@@ -606,7 +593,7 @@ class MainStore(object):
         self._model.sync()
 
     def get_source(self, user_uri, source_uri, subgraph=None):
-        source = CatalogSource.from_model(self._model, source_uri)
+        source = Source.from_model(self._model, source_uri)
 
         if not self._can_read(user_uri, source):
             raise EntryAccessError("Can't access source {0}".format(source_uri))

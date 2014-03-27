@@ -183,7 +183,7 @@ def test_create_work_source_data(store):
         'cachedExternalMetadataGraph': {'about:resource': {'http://purl.org/dc/terms/creator': [{'type': 'literal', 'value': 'Cached Author'}]}},
         'cachedExternalMetadata': 'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1, 'metadata': 'http://src/works/1/sources/1/metadata',
-        'type': 'CatalogSource',
+        'type': 'Source',
     }
     assert source == expected
 
@@ -217,7 +217,7 @@ def test_update_source_data(store):
         'cachedExternalMetadata': u'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': u'http://src/works/1/sources/1/metadata',
-        'type': u'CatalogSource',
+        'type': u'Source',
     }
     assert source == expected
 
@@ -234,7 +234,7 @@ def test_get_source(store):
         'cachedExternalMetadata': u'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': u'http://src/works/1/sources/1/metadata',
-        'type': u'CatalogSource',
+        'type': u'Source',
     }
     assert source == expected
 
@@ -254,7 +254,7 @@ def test_create_stock_source_data(store):
         'cachedExternalMetadata': 'http://src/users/test/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': 'http://src/users/test/sources/1/metadata',
-        'type': 'CatalogSource',
+        'type': 'Source',
     }
     assert source == expected
 
