@@ -10,296 +10,409 @@
 
 from __future__ import absolute_import
 
-import json
+import json, time
+
 from celery import subtask
-from catalog.celery import app, FileLock, StoreTask, on_work_updated
+from catalog.celery import app, RedisLock, StoreTask, LockedError
+
+from catalog.celery import on_create_work
+from catalog.celery import on_update_work
+from catalog.celery import on_delete_work
+from catalog.celery import on_create_work_source
+from catalog.celery import on_create_stock_source
+from catalog.celery import on_update_source
+from catalog.celery import on_delete_source
+from catalog.celery import on_create_post
+from catalog.celery import on_delete_post
+
 from catalog.log import LogNotAvailable
+from catalog.store import CatalogError, EntryNotFoundError
 
 import logging
-_log = logging.getLogger("catalog")
+_log = logging.getLogger('catalog')
+
+
+def error(e):
+    return {'error': {'type': e.__class__.__name__, 'message': str(e)}}
+#
+# main store update tasks
+#
 
 @app.task(base=StoreTask, bind=True)
-def create_work(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    work = store.store_work(**kwargs)
-
-    time = kwargs['timestamp']
-    user = kwargs['user']
-    resource = work['resource']
-    #payload = json.dumps(kwargs)
-    payload = json.dumps(work.get_data())
-
-    log_event.apply_async(args=('create_work', time, user, resource, payload))
-    if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-    return work.get_data()
-
-@app.task(base=StoreTask, bind=True)
-def update_work(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    id = kwargs['id']
-
-    with FileLock(id):
-        work = store.update_work(**kwargs)
-
-        time = kwargs['time'] # as in rest.js
-        user = kwargs['user']
-        resource = work['resource']
-        payload = json.dumps(work.get_data())
-
-        log_event.apply_async(args=('update_work', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        return work.get_data()
-
-@app.task(base=StoreTask, bind=True)
-def delete_work(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    id = kwargs['id']
-
-    with FileLock(id):
-        # here we temporarily get the resource to properly
-        # log delete events. TODO: update this when accessing works by URL is implemented
-        work = store.get_work(user=kwargs['user'], id=kwargs['id'])
-
-        time = kwargs['timestamp']
-        user = kwargs['user']
-        resource = work['resource']
-        payload = None
-
-        log_event.apply_async(args=('delete_work', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        return kwargs
-
-@app.task(base=StoreTask, bind=True)
-def get_work(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.get_work(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def get_works(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.query_works_simple(**kwargs)
-
-# sources of works
-
-@app.task(base=StoreTask, bind=True)
-def add_source(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    work_id = kwargs.get('work_id', None)
-
-    if work_id:
-        with FileLock(work_id):
-            source = store.store_source(**kwargs)
-            # here we temporarily get the resource to properly
-            # log delete events. TODO: update this when accessing works by URL is implemented
-            work = store.get_work(user=kwargs['user'], id=kwargs['work_id'])
-
-            time = kwargs['timestamp']
-            user = kwargs['user']
-            resource = work['resource']
-            payload = json.dumps(source.get_data())
-
-            log_event.apply_async(args=('add_source', time, user, resource, payload))
-            if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-            return source.get_data()
-    else:
-        source = store.store_source(**kwargs)
-
-        time = kwargs['timestamp']
-        user = kwargs['user']
-        resource = None
-        payload = json.dumps(source.get_data())
-
-        log_event.apply_async(args=('add_source', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        return source.get_data()
-
-@app.task(base=StoreTask, bind=True)
-def get_source(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.get_source(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def get_sources(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.get_sources(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def update_source(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    work_id = kwargs.get('work_id', None)
-
-    if work_id:
-        with FileLock(work_id):
-            source = store.update_source(**kwargs)
-            # here we temporarily get the resource to properly
-            # log delete events. TODO: update this when accessing works by URL is implemented
-            work = store.get_work(user=kwargs['user'], id=kwargs['work_id'])
-
-            time = kwargs['timestamp']
-            user = kwargs['user']
-            resource = work['resource']
-            payload = json.dumps(source.get_data())
-
-            log_event.apply_async(args=('update_source', time, user, resource, payload))
-            if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-            return source.get_data()
-    else:
-        source = store.update_source(**kwargs)
-
-        time = kwargs['timestamp']
-        user = kwargs['user']
-        resource = None
-        payload = json.dumps(source.get_data())
-
-        log_event.apply_async(args=('update_source', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        return source.get_data()
-
-    return store.update_source(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def delete_source(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    work_id = kwargs.get('work_id', None)
-
-    if work_id:
-        with FileLock(work_id):
-            store.delete_source(**kwargs)
-
-            # here we temporarily get the resource to properly
-            # log delete events. TODO: update this when accessing works by URL is implemented
-            work = store.get_work(user=kwargs['user'], id=kwargs['work_id'])
-
-            time = kwargs['timestamp']
-            user = kwargs['user']
-            resource = work['resource']
-            payload = json.dumps(kwargs)
-
-            log_event.apply_async(args=('delete_source', time, user, resource, payload))
-            if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-            return kwargs
-    else:
-        store.delete_source(**kwargs)
-
-        time = kwargs['timestamp']
-        user = kwargs['user']
-        resource = None
-        payload = json.dumps(kwargs)
-
-        log_event.apply_async(args=('delete_source', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        return kwargs
-
-# posted instances
-
-@app.task(base=StoreTask, bind=True)
-def add_post(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    work_id = kwargs.get('work_id', None)
-
-    with FileLock(work_id):
-        post = store.store_post(**kwargs)
-
-        # here we temporarily get the resource to properly
-        # log events. TODO: update this when accessing works by URL is implemented
-        work = store.get_work(user=kwargs['user'], id=work_id)
-
-        time = kwargs['timestamp']
-        user = kwargs['user']
-        resource = work['resource']
-        payload = json.dumps(post.get_data())
-
-        log_event.apply_async(args=('add_post', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        return post.get_data()
-
-@app.task(base=StoreTask, bind=True)
-def get_posts(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.get_posts(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def get_post(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.get_post(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def delete_post(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    work_id = kwargs.get('work_id', None)
-
-    with FileLock(work_id):
-        # here we temporarily get the resource to properly
-        # log events. TODO: update this when accessing works by URL is implemented
-        work = store.get_work(user=kwargs['user'], id=work_id)
-
-        time = kwargs['timestamp']
-        user = kwargs['user']
-        resource = work['resource']
-        payload = None
-
-        log_event.apply_async(args=('delete_post', time, user, resource, payload))
-        if store != self.public_store: on_work_updated.send(sender=self, task=self, update_subtask=self.subtask(kwargs=kwargs))
-
-        store.delete_post(**kwargs)
-        return kwargs
-
-@app.task(base=StoreTask, bind=True)
-def get_complete_metadata(self, store='main', **kwargs):
-    store = self.main_store if store == 'main' else self.public_store
-    return store.get_complete_metadata(**kwargs)
-
-@app.task(base=StoreTask, bind=True)
-def query_sparql(self, **kwargs):
-    return self.public_store.query_sparql(**kwargs)
-
-@app.task(base=StoreTask, bind=True,
-          ignore_result = True,
-          max_retries = None,
-          default_retry_delay = 15)
-def log_event(self, type, time, user, resource, data):
+def create_work(self, user_uri, work_uri, work_data):
     try:
-        self.log.log_event(type, time, user, resource, data)
-    except LogNotAvailable as e:
-        raise self.retry(exc = e)
+        with RedisLock(self.lock_db, work_uri):
+            timestamp = int(time.time())
+            work_data = self.main_store.create_work(timestamp, user_uri, work_uri, work_data)
 
+            log_data = json.dumps(work_data)
+            log_event.apply_async(args=('create_work', timestamp, user_uri, work_uri, None, log_data))
+
+            on_create_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+            return work_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+
+@app.task(base=StoreTask, bind=True)
+def update_work(self, user_uri, work_uri, work_data):
+    try:
+        with RedisLock(self.lock_db, work_uri):
+            timestamp = int(time.time())
+            work_data = self.main_store.update_work(timestamp, user_uri, work_uri, work_data)
+
+            log_data = json.dumps(work_data)
+            log_event.apply_async(args=('update_work', timestamp, user_uri, work_uri, None, log_data))
+
+            on_update_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+            return work_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def delete_work(self, user_uri, work_uri):
+    try:
+        with RedisLock(self.lock_db, work_uri):
+            timestamp = int(time.time())
+            self.main_store.delete_work(user_uri, work_uri)
+
+            log_event.apply_async(args=('delete_work', timestamp, user_uri, work_uri, None, None))
+
+            on_delete_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def create_work_source(self, user_uri, work_uri, source_uri, source_data):
+    try:
+        with RedisLock(self.lock_db, work_uri):
+            timestamp = int(time.time())
+            source_data = self.main_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
+
+            log_data = json.dumps(source_data)
+            log_event.apply_async(args=('create_work_source', timestamp, user_uri, work_uri, source_uri, log_data))
+
+            on_create_work_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
+            return source_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def create_stock_source(self, user_uri, source_uri, source_data):
+    try:
+        with RedisLock(self.lock_db, user_uri):
+            timestamp = int(time.time())
+            source_data = self.main_store.create_stock_source(timestamp, user_uri, source_uri, source_data)
+
+            log_data = json.dumps(source_data)
+            log_event.apply_async(args=('create_stock_source', timestamp, user_uri, None, source_uri, log_data))
+
+            on_create_stock_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+            return source_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def update_source(self, user_uri, source_uri, source_data):
+    try:
+        with RedisLock(self.lock_db, source_uri):
+            timestamp = int(time.time())
+            source_data = self.main_store.update_source(timestamp, user_uri, source_uri, source_data)
+
+            log_data = json.dumps(source_data)
+            log_event.apply_async(args=('update_source', timestamp, user_uri, None, source_uri, log_data))
+
+            on_update_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+            return source_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def delete_source(self, user_uri, source_uri):
+    try:
+        with RedisLock(self.lock_db, source_uri):
+            timestamp = int(time.time())
+            self.main_store.delete_source(user_uri, source_uri)
+
+            log_event.apply_async(args=('delete_source', timestamp, user_uri, None, source_uri, None))
+
+            on_delete_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri)
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def create_post(self, user_uri, work_uri, post_uri, post_data):
+    try:
+        with RedisLock(self.lock_db, work_uri):
+            timestamp = int(time.time())
+            post_data = self.main_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
+
+            log_data = json.dumps(post_data)
+            log_event.apply_async(args=('create_post', timestamp, user_uri, work_uri, post_uri, log_data))
+
+            on_create_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
+            return post_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
+def delete_post(self, user_uri, post_uri):
+    try:
+        with RedisLock(self.lock_db, post_uri):
+            timestamp = int(time.time())
+            self.main_store.delete_post(user_uri, post_uri)
+
+            log_event.apply_async(args=('delete_post', timestamp, user_uri, None, post_uri, None))
+
+            on_delete_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, post_uri=post_uri)
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+#
+# public store update tasks
+#
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_create_work(self, timestamp, user_uri, work_uri, work_data):
+    try:
+        with RedisLock(self.lock_db, "public." + work_uri):
+            self.public_store.create_work(timestamp, user_uri, work_uri, work_data)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_update_work(self, timestamp, user_uri, work_uri, work_data):
+    try:
+        with RedisLock(self.lock_db, "public." + work_uri):
+            self.public_store.update_work(timestamp, user_uri, work_uri, work_data)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_delete_work(self, timestamp, user_uri, work_uri):
+    try:
+        with RedisLock(self.lock_db, "public." + work_uri):
+            self.public_store.delete_work(user_uri, work_uri, linked_entries=True)
+    except EntryNotFoundError:
+        pass
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_create_work_source(self, timestamp, user_uri, work_uri, source_uri, source_data):
+    try:
+        with RedisLock(self.lock_db, "public." + work_uri):
+            self.public_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+#@app.task(base=StoreTask, bind=True, ignore_result=True)
+#def public_create_stock_source(self, user_uri, source_uri, source_data):
+#    self.public_store.create_stock_source(user_uri, source_uri, source_data)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_update_source(self, timestamp, user_uri, source_uri, source_data):
+    try:
+        with RedisLock(self.lock_db, "public." + source_uri):
+            self.public_store.update_source(timestamp, user_uri, source_uri, source_data)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_delete_source(self, timestamp, user_uri, source_uri, unlink=True):
+    try:
+        with RedisLock(self.lock_db, "public." + source_uri):
+            self.public_store.delete_source(user_uri, source_uri)
+    except EntryNotFoundError:
+        pass
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data):
+    try:
+        with RedisLock(self.lock_db, "public." + work_uri):
+            self.public_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_delete_post(self, timestamp, user_uri, post_uri):
+    try:
+        with RedisLock(self.lock_db, "public." + post_uri):
+            self.public_store.delete_post(user_uri, post_uri)
+    except EntryNotFoundError:
+        pass
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+#
+# query tasks
+#
+
+@app.task(base=StoreTask, bind=True)
+def get_work(self, user_uri, work_uri, subgraph=None):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_work(user_uri, work_uri, subgraph)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def get_work_sources(self, user_uri, work_uri):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_work_sources(user_uri, work_uri)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def get_stock_sources(self, user_uri):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_stock_sources(user_uri)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def get_source(self, user_uri, source_uri, subgraph=None):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_source(user_uri, source_uri, subgraph)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def get_post(self, user_uri, post_uri, subgraph=None):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_post(user_uri, post_uri, subgraph)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def get_posts(self, user_uri, work_uri):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_posts(user_uri, work_uri)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def get_complete_metadata(self, user_uri, work_uri, format='json'):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.get_complete_metadata(user_uri, work_uri, format)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def query_works_simple(self, user_uri=None, offset=0, limit=0, query=None):
+    store = self.main_store if user_uri is not None else self.public_store
+    try:
+        return store.query_works_simple(user_uri, offset, limit, query)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True)
+def query_sparql(self, query_string=None, results_format='json'):
+    store = self.public_store
+    try:
+        return store.query_sparql(query_string, results_format)
+    except CatalogError as e:
+        return error(e)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True, max_retries=None, default_retry_delay=15)
+def log_event(self, type, time, user, resource, entry, data):
+    try:
+        self.log.log_event(type, time, user, resource, entry, data)
+    except LogNotAvailable as e:
+        raise self.retry(exc=e)
 
 @app.task(base=StoreTask, bind=True)
 def query_events(self, type=None, user=None, time_min=None, time_max=None, resource=None, limit=100, offset=0):
     return self.log.query_events(type, user, time_min, time_max, resource, limit, offset)
 
-@on_work_updated.connect
-def work_updated_handler(sender=None, task=None, update_subtask=None, **kwargs):
-    subtask_kwargs = update_subtask['kwargs']
 
+@on_create_work.connect
+@on_update_work.connect
+@on_delete_work.connect
+@on_create_work_source.connect
+@on_create_stock_source.connect
+@on_update_source.connect
+@on_delete_source.connect
+@on_create_post.connect
+@on_delete_post.connect
+def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, work_data=None,
+                    source_uri=None, source_data=None, post_uri=None, post_data=None, **kwargs):
+    task = sender
     if sender == create_work:
-        visibility = subtask_kwargs.get('visibility', None)
-        if visibility != "public":
-            return False
-    elif sender == update_work:
-        work_id = subtask_kwargs['id']
-        work = task.main_store.get_work(user=subtask_kwargs['user'], id=work_id)
-        visibility = subtask_kwargs.get('visibility', work['visibility'])
-        if visibility != "public":
-            return False
-    elif sender == add_source or \
-            sender == update_source or \
-            sender == add_post:
-        work_id = subtask_kwargs['work_id']
-        work = task.main_store.get_work(user=subtask_kwargs['user'], id=work_id)
-        if work['visibility'] != 'public':
-            return False
+        visibility = work_data.get('visibility')
+        if visibility == 'public':
+            public_create_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
 
-    # work is public or deleted, ok to re-run the updater task for public store now
-    sub = subtask(update_subtask)
-    sub.apply_async(kwargs={"store": "public"})
+    elif sender == update_work:
+        visibility = work_data.get('visibility')
+        # visibility values should be valid here, since this
+        # is called after a successful main store update
+        if visibility == 'public':
+            try:
+                task.public_store.get_work(user_uri, work_uri)
+                public_update_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+            except EntryNotFoundError:
+                public_create_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+        else:
+            try:
+                task.public_store.get_work(user_uri, work_uri)
+                public_delete_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
+            except EntryNotFoundError:
+                pass
+
+    elif sender == delete_work:
+        public_delete_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
+
+    elif sender == create_work_source:
+        work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
+        visibility = work_data.get('visibility')
+        if visibility == 'public':
+            public_create_work_source.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
+
+    elif sender == create_stock_source:
+        #public_create_stock_source.delay(user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+        pass
+
+    elif sender == update_source:
+        if work_uri:
+            work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
+            if visibility == 'public':
+                public_update_source.delay(timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+
+    elif sender == delete_source:
+        public_delete_source.delay(timestamp=timestamp, user_uri=user_uri, source_uri=source_uri)
+
+    elif sender == create_post:
+        work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
+        visibility = work_data.get('visibility')
+        if visibility == 'public':
+            public_create_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri, post_data=post_data)
+
+    elif sender == delete_post:
+        public_delete_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri)
