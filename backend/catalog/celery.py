@@ -19,6 +19,7 @@ from catalog.store import MainStore, PublicStore
 import redis
 import os, time
 import errno
+import threading
 
 import logging.config
 import importlib
@@ -26,6 +27,7 @@ import importlib
 import logging
 _log = logging.getLogger("catalog")
 
+thread_local = threading.local()
 
 APP_SETTINGS_FILENAME = "settings"
 LOG_SETTINGS_FILENAME = "logging.ini"
@@ -159,9 +161,9 @@ class FileLock(object):
 
 
 class RedisLock(object):
-    def __init__(self, id):
+    def __init__(self, lock_db, id):
         self._key = "lock." + id
-        self._conn = redis.Redis("localhost")
+        self._conn = lock_db
         self._locked = False
 
     def __enter__(self):
@@ -184,24 +186,35 @@ class RedisLock(object):
             self._locked = False
 
 
+thread_local.main_store = MainStore("works", config)
+thread_local.public_store = PublicStore("public", config)
+thread_local.lock_db = redis.Redis(config.REDIS_URL)
+
 class StoreTask(app.Task):
     abstract = True
     max_retries = 5
     _main_store = None
     _public_store = None
+    _lock_db = None
     _log = None
 
     @property
     def main_store(self):
         if self._main_store is None:
-            self._main_store = MainStore("works", config)
+            self._main_store = thread_local.main_store
         return self._main_store
 
     @property
     def public_store(self):
         if self._public_store is None:
-            self._public_store = PublicStore("public", config)
+            self._public_store = thread_local.public_store
         return self._public_store
+
+    @property
+    def lock_db(self):
+        if self._lock_db is None:
+            self._lock_db = thread_local.lock_db
+        return self._lock_db
 
     @property
     def log(self):

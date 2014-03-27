@@ -39,7 +39,7 @@ _log = logging.getLogger('catalog')
 @app.task(base=StoreTask, bind=True)
 def create_work(self, user_uri, work_uri, work_data):
     try:
-        with RedisLock(work_uri):
+        with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
             work_data = self.main_store.create_work(timestamp, user_uri, work_uri, work_data)
 
@@ -57,7 +57,7 @@ def create_work(self, user_uri, work_uri, work_data):
 @app.task(base=StoreTask, bind=True)
 def update_work(self, user_uri, work_uri, work_data):
     try:
-        with RedisLock(work_uri):
+        with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
             work_data = self.main_store.update_work(timestamp, user_uri, work_uri, work_data)
 
@@ -74,7 +74,7 @@ def update_work(self, user_uri, work_uri, work_data):
 @app.task(base=StoreTask, bind=True)
 def delete_work(self, user_uri, work_uri):
     try:
-        with RedisLock(work_uri):
+        with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
             self.main_store.delete_work(user_uri, work_uri)
 
@@ -89,7 +89,7 @@ def delete_work(self, user_uri, work_uri):
 @app.task(base=StoreTask, bind=True)
 def create_work_source(self, user_uri, work_uri, source_uri, source_data):
     try:
-        with RedisLock(work_uri):
+        with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
             source_data = self.main_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
 
@@ -155,7 +155,7 @@ def delete_source(self, user_uri, source_uri):
 @app.task(base=StoreTask, bind=True)
 def create_post(self, user_uri, work_uri, post_uri, post_data):
     try:
-        with RedisLock(work_uri):
+        with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
             post_data = self.main_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
 
