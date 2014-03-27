@@ -189,44 +189,34 @@ class RedisLock(object):
 thread_local.main_store = MainStore("works", config)
 thread_local.public_store = PublicStore("public", config)
 thread_local.lock_db = redis.Redis(config.REDIS_URL)
+if config.EVENT_LOG_TYPE == 'sqlite':
+    thread_local.log = SqliteLog(config.DATA_DIR)
+elif config.EVENT_LOG_TYPE == 'mongodb':
+    thread_local.log = MongoDBLog(config.MONGODB_URL, config.EVENT_LOG_DB)
+else:
+    raise RuntimeError('invalid event log configuration: %s' % config.EVENT_LOG_TYPE)
+
 
 class StoreTask(app.Task):
     abstract = True
     max_retries = 5
-    _main_store = None
-    _public_store = None
-    _lock_db = None
     _log = None
 
     @property
     def main_store(self):
-        if self._main_store is None:
-            self._main_store = thread_local.main_store
-        return self._main_store
+        return thread_local.main_store
 
     @property
     def public_store(self):
-        if self._public_store is None:
-            self._public_store = thread_local.public_store
-        return self._public_store
+        return thread_local.public_store
 
     @property
     def lock_db(self):
-        if self._lock_db is None:
-            self._lock_db = thread_local.lock_db
-        return self._lock_db
+        return thread_local.lock_db
 
     @property
     def log(self):
-        if self._log is None:
-            if config.EVENT_LOG_TYPE == 'sqlite':
-                self._log = SqliteLog(config.DATA_DIR)
-            elif config.EVENT_LOG_TYPE == 'mongodb':
-                self._log = MongoDBLog(config.MONGODB_URL, config.EVENT_LOG_DB)
-            else:
-                raise RuntimeError('invalid event log configuration: %s' % config.EVENT_LOG_TYPE)
-
-        return self._log
+        return thread_local.log
 
 
 if __name__ == '__main__':
