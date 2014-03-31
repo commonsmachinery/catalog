@@ -16,6 +16,10 @@ var util = require('util');
 var celery = require('node-celery');
 var Promise = require('bluebird');
 
+/* Call timeout - no real need to make this configurable */
+var gCallTimeoutSecs = 15;
+
+
 /* Exceptions thrown on timeouts, connection errors or exceptions
  * coming from the backend itself.
  */
@@ -61,7 +65,7 @@ Backend.prototype.call = function(name, params) {
     var self = this;
 
     return new Promise(function(resolve, reject) {
-        var options, result;
+        var options, result, timeout;
 
         options = {};
 
@@ -72,7 +76,20 @@ Backend.prototype.call = function(name, params) {
             'catalog.tasks.' + name,
             params, options);
 
-        // TODO: timeout handling
+        timeout = setTimeout(function() {
+            // There's no support to cancel a Celery call in
+            // node-celery at the moment, so just stop listening
+            result.removeAllListeners();
+
+            console.error('timeout calling %s', name);
+
+            // Throw an exception that will turn into a 503 response
+            resolve(Promise.try(function() {
+                throw new BackendError(util.format(
+                    'calling %s: timeout waiting for response',
+                    name));
+            }));
+        }, gCallTimeoutSecs * 1000);
 
         // TODO: listen on client for errors?  But then it will be
         // difficult to determine which task caused it.  On the other
@@ -80,7 +97,9 @@ Backend.prototype.call = function(name, params) {
         // and all current tasks should fail...  To be tested.
 
         result.on('ready', function(message) {
+            // Avoid resolving more than once
             result.removeAllListeners();
+            clearTimeout(timeout);
 
             if (message.status === 'SUCCESS') {
                 debug('result of %s: %j', name, message.result);
@@ -101,10 +120,11 @@ Backend.prototype.call = function(name, params) {
                 // proper .error()/.catch() treatment.  For some
                 // reason just throwing here won't be treated as a rejection.
                 resolve(Promise.try(function() {
-                    throw(new BackendError(util.format(
-                        'backend %s: %s',
+                    throw new BackendError(util.format(
+                        'calling %s: %s: %s',
+                        name,
                         message.status,
-                        message.result.exc_message)));
+                        message.result.exc_message));
                 }));
             }
         });
