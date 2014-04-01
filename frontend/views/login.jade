@@ -1,11 +1,22 @@
 
 meta(http-equiv="X-UA-Compatible" content="IE=Edge")
 
+| #{JSON.stringify(self)} asdfasdf
+
 mixin loginForm()
 	form
-		input#login-user(type="text")
-		input#login-persona(type="button" value="Email")
-		input#token(type="hidden" value="#{token}")
+		h2 Log in to elog.io 
+		br
+		input#login(type="button" value="Email")
+	form
+		h2 ¿Don't have an account yet?:
+		br
+		label(for="signup-user") Pick a username: 
+		input#signup-user(type="text")
+		br
+		input#signup(type="button" value="Sign up")
+
+	input#token(type="hidden" value="#{token}")
 
 if landing
 	include includes/top

@@ -95,7 +95,7 @@ function main() {
 
             /* Load REST API */
             require('./lib/rest')(app, backend, cluster);
-            require('./lib/sessions').start(app, express, db);
+            require('./lib/sessions').start(app, express, db, sessionstore);
 
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);

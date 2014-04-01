@@ -25,7 +25,7 @@
     "bluebird": "1.1.x",
     "then-redis": "0.3.x",
     "mongodb": "1.3.x",
-    "oauth": "0.9.x"
+    "uid2": "0.0.*"
   },
   "devDependencies": {
     "jslint": "*",

@@ -17,15 +17,22 @@ var persona = require('./persona');
 var User;
 var env;
 var dev, test;
+var sessions;
 
 
 var isLogged, loginScreen, logout, newSession, newUser, loginScreen; 
 
-function init (app, express, db) {
-
+function init (app, express, db, sessionstore) {
+    sessions = sessionstore;
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
+
+    app.use(function(req, res, next){
+        res.locals.logged = req.session.uid;
+        next();
+        return;
+    });
 
     var user = require('./userSchema');
     
@@ -43,15 +50,15 @@ function init (app, express, db) {
     if(dev){
         app.post('/session', prefix, start_dummy_session);
         app.get('/session', check_dummy_session);
-        app.post('/login', prefix, newUser);
+        app.post('/signup', prefix, newUser);
     }
     else if (test){
         app.post('/session', prefix, csrf.check, newSession);
-        app.post('/login', prefix, csrf.check, newUser);
+        app.post('/signup', prefix, csrf.check, newUser);
     }
     else{
         app.post('/session', csrf.check, newSession);
-        app.post('/login', csrf.check, newUser);
+        app.post('/signup', csrf.check, newUser);
     }
 
     app.del('/session', logout);
@@ -104,6 +111,7 @@ function prefix (req, res, next) {
 /* Screens */
 
 function loginScreen (req, res) {
+    console.log(res.locals.logged);
     res.setHeader('X-UA-Compatible', 'IE=Edge'); //requirement for persona
     var referer = req.headers.referer;
     var landing = !referer || referer.search(env.CATALOG_BASE_URL) < 0;
@@ -117,74 +125,77 @@ function loginScreen (req, res) {
 /* Actions */
 
 function logout (req, res) {
-    if (req.session) {
-        debug('login %s out', req.session.uid);
-        req.session.destroy();
-    }
-    res.redirect('/login');
+    var session = req.session.id;
+    sessions.all(function(all){
+        console.log(all);
+    });
+    sessions.get(session, function(err, data){
+        if(err){
+            console.log(err);
+        }
+        else{
+            sessions.destroy(session);
+        }
+        res.redirect('/login');
+        return;
+    });
+    return;
 }
 
 function newSession (req, res) {
     var uid = req.body.uid;
+    debug('starting new session...');
 
     function respond (user) {
-        debug('new session: %s', user);
-        if (user && user.provider == 'elog.io' && user.authenticate(req.body.pass)) {
+        uid = user.uid;
+        if (user) {
             req.session.uid = uid;
-            res.redirect('/users/' + uid);
+            req.session.group = user.group;
+            sessions.set(uid, req.session);
+            res.send(uid);
         } 
-        else if(user && user.provider == 'persona' && req.body.token === req.session._csrf){
-           persona.verify(req.body.assertion)
-           .then(
-                function(email){
-                    req.session.email = email;
-                    req.session.uid = uid;
-                    res.redirect('/users/' + uid);
-                    return;
-                }, function(err){
-                    res.send('403');
-                    console.error(err);
-                    return;
-                }
-            );
-        }
-        else if (user && user.provider == 'oauth'){
-
-        }
         else {
-            referer = req.headers.referer;
-            landing = !ref || ref.search(env.CATALOG_BASE_URL) < 0
             res.redirect('/login');
         }
 
         return;
     }
 
-    User.findOne({uid: uid}).exec()
-    .then(respond,
-        function(err){
-            console.error(err);
-            return;
-        }
-    );
+    function findUser (param) {
+        User.findOne(param).exec()
+        .then(respond,
+            function(err){
+                console.error(err);
+                res.send('403');
+                return;
+            }
+        );
+    }
+
+    if(req.body.provider == 'persona'){
+       persona.verify(req.body.assertion)
+       .then(
+            function(email){
+                findUser({email:email});
+                return;
+            }, function(err){
+                res.send('403');
+                return;
+            }
+        );
+       return;
+    }
+
+    findUser({uid:uid});
 
     return;
 }
 
 function newUser (req, res) {
-    var provider = req.body.provider;
     var uid = req.body.uid;
-    if(provider == 'direct'){
-        var user = new User({
-            uid: uid,
-            hash: req.body.pass
-        });
-        user.save(function(err){
-            newSession(req, res);
-            return;
-        });
-    }
-    else if (provider == 'persona'){
+    var provider = req.body.provider;
+
+    if (provider == 'persona'){
         persona.verify(req.body.assertion)
         .then(
             function(email){
@@ -194,15 +205,36 @@ function newUser (req, res) {
                     provider: provider
                 });
                 user.save(function(err){
+                    if (err){
+                        console.error(err);
+                        res.send('403');
+                        return;
+                    }
                     newSession(req, res);
                     return;
                 });
                 return;
             }, function(err){
-                console.error(err);
+                res.send('403');
                 return;
             }
         );
+        return;
+    }
+    if(uid && req.body.pass){
+        var user = new User({
+            uid: uid,
+            hash: req.body.pass
+        });
+        user.save(function(err){
+            if (err){
+                console.error(err);
+                res.send('403');
+                return;
+            }
+            newSession(req, res);
+            return;
+        });
     }
     
     return;
@@ -211,37 +243,19 @@ function newUser (req, res) {
 /* ======================== Dummies ===================== */
 
 function start_dummy_session (req, res) {
-
     var uid = req.body.uid;
     debug('starting new session...');
 
     function respond (user) {
+        uid = user.uid;
         debug('new session: %s', uid);
 
         if (user) {
-            debug('user %s is registered', user);
-
-            if (user.provider == 'elog.io'){
-                req.session.uid = uid;
-                res.redirect('/users/' + uid);
-            }
-            else if(user.provider == 'persona'){
-               persona.verify(req.body.assertion)
-               .then(
-                    function(email){
-                        req.session.email = email;
-                        req.session.uid = uid;
-                        debug("persona verified successfully for email: %s", email);
-                        res.send('/users/' + uid);
-                        return;
-                    }, function(err){
-                        res.send('403');
-                        console.error(err);
-                        return;
-                    }
-                );
-            }
-            
+            debug('user %s is registered', uid);
+            req.session.uid = uid;
+            req.session.group = user.group;
+            sessions.set(req.session.id, req.session);
+            res.send(uid);
         } 
         else {
             debug('user is not registered, started dummy session');
@@ -251,23 +265,34 @@ function start_dummy_session (req, res) {
 
         return;
     }
+    function findUser (param) {
+        var promise = User.findOne(param).exec();
+        promise.then(respond,
+            function(err) {
+                console.error(err);
+                return;
+            }
+        );
+    }
 
-
-
-    User.findOne({uid: uid}).exec()
-    .then(respond,
-        function(err) {
-            console.error(err);
-            return;
-        }
-    );
-
+    if(req.body.provider == 'persona'){
+       persona.verify(req.body.assertion)
+       .then(
+            function(email){
+                findUser({email:email});
+                return;
+            }, function(err){
+                res.send('403');
+                return;
+            }
+        );
+    }
     return;
 }
 
 function check_dummy_session(req, res, next){
 
-    var uid, session;
+    var uid;
     function respond(user){
         if (user) {
             debug('user is logged in and registered.');
@@ -280,20 +305,21 @@ function check_dummy_session(req, res, next){
             req.locals.user = uid;
             next();
         }
-
         return;
     }
 
-    if (session && session.uid && session._sessionID === req.body.token) {
+    if (session && session.uid) {
         debug('checking session for user: %s...', uid);
         uid = session.uid
         User.findOne({uid: uid}).exec()
         .then(respond, 
             function(err){
                 console.error(err);
+                res.send('403');
                 return;
             }
         );
+        return;
     } 
     else {
         debug('there is no session running for this user.')

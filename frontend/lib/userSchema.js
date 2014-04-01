@@ -19,7 +19,16 @@ var userSchema = {
             unique: true
         }
     },
+    group: {
+        type: String
+    },
     email: {
+        type: String,
+        index: {
+            unique: true
+        }
+    },
+    provider: {
         type: String
     },
     hash: {

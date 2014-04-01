@@ -5,11 +5,12 @@ var uid = require('uid2');
 var crypto = require('crypto');
 
 
-module.exports.setToken = function (res, req, next) {
+module.exports.setToken = function (req, res, next) {
 
-    var secret = req.session.csrfSecret;
+    var secret;
+    var token;
 
-    if(!secret){
+    if(!req.session.csrfSecret){
         uid(24, function(err, res){
             if (err) return next(err);
             secret = res;
@@ -24,24 +25,23 @@ module.exports.setToken = function (res, req, next) {
     return;
 };
 
-module.exports.check = function (res, req, next) {
+module.exports.check = function (req, res, next) {
 
-        // determine user-submitted token
-        var reqToken = req.body._csrf;
+    // determine user-submitted token
+    var reqToken = req.body._csrf;
 
-        // check
-        if (!reqToken || !checkToken(reqToken, secret)) {
-            console.error('invalid csrf token');
-            res.send('403')
-            return;
-        }
-        next();
+    // check
+    if (!reqToken || !checkToken(reqToken, secret)) {
+        console.error('invalid csrf token');
+        res.send('403')
         return;
     }
-};
+    next();
+    return;
+}
 
 function saltedToken(secret) {
-  return createToken(generateSalt(10), secret);
+    return createToken(generateSalt(10), secret);
 }
 
 function createToken(salt, secret) {
@@ -57,7 +57,7 @@ function generateSalt(length) {
     var SALTCHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
     var i, salt = [];
     for (i = 0; i < length; ++i) {
-    salt.push(SALTCHARS[Math.floor(Math.random() * SALTCHARS.length)]);
+        salt.push(SALTCHARS[Math.floor(Math.random() * SALTCHARS.length)]);
     }
     return salt.join('');
 }
