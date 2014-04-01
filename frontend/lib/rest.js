@@ -199,11 +199,11 @@ function call (res, queryData, action, view, callback) {
         }).
         catch(BackendError, function(e) {
             // It's already been logged
-            res.send(503, env.NODE_ENV === 'production' ? 'Temporary internal error' : e.message);
+            res.send(503, env.NODE_ENV === 'production' ? 'Temporary internal error\n' : e.message + '\n');
         }).
         catch(function(e) {
             console.error('exception in task %s: %s', action, e.stack);
-            res.send(500, env.NODE_ENV === 'production' ? 'Internal error' : e.stack);
+            res.send(500, env.NODE_ENV === 'production' ? 'Internal error\n' : e.stack);
         }).
         done();
 }
