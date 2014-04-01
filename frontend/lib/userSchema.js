@@ -19,6 +19,9 @@ var userSchema = {
             unique: true
         }
     },
+    email: {
+        type: String
+    },
     hash: {
         type: String,
         set: function(password) {

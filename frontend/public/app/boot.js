@@ -11,6 +11,7 @@ requirejs.config({
 		collections: '../app/collections',
 		underscore: '../lib/underscore',
 		jquery : '../lib/jquery',
+		persona : 'https://login.persona.org/include'
 	},
 	map: {
 		'lib': {
@@ -31,9 +32,13 @@ require(['lib/jquery', 'lib/backbone'], function($, Backbone){
 			"works/:id(/)": 'work',
 			"works/:id/posts(/)": 'posts',
 			"works/:id/sources(/)": 'sources',
+			"login(/)": 'login'
 		},
 		home: function() {
 			require(['home']);
+		},
+		login: function(){
+			require(['login']);
 		},
 		posts: function(id){
 			require(['posts']);
@@ -58,5 +63,8 @@ require(['lib/jquery', 'lib/backbone'], function($, Backbone){
 	// } else {
 	// 	document.onready = _init;
 	// }
+
+	return;
+
 });
 

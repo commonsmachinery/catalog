@@ -11,13 +11,15 @@
 
 'use strict';
 
-var debug = require('debug')('frontend:sessions')
+var debug = require('debug')('frontend:sessions');
+var csrf = require('./csrf');
+var persona = require('./persona');
 var User;
 var env;
 var dev, test;
 
 
-var isLogged, loginScreen, logout, newSession, newUser, signupScreen; 
+var isLogged, loginScreen, logout, newSession, newUser, loginScreen; 
 
 function init (app, express, db) {
 
@@ -27,31 +29,29 @@ function init (app, express, db) {
 
     var user = require('./userSchema');
     
-    var userSchema = new db.Schema(user.schema);
+    var userSchema = new db.Schema(user.schema,{autoIndex: env.CATALOG_USERS_AUTOINDEX});
     userSchema.method(user.methods);
     User = db.model('User', userSchema);
 
     /* ==================== Routes ==================== */
 
     /* Screens */
-    app.get('/login', loginScreen);
-    app.get('/signup', signupScreen);
+    app.get('/login', csrf.setToken, loginScreen);
 
     /* Actions */
-
 
     if(dev){
         app.post('/session', prefix, start_dummy_session);
         app.get('/session', check_dummy_session);
-        app.post('/signup', prefix, newUser);
+        app.post('/login', prefix, newUser);
     }
     else if (test){
-        app.post('/session', prefix, newSession);
-        app.post('/signup', prefix, newUser);
+        app.post('/session', prefix, csrf.check, newSession);
+        app.post('/login', prefix, csrf.check, newUser);
     }
     else{
-        app.post('/session', newSession);
-        app.post('/signup', newUser);
+        app.post('/session', csrf.check, newSession);
+        app.post('/login', csrf.check, newUser);
     }
 
     app.del('/session', logout);
@@ -104,11 +104,14 @@ function prefix (req, res, next) {
 /* Screens */
 
 function loginScreen (req, res) {
-    res.render('login');
-}
+    res.setHeader('X-UA-Compatible', 'IE=Edge'); //requirement for persona
+    var referer = req.headers.referer;
+    var landing = !referer || referer.search(env.CATALOG_BASE_URL) < 0;
 
-function signupScreen (req, res) {
-    // body...
+    res.render('login',{
+        landing: landing,
+        token: req.session.token
+    });
 }
 
 /* Actions */
@@ -122,17 +125,35 @@ function logout (req, res) {
 }
 
 function newSession (req, res) {
-
     var uid = req.body.uid;
-    var pass = req.body.pass;
 
     function respond (user) {
         debug('new session: %s', user);
-        if (user && user.authenticate(pass)) {
-            req.session.uid = user.uid;
-            res.redirect('/users/' + req.session.uid);
+        if (user && user.provider == 'elog.io' && user.authenticate(req.body.pass)) {
+            req.session.uid = uid;
+            res.redirect('/users/' + uid);
         } 
+        else if(user && user.provider == 'persona' && req.body.token === req.session._csrf){
+           persona.verify(req.body.assertion)
+           .then(
+                function(email){
+                    req.session.email = email;
+                    req.session.uid = uid;
+                    res.redirect('/users/' + uid);
+                    return;
+                }, function(err){
+                    res.send('403');
+                    console.error(err);
+                    return;
+                }
+            );
+        }
+        else if (user && user.provider == 'oauth'){
+
+        }
         else {
+            referer = req.headers.referer;
+            landing = !ref || ref.search(env.CATALOG_BASE_URL) < 0
             res.redirect('/login');
         }
 
@@ -151,14 +172,39 @@ function newSession (req, res) {
 }
 
 function newUser (req, res) {
-    var user = new User({
-        uid: req.body.uid,
-        hash: req.body.pass
-    });
-    user.save(function(err){
-        newSession(req, res);
-        return;
-    });
+    var provider = req.body.provider;
+    var uid = req.body.uid;
+    if(provider == 'direct'){
+        var user = new User({
+            uid: uid,
+            hash: req.body.pass
+        });
+        user.save(function(err){
+            newSession(req, res);
+            return;
+        });
+    }
+    else if (provider == 'persona'){
+        persona.verify(req.body.assertion)
+        .then(
+            function(email){
+                var user = new User({
+                    uid: uid,
+                    email: email,
+                    provider: provider
+                });
+                user.save(function(err){
+                    newSession(req, res);
+                    return;
+                });
+                return;
+            }, function(err){
+                console.error(err);
+                return;
+            }
+        );
+    }
+    
     return;
 }
 
@@ -168,13 +214,34 @@ function start_dummy_session (req, res) {
 
     var uid = req.body.uid;
     debug('starting new session...');
+
     function respond (user) {
         debug('new session: %s', uid);
 
         if (user) {
             debug('user %s is registered', user);
-            req.session.uid = user.uid;
-            res.redirect('/users/' + user.uid);
+
+            if (user.provider == 'elog.io'){
+                req.session.uid = uid;
+                res.redirect('/users/' + uid);
+            }
+            else if(user.provider == 'persona'){
+               persona.verify(req.body.assertion)
+               .then(
+                    function(email){
+                        req.session.email = email;
+                        req.session.uid = uid;
+                        debug("persona verified successfully for email: %s", email);
+                        res.send('/users/' + uid);
+                        return;
+                    }, function(err){
+                        res.send('403');
+                        console.error(err);
+                        return;
+                    }
+                );
+            }
+            
         } 
         else {
             debug('user is not registered, started dummy session');
@@ -184,6 +251,8 @@ function start_dummy_session (req, res) {
 
         return;
     }
+
+
 
     User.findOne({uid: uid}).exec()
     .then(respond,
@@ -198,7 +267,7 @@ function start_dummy_session (req, res) {
 
 function check_dummy_session(req, res, next){
 
-    var uid;
+    var uid, session;
     function respond(user){
         if (user) {
             debug('user is logged in and registered.');
@@ -215,9 +284,9 @@ function check_dummy_session(req, res, next){
         return;
     }
 
-    if (req.session && req.session.uid) {
+    if (session && session.uid && session._sessionID === req.body.token) {
         debug('checking session for user: %s...', uid);
-        uid = req.session.uid
+        uid = session.uid
         User.findOne({uid: uid}).exec()
         .then(respond, 
             function(err){

@@ -42,21 +42,20 @@ setEnv(config.common);
 setEnv(config[process.env.NODE_ENV || 'development']);
 
 
-function main() {
+function main() {    
 
-    /* ============================== Frontend Setup ========================= */
-
-    //var redisClient = redis.createClient();
     var app = express();
     var env = process.env;
 
+    /* ============================== Frontend Setup ========================= */
+
     app.set('err', err);
 
-    // Middlewares
     app.use(express.logger());
     app.use(express.json());
+    app.use(express.bodyParser());
+    app.use(express.cookieParser());
 
-    // Templating
     app.engine('.jade', cons.jade);
     app.set('view engine', 'jade');
     app.use(stylus.middleware({
@@ -64,9 +63,8 @@ function main() {
         dest: __dirname + env.CATALOG_STYLE_DEST,
         compress: true
     }));
+
     app.use(express.static(__dirname + env.CATALOG_STATIC));
-    
-    app.use(express.cookieParser());
 
 
     /* ======================= Connect services and start ======================= */
