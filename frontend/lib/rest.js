@@ -22,7 +22,6 @@ var cluster;
 
 // TODO: this should perhaps go into a json file instead
 var errorMap = {
-    // TODO: get real error types from backend tasks
     'ParamError': 400,
     'EntryAccessError': 403,
     'EntryNotFoundError': 404,
@@ -164,36 +163,11 @@ function stockSourceURIFromReq(req) {
 
 
 
-function call (res, queryData, action, view, callback) {
-    backend.call(action, queryData).
-        then(function(data) {
-            var owner = false;
-
-            if (callback) {
-                return callback(data);
-            }
-
-            if (queryData.user) {
-                if (queryData.user_id && queryData.user_id === queryData.user) {
-                    owner = true;
-                }
-                else if (data.creator && data.creator === queryData.user) {
-                    owner = true;
-                }
-            }
-
-            res.format({
-                'text/html': function(){
-                    res.render(view, {
-                        data: data,
-                        owner: owner
-                    });
-                },
-                'application/json': function(){
-                    res.send(data);
-                }
-            });
-        }).
+/* Add error handlers to a call promise to ensure proper HTTP
+ * responses are sent.
+ */
+function handleErrors(callPromise, res) {
+    callPromise.
         error(function(error) {
             res.send(errorMap[error.type] || 500, error);
         }).
@@ -202,13 +176,35 @@ function call (res, queryData, action, view, callback) {
             res.send(503, env.NODE_ENV === 'production' ? 'Temporary internal error\n' : e.message + '\n');
         }).
         catch(function(e) {
-            console.error('exception in task %s: %s', action, e.stack);
+            console.error('exception when calling task: %s', e.stack);
             res.send(500, env.NODE_ENV === 'production' ? 'Internal error\n' : e.stack);
         }).
         done();
 }
 
-/* when we only need user and id */
+/* Helper method to return a result object correctly formatted.
+ */
+function formatResult(res, view) {
+    return function(data) {
+        // TODO: owner should really be returned from the backend
+        var owner = false;
+
+        res.format({
+            'text/html': function(){
+                res.render(view, {
+                    data: data,
+                    owner: owner
+                });
+            },
+            'application/json': function(){
+                res.send(data);
+            }
+        });
+    };
+}
+
+/* Basic data needed for all task calls.
+ */
 function commonData (req) { 
     var user_uri = buildUserURI('test_1');
 
@@ -220,43 +216,42 @@ function commonData (req) {
 /* API functions */
 
 function deleteWork(req, res) {
-    function respond (work, err) {
-        res.send(204, 'successfully deleted work'); 
-        return;
-         // TODO: this could be 202 Accepted if we add undo capability
-    }
-
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
 
-    call(res, queryData, 'delete_work', null, respond);
-    return;
+    handleErrors(
+        backend.call('delete_work', queryData).
+            then(function(data) {
+                res.send(204, 'successfully deleted work');
+                // TODO: this could be 202 Accepted if we add undo capability
+            }),
+        res
+    );
 }
 
 function getPosts (req, res) {
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
 
-    call(res, queryData, 'get_posts', 'posts');
-    return;
+    handleErrors(
+        backend.call('get_posts', queryData).
+            then(formatResult(res, 'posts')),
+        res);
 }
 
 function getPost (req, res) {
     var queryData = commonData(req);
     queryData.post_uri = workPostURIFromReq(req);
 
-    call(res, queryData, 'get_post', 'workPost');
-    return;
+    handleErrors(
+        backend.call('get_post', queryData).
+            then(formatResult(res, 'workPost')),
+        res);
 }
 
 
 function postPost(req, res) {
     var postURI;
-
-    function respond(post, err) {
-        debug('successfully added post, redirecting to %s', postURI);
-        res.redirect(postURI);
-    }
 
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
@@ -267,32 +262,35 @@ function postPost(req, res) {
         resource: req.body.resource,
     };
 
-    cluster.increment('next-post-id')
-    .then(
-        function(postID){
-            postURI = buildWorkPostURI(req.params.workID, postID);
-            queryData.post_uri = postURI;
-            queryData.post_data.id = postID;
-            call(res, queryData, 'create_post', null, respond);
-            return;
-        }
-    );
-
-    return;
+    handleErrors(
+        cluster.increment('next-post-id')
+            .then(
+                function(postID) {
+                    postURI = buildWorkPostURI(req.params.workID, postID);
+                    queryData.post_uri = postURI;
+                    queryData.post_data.id = postID;
+                    return backend.call('create_post', queryData);
+                }
+            ).then(
+                function(data) {
+                    debug('successfully added post, redirecting to %s', postURI);
+                    res.redirect(postURI);
+                }
+            ),
+        res);
 }
 
 function deletePost (req, res) {
-    function respond (work, err) {
-        res.send(204, 'successfully deleted post'); 
-        return;
-         // TODO: this could be 202 Accepted if we add undo capability
-    }
-
     var queryData = commonData(req);
     queryData.post_uri = workPostURIFromReq(req);
 
-    call(res, queryData, 'delete_post', null, respond);
-    return;
+    handleErrors(
+        backend.call('delete_post', queryData).
+            then(function(data) {
+                res.send(204, 'successfully deleted post');
+                // TODO: this could be 202 Accepted if we add undo capability
+            }),
+        res);
 }
 
 function getSource (req, res) {
@@ -304,17 +302,14 @@ function getSource (req, res) {
         queryData.source_uri = stockSourceURIFromReq(req);
     }
 
-    call(res, queryData, 'get_source', 'source');
-    return;
+    handleErrors(
+        backend.call('get_source', queryData).
+            then(formatResult(res, 'source')),
+        res);
 }
 
 function postWorkSource(req, res) {
     var sourceURI;
-
-    function respond(source, err) {
-        debug('successfully added work source, redirecting to %s', sourceURI);
-        res.redirect(sourceURI);
-    }
 
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
@@ -325,29 +320,28 @@ function postWorkSource(req, res) {
         resource: req.body.resource,
     };
 
-    cluster.increment('next-source-id')
-    .then(
-        function(sourceID){
-            sourceURI = buildWorkSourceURI(
-                req.params.workID, sourceID);
-            queryData.source_uri = sourceURI;
-            queryData.source_data.id = sourceID;
-            call(res, queryData, 'create_work_source', null, respond);
-            return;
-        }
-    );
-
-    return;
+    handleErrors(
+        cluster.increment('next-source-id')
+            .then(
+                function(sourceID) {
+                    sourceURI = buildWorkSourceURI(
+                        req.params.workID, sourceID);
+                    queryData.source_uri = sourceURI;
+                    queryData.source_data.id = sourceID;
+                    return backend.call('create_work_source', queryData);
+                }
+            ).then(
+                function(data) {
+                    debug('successfully added work source, redirecting to %s',
+                          sourceURI);
+                    res.redirect(sourceURI);
+                }
+            ),
+        res);
 }
 
 function postStockSource(req, res) {
     var sourceURI;
-
-    function respond(source, err) {
-        debug('successfully added work source, redirecting to %s', sourceURI);
-        res.redirect(sourceURI);
-    }
-
     var queryData = commonData(req);
 
     queryData.source_data = {
@@ -356,28 +350,27 @@ function postStockSource(req, res) {
         resource: req.body.resource,
     };
 
-    cluster.increment('next-source-id')
-    .then(
-        function(sourceID){
-            sourceURI = buildStockSourceURI('test_1', sourceID);
-            queryData.source_uri = sourceURI;
-            queryData.source_data.id = sourceID;
-            call(res, queryData, 'create_stock_source', null, respond);
-            return;
-        }
-    );
-
-    return;
+    handleErrors(
+        cluster.increment('next-source-id')
+            .then(
+                function(sourceID) {
+                    sourceURI = buildStockSourceURI('test_1', sourceID);
+                    queryData.source_uri = sourceURI;
+                    queryData.source_data.id = sourceID;
+                    return backend.call('create_stock_source', queryData);
+                }
+            ).then(
+                function (data) {
+                    debug('successfully added work source, redirecting to %s', sourceURI);
+                    res.redirect(sourceURI);
+                }
+            ),
+        res);
 }
 
 function putSource(req, res) {
-    function respond(work, err) {
-        debug('successfully source work');
-        res.send('success');
-        return;
-    }
-
     var queryData = commonData(req);
+
     if (req.params.workID) {
         queryData.source_uri = workSourceURIFromReq(req);
     }
@@ -388,18 +381,18 @@ function putSource(req, res) {
     queryData.source_data = _.pick(
         req.body, 'metadataGraph', 'cachedExternalMetadataGraph', 'resource');
 
-    call(res, queryData, 'update_source', null, respond);
-    return;
+    handleErrors(
+        backend.call('update_source', queryData).
+            then(function (data) {
+                debug('successfully source work');
+                res.send(data);
+            }),
+        res);
 }
 
 function deleteSource (req, res) {
-    function respond (work, err) {
-        res.send(204, 'successfully deleted source'); 
-        return;
-         // TODO: this could be 202 Accepted if we add undo capability
-    }
-
     var queryData = commonData(req);
+
     if (req.params.workID) {
         queryData.source_uri = workSourceURIFromReq(req);
     }
@@ -407,13 +400,19 @@ function deleteSource (req, res) {
         queryData.source_uri = stockSourceURIFromReq(req);
     }
 
-    call(res, queryData, 'delete_source', null, respond);
-    return;
+    handleErrors(
+        backend.call('delete_source', queryData).
+            then(function (data) {
+                res.send(204, 'successfully deleted source');
+                // TODO: this could be 202 Accepted if we add undo capability
+            }),
+        res);
 }
 
 function getSourceMetadata (req, res) {
     var queryData = commonData(req);
-    if (req.params.workID) {
+
+   if (req.params.workID) {
         queryData.source_uri = workSourceURIFromReq(req);
     }
     else {
@@ -422,8 +421,10 @@ function getSourceMetadata (req, res) {
 
     queryData.subgraph = 'metadata';
 
-    call(res, queryData, 'get_source', 'sourceMetadata');
-    return;
+    handleErrors(
+        backend.call('get_source', queryData).
+            then(formatResult(res, 'sourceMetadata')),
+        res);
 }
 
 function getSourceCEM (req, res) {
@@ -437,31 +438,40 @@ function getSourceCEM (req, res) {
 
     queryData.subgraph = 'cachedExternalMetadata';
 
-    call(res, queryData, 'get_source', 'sourceCEM');
-    return;
+    handleErrors(
+        backend.call('get_source', queryData).
+            then(formatResult(res, 'sourceCEM')),
+        res);
 }
 
 function getWorkSources (req, res) {
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
 
-    call(res, queryData, 'get_work_sources', 'sources');
-    return;
+    handleErrors(
+        backend.call('get_work_sources', queryData).
+            then(formatResult(res, 'sources')),
+        res);
 }
 
 function getStockSources (req, res) {
     var queryData = commonData(req);
 
-    call(res, queryData, 'get_stock_sources', 'sources');
-    return;
+    handleErrors(
+        backend.call('get_stock_sources', queryData).
+            then(formatResult(res, 'sources')),
+        res);
 }
+
 
 function getWork(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
 
-    call(res, queryData, 'get_work', 'workPermalink');
-    return;
+    handleErrors(
+        backend.call('get_work', queryData).
+            then(formatResult(res, 'workPermalink')),
+        res);
 }
 
 
@@ -472,35 +482,40 @@ function getWorks(req, res) {
     queryData.limit = req.query.limit || 0;
     queryData.query = req.query;
 
-    call(res, queryData, 'query_works_simple', 'works');
-    return;
+    handleErrors(
+        backend.call('query_works_simple', queryData).
+            then(formatResult(res, 'works')),
+        res);
 }
+
 
 function getWorkMetadata(req, res) {
     var queryData = commonData(req);
+
     queryData.work_uri = workURIFromReq(req);
     queryData.subgraph = "metadata";
 
-    call(res, queryData, 'get_work', 'workMetadata');
-    return;
+    handleErrors(
+        backend.call('get_work', queryData).
+            then(formatResult(res, 'workMetadata')),
+        res);
 }
+
 
 function getCompleteWorkMetadata(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = workURIFromReq(req);
     queryData.format = 'json';
 
-    call(res, queryData, 'get_complete_metadata', 'completeMetadata');
-    return;
+    handleErrors(
+        backend.call('get_complete_metadata', queryData).
+            then(formatResult(res, 'completeMetadata')),
+        res);
 }
+
 
 function postWork(req, res) {
     var workURI;
-
-    function respond(work, err) {
-        debug('successfully added work, redirecting to %s', workURI);
-        res.redirect(workURI);
-    }
 
     var queryData = commonData(req);
     queryData.work_data = {
@@ -509,34 +524,41 @@ function postWork(req, res) {
         visibility: req.body.visibility || 'private',
     };
 
-    cluster.increment('next-work-id')
-    .then(
-        function(workID){
-            workURI = buildWorkURI(workID);
-            queryData.work_uri = workURI;
-            queryData.work_data.id = workID;
-            call(res, queryData, 'create_work', null, respond);
-            return;
-        }
-    );
-    return;
+    handleErrors(
+        cluster.increment('next-work-id')
+            .then(
+                function(workID) {
+                    workURI = buildWorkURI(workID);
+                    queryData.work_uri = workURI;
+                    queryData.work_data.id = workID;
+                    return backend.call('create_work', queryData);
+                }
+            ).then(
+                function respond(data) {
+                    debug('successfully added work, redirecting to %s', workURI);
+                    res.redirect(workURI);
+                }
+            ),
+        res);
 }
 
-function putWork(req, res) {
-    function respond(work, err) {
-        debug('successfully updated work');
-        res.send(work);
-        return;
-    }
 
+function putWork(req, res) {
     var queryData = commonData(req);
+
     queryData.work_uri = workURIFromReq(req);
     queryData.work_data = _.pick(
         req.body, 'metadataGraph', 'state', 'visiblity');
 
-    call(res, queryData, 'update_work', null, respond);
-    return;
+    handleErrors(
+        backend.call('update_work', queryData).
+            then(function(data) {
+                debug('successfully updated work');
+                res.send(data);
+            }),
+        res);
 }
+
 
 function getSPARQL(req, res) {
     var results_format;
@@ -547,19 +569,17 @@ function getSPARQL(req, res) {
         results_format = "xml";
     }
 
-
-    function respond(result, err) {
-        res.send(result);
-        return;
-    }
-
     var queryData = {
         query_string: req.query.query,
         results_format: results_format
     };
 
-    call(res, queryData, 'query_sparql', null, respond);
-    return;
+    handleErrors(
+        backend.call('query_sparql', queryData).
+            then(function(data) {
+                res.send(data);
+            }),
+        res);
 }
 
 module.exports = rest;
