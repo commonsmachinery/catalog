@@ -12,17 +12,21 @@
 
 'use strict';
 
-var backendClient = require('./lib/wrappers/celery');
-var db = require('./lib/wrappers/mongo');
-var sessionStore = require('./lib/wrappers/sessionStore');
-var cons = require('consolidate');
 var debug = require('debug')('frontend:server');
+
+var cons = require('consolidate');
 var express = require('express');
 var stylus = require('stylus');
+var Promise = require('bluebird');
+
+var sessionStore = require('./lib/wrappers/sessionStore');
+var backend = require('./lib/backend');
+var db = require('./lib/wrappers/mongo');
+var cluster = require('./lib/cluster');
+
 var config = require('./config.json');
 var err = require('./err.json');
-var cluster = require('./lib/cluster');
-var Promise = require('bluebird');
+
 
 /*  Override config.json with enviroment variables  */
 function setEnv (obj) {
@@ -42,20 +46,23 @@ setEnv(config.common);
 setEnv(config[process.env.NODE_ENV || 'development']);
 
 
-function main() {    
-
-    var app = express();
-    var env = process.env;
+function main() {
 
     /* ============================== Frontend Setup ========================= */
 
+    //var redisClient = redis.createClient();
+    var app = express();
+    var env = process.env;
+
     app.set('err', err);
 
+    // Middlewares
     app.use(express.logger());
     app.use(express.json());
     app.use(express.bodyParser());
     app.use(express.cookieParser());
 
+    // Templating
     app.engine('.jade', cons.jade);
     app.set('view engine', 'jade');
     app.use(stylus.middleware({
@@ -71,15 +78,10 @@ function main() {
 
     function connectServices () {
         return new Promise.join(
-            backendClient({
-                CELERY_BROKER_URL: env.CATALOG_BROKER_URL,
-                CELERY_RESULT_BACKEND: 'amqp',
-                CELERY_TASK_RESULT_EXPIRES: 30,
-                CELERY_TASK_RESULT_DURABLE: false
-            }), 
-            cluster.connect(env.CATALOG_REDIS_URL), 
+            backend.connect(env.CATALOG_BROKER_URL),
+            cluster.connect(env.CATALOG_REDIS_URL),
             db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB),
-            sessionStore(env.CATALOG_USERS_DB)
+			sessionStore(env.CATALOG_USERS_DB)
         );
     }
 

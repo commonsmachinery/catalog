@@ -21,6 +21,7 @@ sudo docker run \
     --link=cat-redis:redis \
     -p 127.0.0.1:8004:8004 \
     -e HOME=/frontend \
+    -e DEBUG='frontend:*' \
     -w /frontend \
     dockerfile/nodejs \
     /frontend/docker_run.sh node_modules/nodemon/bin/nodemon.js server.js
