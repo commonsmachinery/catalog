@@ -1,7 +1,19 @@
 'use strict';
 
+
+var debug = require('debug')('frontend:mongo');
 var mongoose = require('mongoose'),
     Promise = require('bluebird');
+
+var model = mongoose.Model;
+var find = model.find;
+var findOne = model.findOne;
+var findOneAndUpdate = model.findOneAndUpdate;
+
+model.find = Promise.promisify(find);
+model.findOne = Promise.promisify(findOne);
+model.findOneAndUpdate = Promise.promisify(findOneAndUpdate);
+
 
 exports.Schema = mongoose.Schema;
 exports.model = mongoose.model.bind(mongoose);

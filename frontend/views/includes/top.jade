@@ -21,7 +21,10 @@ html(lang="en")
 				| link1
 			li: a#link2 
 				| link2
-			li: a#link3 
-				| link3
+			if(logged)
+				li: a(href="/users/#{logged}")
+					| #{logged}
+				li: a#logout(href="#")
+					|logout
 		div#content
 			| 

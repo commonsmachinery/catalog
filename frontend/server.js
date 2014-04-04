@@ -88,14 +88,9 @@ function main() {
         function(backend, redis, mongo, sessionstore){
             console.log('Services connected... starting server...');
 
-            app.use(express.session({
-                secret: env.CATALOG_SECRET,
-                store: sessionstore
-            }));
-
             /* Load REST API */
-            require('./lib/rest')(app, backend, cluster);
             require('./lib/sessions').start(app, express, db, sessionstore);
+            require('./lib/rest')(app, backend, cluster);
 
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);

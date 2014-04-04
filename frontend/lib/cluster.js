@@ -35,7 +35,7 @@ function increment(key) {
                 return;
             }, function(err){
                 debug('Counter error: %s', err);
-                reject(err) || null;
+                reject(err);
                 return;
             }
         );

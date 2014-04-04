@@ -20,7 +20,7 @@ var cluster;
 var cudCallOptions = { };
 
 /* API functions */
-var deletePost, deleteSource, deleteWork, getCompleteMetadata, getMetadata, getMetadata, getPost, getSource, getSourceCEM, getSourceCEM, getSources, getSPARQL, getWork, getWorks, patchSource, postPost, postSource, postWork, putSource, putWork; 
+var deletePost, deleteSource, deleteWork, getCompleteMetadata, getMetadata, getMetadata, getPost, getSource, getSourceCEM, getSourceCEM, getSources, getSPARQL, getPosts, getWork, getWorks, patchSource, postPost, postSource, postWork, putSource, putWork; 
 
 function rest(app, localBackend, localCluster) {
     backend = localBackend;

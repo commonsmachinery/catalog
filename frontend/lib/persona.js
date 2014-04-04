@@ -31,7 +31,7 @@ module.exports.verify = function verify(assertion){
                     }
                 } 
                 catch(err) {
-                    promiseObj.reject(err);
+                    reject(err);
                     console.error("non-JSON response from verifier");
                 }
                 return;
@@ -62,4 +62,4 @@ module.exports.verify = function verify(assertion){
     }
 
     return new Promise(promise);
-}
+};

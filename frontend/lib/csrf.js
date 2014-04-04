@@ -4,17 +4,19 @@ var debug = require('debug')('frontend:csrf');
 var uid = require('uid2');
 var crypto = require('crypto');
 
-
+var saltedToken, checkToken, createToken, generateSalt;
 module.exports.setToken = function (req, res, next) {
 
     var secret;
-    var token;
 
     if(!req.session.csrfSecret){
         uid(24, function(err, res){
-            if (err) return next(err);
+            if (err) {
+                return next(err);
+            }
             secret = res;
             req.session.csrfSecret = secret;
+            return;
         });
     }
 
@@ -29,16 +31,17 @@ module.exports.check = function (req, res, next) {
 
     // determine user-submitted token
     var reqToken = req.body._csrf;
+    var secret = req.session.csrfSecret;
 
     // check
     if (!reqToken || !checkToken(reqToken, secret)) {
         console.error('invalid csrf token');
-        res.send('403')
+        res.send('403');
         return;
     }
     next();
     return;
-}
+};
 
 function saltedToken(secret) {
     return createToken(generateSalt(10), secret);
@@ -49,7 +52,9 @@ function createToken(salt, secret) {
 }
 
 function checkToken(token, secret) {
-    if ('string' != typeof token) return false;
+    if ('string' != typeof token) {
+        return false;
+    }
     return token === createToken(token.slice(0, 10), secret);
 }
 

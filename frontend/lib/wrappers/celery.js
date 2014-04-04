@@ -1,5 +1,6 @@
 'use strict';
 
+var debug = require('debug')('frontend:celery');
 var celery = require('node-celery');
 var Promise = require('bluebird');
 

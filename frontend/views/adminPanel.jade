@@ -1,0 +1,23 @@
+
+include includes/top
+
+h2 Sessions
+ul
+	for session in sessions
+		li 
+			| #{session.uid} - #{Date(session.lastAccess)} 
+			input.kick(type="button" data-uid="#{session.uid}" value="kick")
+h2 Users
+for user in users
+	- var lock, lockCaption
+	if(user.locked)
+		- lock = false
+		- lockCaption = 'unlock'
+	else
+		- lock = true
+		- lockCaption = 'lock'
+	li
+		| #{user.uid} - #{user.email}
+		input.lock(type="button" data-uid="#{user.uid}" data-lock="#{lock}" value="#{lockCaption}")
+
+include includes/bottom

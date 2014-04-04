@@ -40,12 +40,19 @@ var userSchema = {
     },
     salt: {
         type: String
+    },
+    created: {
+        type: Date,
+        default: Date.now()
+    },
+    locked: {
+        type: Boolean,
+        default: false
     }
 };
 
 var userMethods = {
     authenticate: function(string) {
-            console.log(this.encrypt(string), ' ---- ', this.hash);
             return this.encrypt(string) === this.hash;
         },
     encrypt: function(string) {

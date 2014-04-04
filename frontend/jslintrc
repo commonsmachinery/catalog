@@ -1,4 +1,5 @@
 {
+    "eqeq": true,
     "devel": true,
     "debug": true,
     "plusplus": true,

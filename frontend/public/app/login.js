@@ -1,9 +1,11 @@
-/*global define*/
+/*global define, navigator, window*/
 'use strict';
 
-define(function(req){
-	var $ = require('jquery');
-	var persona = require('persona');
+var $, authenticate;
+
+define(function(require){
+	$ = require('jquery');
+	require('persona');
 
 	$('#login, #signup').on('click', function(ev){
 		var btn = ev.target.id;
@@ -15,14 +17,15 @@ define(function(req){
 		return;
 	}); 
 
-	$('#logout-persona').one('click', function(){
-		navigator.id.logout(); 
+	function logout(){
+		authenticate('logout');
 		return;
-	});
+	}
 
-	return;
+	return {
+		logout: logout
+	};
 });
-
 
 function authenticate (action) {
 	navigator.id.watch({
@@ -56,6 +59,7 @@ function authenticate (action) {
 				url: '/session',
 				success: function(res, status, xhr) { 
 					console.log('logged out');
+					window.location.href = '/';
 					return;
 				},
 				error: function(xhr, status, err) { 
@@ -65,6 +69,13 @@ function authenticate (action) {
 			});
 		}
 	});
+	if(action == 'logout'){
+		navigator.id.logout(); 
+		return;
+	}
 	navigator.id.request(); 
 	return;
 }
+
+
+
