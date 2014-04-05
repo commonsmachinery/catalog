@@ -14,31 +14,8 @@ module.exports = function(dbname){
                 return;
             }
             debug('session store connected');
-            var proto = store.constructor.prototype;
-            store.list = {};
-            proto.all = promiseFilter;
 
-            proto.set = (function(_super){
-                return function(sid, sess, callback){
-                    var sessRef = this.list[sid];
-                    if(!sessRef){
-                        sessRef = sess;
-                    }
-                    _super.apply(this, arguments);
-                    return;
-                };
-            })(proto.set);
-
-            proto.kick = function(sid){
-                var sessRef = this.list[sid];
-                if(sessRef){
-                    sessRef.destroy();
-                }
-                else{
-                    store.destroy(sid);
-                }
-                return;
-            };
+            extend(store, store.constructor.prototype);
 
             resolve(store);
             return;
@@ -53,6 +30,38 @@ module.exports = function(dbname){
     }
     return new Promise(promise);
 };
+
+function extend (store, proto) {
+
+    store.list = {};
+
+    /* lets us get filtered sessions */
+    proto.all = promiseFilter;
+
+    /* keeps a registry of currently connected users */
+    proto.set = (function(_super){
+        return function(sid, sess, callback){
+            var sessRef = this.list[sid];
+            if(!sessRef){
+                sessRef = sess;
+            }
+            _super.apply(this, arguments);
+            return;
+        };
+    })(proto.set);
+
+    /* kills other user's sessions */
+    proto.kick = function(sid){
+        var sessRef = this.list[sid];
+        if(sessRef){
+            sessRef.destroy();
+        }
+        else{
+            store.destroy(sid);
+        }
+        return;
+    };
+}
 
 function promiseFilter(param, offset, limit) {
 

@@ -6,7 +6,9 @@ var Promise = require('bluebird');
 var https = require("https");
 var env = process.env;
 
-
+/* On register/login, this module receives the assertion passed by the 
+*  client to be verified remotely by persona
+*/
 module.exports.verify = function verify(assertion){
 
     function promise (resolve, reject){

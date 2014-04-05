@@ -24,6 +24,7 @@ function kick (ev) {
     return;
 }
 
+/* Lock is a toggle */
 function lock (ev) {
 
     var dataset = ev.target.dataset;

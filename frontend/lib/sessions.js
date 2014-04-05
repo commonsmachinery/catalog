@@ -36,6 +36,7 @@ function init (app, express, db, sessionstore) {
         store: sessionstore
     }));
 
+    /* make the current user, if logged, always available to templates */
     app.use(function(req, res, next){
         res.locals.logged = req.session.uid;
         next();
@@ -115,14 +116,6 @@ function checkSession(req, res, next) {
     return;
 }
 
-function prefix (req, res, next) {
-    req.body.uid = 'test_' + req.body.uid;
-    next();
-
-    return;
-}
-
-
 /* ========================== REST Functions =============================== */
 
 /* Screens */
@@ -139,6 +132,7 @@ function loginScreen (req, res) {
     return;
 }
 
+/* for now it can kill sessions or lock users */
 function adminPanel (req, res){
     if(req.session.group === 'admin'){
         var q = req.query;
@@ -227,6 +221,9 @@ function logout (req, res) {
     return;
 }
 
+/* for now setGroup can only be done by curl on dev mode. Otherwise, 
+*  they need to be set by a DBA on mongo
+*/
 function setGroup (req, res) {
 
     var uid = req.body.uid;
@@ -277,6 +274,7 @@ function newSession (req, res) {
                 return;
             }
         );
+        return;
     }
 
     if(req.body.provider == 'persona'){
@@ -352,6 +350,19 @@ function newUser (req, res) {
 
 /* ======================== Dummies ===================== */
 
+/* If running on dev/test mode, every username will be prefixed to
+*  prevent accidents
+*/
+function prefix (req, res, next) {
+    req.body.uid = 'test_' + req.body.uid;
+    next();
+
+    return;
+}
+
+/* If running dev mode, you can log in via a script with only a username 
+*  which doesn't need to be previously registered
+*/
 function start_dummy_session (req, res) {
     var uid = req.body.uid;
     debug('starting new session...');
@@ -401,6 +412,9 @@ function start_dummy_session (req, res) {
     return;
 }
 
+/* if running in dev mode, checks your session and it doesn't matter if you are
+*  registered or not unless you want to check as admin
+*/
 function check_dummy_session(req, res, next){
 
     var uid;
@@ -413,7 +427,7 @@ function check_dummy_session(req, res, next){
             else{
                 debug('user is logged in and registered.');
                 req.locals.user = uid;
-                req.locals.type = user.type || null;
+                req.locals.group = user.group || null;
                 next();
             }
         } 

@@ -5,6 +5,13 @@ var uid = require('uid2');
 var crypto = require('crypto');
 
 var saltedToken, checkToken, createToken, generateSalt;
+
+/* Implementation suggested by Mozilla when using persona */
+
+/* Call csrf.setToken when expecting sensible user input (like login or work 
+*  management). If there is no token for this session, sets one and it 
+*  must be put in a hidden field in the response html.
+*/
 module.exports.setToken = function (req, res, next) {
 
     var secret;
@@ -27,6 +34,9 @@ module.exports.setToken = function (req, res, next) {
     return;
 };
 
+/* Call csrf.check when recieving sensible user input to make sure the request is comming
+*  from a view provided by us  
+*/
 module.exports.check = function (req, res, next) {
 
     // determine user-submitted token
@@ -55,7 +65,7 @@ function checkToken(token, secret) {
     if ('string' != typeof token) {
         return false;
     }
-    return token === createToken(token.slice(0, 10), secret);
+    return token === createToken(token, secret).slice(0, token.length);
 }
 
 function generateSalt(length) {

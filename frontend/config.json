@@ -30,6 +30,7 @@
         "base_url": "http://localhost:8004",
         "broker_url": "amqp://guest@localhost:5672//",
         "mongodb_url": "mongodb://localhost/",
+        "port": "8004",
         "redis_url": "tcp://localhost:6379",
         "secret": "rainbow pegasi",
         "static": "/public",
