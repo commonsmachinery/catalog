@@ -79,6 +79,7 @@ function init (app, express, db, sessionstore) {
     return;
 }
 
+
 function checkSession(req, res, next) {
 
     var uid = req.session.uid;
@@ -89,7 +90,7 @@ function checkSession(req, res, next) {
             }
             else{
                 res.locals.user = uid;
-                res.locals.type = user.type || null;
+                res.locals.group = user.group || null;
                 next();
             }
         } 
@@ -249,11 +250,20 @@ function setGroup (req, res) {
 
 function newSession (req, res) {
     var uid = req.body.uid;
+    var provider = req.body.persona;
+    var pass = req.body.pass;
+
     debug('starting new session...');
 
     function respond (user) {
         uid = user.uid;
-        if (user) {
+        if(!provider && user && pass && user.authenticate(pass)){
+            req.session.uid = uid;
+            req.session.group = user.group;
+            res.send(uid);
+        }
+        else if (provider == 'persona' && user) {
+            uid = req.body.uid;
             req.session.uid = uid;
             req.session.group = user.group;
             res.send(uid);
@@ -277,7 +287,7 @@ function newSession (req, res) {
         return;
     }
 
-    if(req.body.provider == 'persona'){
+    if(provider == 'persona'){
        persona.verify(req.body.assertion)
        .then(
             function(email){
@@ -325,12 +335,12 @@ function newUser (req, res) {
                 return;
             }
         );
-        return;
     }
-    if(uid && req.body.pass){
+    else if(!provider && uid && req.body.pass){
         var user = new User({
             uid: uid,
-            hash: req.body.pass
+            hash: req.body.pass,
+            group: req.body.group || null
         });
         user.save(function(err){
             if (err){
@@ -342,7 +352,6 @@ function newUser (req, res) {
             return;
         });
     }
-    
     return;
 }
 
@@ -365,12 +374,18 @@ function prefix (req, res, next) {
 */
 function start_dummy_session (req, res) {
     var uid = req.body.uid;
+    var provider = req.body.provider;
     debug('starting new session...');
 
     function respond (user) {
         debug('new session: %s ', uid);
 
-        if (user) {
+        if(!provider && user && pass && user.authenticate(pass)){
+            req.session.uid = uid;
+            req.session.group = user.group;
+            res.send(uid);
+        }
+        else if (provider == 'persona' && user) {
             uid = user.uid;
             debug('user %s is registered', uid);
             req.session.uid = uid;
@@ -395,7 +410,7 @@ function start_dummy_session (req, res) {
         );
     }
 
-    if(req.body.provider == 'persona'){
+    if(provider == 'persona'){
        persona.verify(req.body.assertion)
        .then(
             function(email){
