@@ -61,10 +61,7 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 	Backbone.history.start({pushState:true});
 
 	function _init(){
-		$('#logout').on('click', function(){
-			login.logout();
-			return;
-		});
+		login.events();
 	}
 	if(document.readyState === 'complete'){
 		_init();

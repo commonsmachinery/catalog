@@ -7,25 +7,30 @@ define(function(require){
 	$ = require('jquery');
 	require('persona');
 
+	/* Remember logout happens outside */
+	return {
+		init: init
+	};
+});
+
+
+function init(){
 	$('#login, #signup').on('click', function(ev){
 		var btn = ev.target.id;
 		if(btn == 'login'){
 			authenticate('session');
-			return;
 		}
-		authenticate('signup');
-		return;
+		else {
+			authenticate('signup');
+		}
+		return false;
 	}); 
-
-	function logout(){
+	$('#logout').on('click', function(){
 		authenticate('logout');
-		return;
-	}
-
-	return {
-		logout: logout
-	};
-});
+		return false;
+	});
+	return;
+}
 
 function authenticate (action) {
 	navigator.id.watch({
