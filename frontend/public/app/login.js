@@ -48,15 +48,15 @@ function authenticate (action) {
 				success: function(res, status, xhr) { 
 					console.log('%s: success', action);
 					window.location.href = '/users/' + res;
-					return;
+					return false;
 				},
 				error: function(xhr, status, err) {
 					navigator.id.logout();
 					console.error("%s failure: %s", action, err);
-					return;
+					return false;
 				}
 			});
-			return;
+			return false;
 		},
 		onlogout: function() {
 			$.ajax({
@@ -65,20 +65,22 @@ function authenticate (action) {
 				success: function(res, status, xhr) { 
 					console.log('logged out');
 					window.location.href = '/';
-					return;
+					return false;
 				},
 				error: function(xhr, status, err) { 
 					console.log("Logout failure: " + err); 
-					return;
+					return false;
 				}
 			});
+			return false;
 		}
 	});
 	if(action == 'logout'){
 		navigator.id.logout(); 
-		return;
 	}
-	navigator.id.request(); 
+	else {
+	 	navigator.id.request(); 
+	}
 	return;
 }
 

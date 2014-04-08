@@ -154,15 +154,14 @@ function adminPanel (req, res){
                     sessions: sessions,
                     users: users
                 });
-                return;
             }, function(err){
                 console.error(err);
-                return;
             }
         );
-        return;
     }
-    res.redirect('/login');
+    else {
+        res.redirect('/login');
+    }
     return;
 }
 
@@ -187,9 +186,7 @@ function kickUser (req, res) {
         .then(kick, function(err){
             console.error(err);
             res.send('500');
-            return;
         });
-        return;
     }
     return;
 }
@@ -204,14 +201,11 @@ function userLock (req, res) {
             function(){
                 debug('user %s locked', user);
                 res.send('200');
-                return;
             }, function(err){
                 console.error(err);
                 res.send('500');
-                return;
             }
         );
-        return;
     }
     return;
 }
@@ -235,16 +229,15 @@ function setGroup (req, res) {
             function(user){
                 debug('new admin: %s', uid);
                 res.send('200');
-                return;
             }, function(err){
                 console.error('error updating user: %s', err);
                 res.send('500');
-                return;
             }
         );
-        return;
     }
-    res.redirect('/login');
+    else{
+        res.redirect('/login');
+    }
     return;
 }
 
@@ -271,7 +264,6 @@ function newSession (req, res) {
         else {
             res.redirect('/login');
         }
-
         return;
     }
 
@@ -281,10 +273,8 @@ function newSession (req, res) {
             function(err){
                 console.error(err);
                 res.send('403');
-                return;
             }
         );
-        return;
     }
 
     if(provider == 'persona'){
@@ -292,17 +282,15 @@ function newSession (req, res) {
        .then(
             function(email){
                 findUser({email:email});
-                return;
             }, function(err){
                 res.send('403');
-                return;
             }
         );
-       return;
     }
-
-    findUser({uid:uid});
-
+    else {
+        findUser({uid:uid});
+    }
+    
     return;
 }
 
@@ -324,15 +312,13 @@ function newUser (req, res) {
                     if (err){
                         console.error(err);
                         res.send('403');
-                        return;
                     }
-                    newSession(req, res);
-                    return;
+                    else{
+                        newSession(req, res);
+                    }
                 });
-                return;
             }, function(err){
                 res.send('403');
-                return;
             }
         );
     }
@@ -346,10 +332,10 @@ function newUser (req, res) {
             if (err){
                 console.error(err);
                 res.send('403');
-                return;
             }
-            newSession(req, res);
-            return;
+            else {
+                newSession(req, res);
+            }
         });
     }
     return;
@@ -405,7 +391,6 @@ function start_dummy_session (req, res) {
         .then(respond,
             function(err) {
                 console.error(err);
-                return;
             }
         );
     }
@@ -415,15 +400,14 @@ function start_dummy_session (req, res) {
        .then(
             function(email){
                 findUser({email:email});
-                return;
             }, function(err){
                 res.send('403');
-                return;
             }
         );
-       return;
     }
-    findUser({uid: uid});
+    else {
+        findUser({uid: uid});
+    }
     return;
 }
 
@@ -462,7 +446,6 @@ function check_dummy_session(req, res, next){
             function(err){
                 console.error(err);
                 res.send('403');
-                return;
             }
         );
     } 

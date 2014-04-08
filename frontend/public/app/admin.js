@@ -16,12 +16,12 @@ function kick (ev) {
             console.log('user kicked');
             $(ev.target).parent().remove();
         }
-        return;
+        return false;
     }
 
     var dataset = ev.target.dataset;
     $.post('/kick', {uid: dataset.uid}, response);
-    return;
+    return false;
 }
 
 /* Lock is a toggle */
@@ -34,12 +34,12 @@ function lock (ev) {
             dataset.lock = !dataset.lock;
             ev.target.value = ev.target.value == 'lock' ? 'unlock' : 'lock';
         }
-        return;
+        return false;
     }
 
     $.post('/lock', {
         uid: dataset.uid,
         lock: dataset.lock
     }, response);
-    return;
+    return false;
 }

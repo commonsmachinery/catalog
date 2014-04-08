@@ -53,8 +53,8 @@ var userSchema = {
 
 var userMethods = {
     authenticate: function(string) {
-            return this.encrypt(string) === this.hash;
-        },
+        return this.encrypt(string) === this.hash;
+    },
     encrypt: function(string) {
         return crypto.createHmac('sha1', this.salt).update(string).digest('hex');
     },

@@ -19,10 +19,12 @@ module.exports.setToken = function (req, res, next) {
     if(!req.session.csrfSecret){
         uid(24, function(err, res){
             if (err) {
-                return next(err);
+                next(err);
             }
-            secret = res;
-            req.session.csrfSecret = secret;
+            else {
+                secret = res;
+                req.session.csrfSecret = secret;
+            }
             return;
         });
     }
@@ -47,9 +49,10 @@ module.exports.check = function (req, res, next) {
     if (!reqToken || !checkToken(reqToken, secret)) {
         console.error('invalid csrf token');
         res.send('403');
-        return;
     }
-    next();
+    else {
+        next();
+    }
     return;
 };
 
@@ -65,7 +68,9 @@ function checkToken(token, secret) {
     if ('string' != typeof token) {
         return false;
     }
-    return token === createToken(token, secret).slice(0, token.length);
+    else {
+        return token === createToken(token, secret).slice(0, token.length);
+    }
 }
 
 function generateSalt(length) {

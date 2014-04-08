@@ -100,7 +100,6 @@ function main() {
             return;
         }, function(err){
             console.error('Services connection error: %s', err);
-            return;
         }
     );
 
