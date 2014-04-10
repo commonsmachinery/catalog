@@ -8,6 +8,34 @@
 #
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir.
 
+"""
+This module provides tasks for all catalog operations performed
+on main and public storage backends.
+
+Main store update tasks:
+
+create_work, update_work, delete_work
+create_work_source, create_stock_source, update_source, delete_source
+create_post, delete_post
+
+On success all the main store update tasks return the normalized Entry
+(Work, Source or Post) as dict, or None in case the entry was deleted.
+
+Public store update tasks: (never should be called directly):
+
+public_create_work, public_update_work, public_delete_work, public_create_work_source
+public_update_source, public_delete_source, public_create_post, public_delete_post
+
+Query tasks:
+
+get_work, get_work_sources, get_stock_sources, get_source, get_post, get_posts
+get_complete_metadata, query_works_simple, query_sparql
+
+If a CatalogError is raised when executing any of the above tasks,
+the error is returned to the frontend in the form of a dict:
+{ 'error': { 'type': 'foo', 'message': 'bar' } }.
+"""
+
 from __future__ import absolute_import
 
 import json, time
@@ -40,6 +68,25 @@ def error(e):
 
 @app.task(base=StoreTask, bind=True)
 def create_work(self, user_uri, work_uri, work_data):
+    """
+    Create a work record in main store.
+    The work will be created in public store if it's visibility is public.
+    Automatically retries the task if the record is locked.
+
+    Arguments:
+        user_uri -- user identifier
+        work_uri -- work identifier
+        work_data -- data as dict, must conform to the Work schema.
+        Keys looked for when storing the record:
+            'id':           Numeric ID for work
+            'visibility':   Possible values: 'private', 'group', 'public'
+            'state':        Possible values: 'draft', 'published'
+            'metadataGraph': Work metadata as RDF/JSON dict
+    Returns:
+        Normalized work record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
@@ -58,6 +105,23 @@ def create_work(self, user_uri, work_uri, work_data):
 
 @app.task(base=StoreTask, bind=True)
 def update_work(self, user_uri, work_uri, work_data):
+    """Update work record in main store.
+    The work will be updated in public store if it's visibility is public after updating.
+    Automatically retries the task if the record is locked.
+
+    Arguments:
+        user_uri -- user identifier
+        work_uri -- work identifier
+        work_data -- data as dict, must conform to the Work schema.
+        Only listed properties will be updated:
+            'visibility':   Possible values: 'private', 'group', 'public'
+            'state':        Possible values: 'draft', 'published'
+            'metadataGraph': Work metadata as RDF/JSON dict
+    Returns:
+        Normalized work record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
@@ -75,6 +139,18 @@ def update_work(self, user_uri, work_uri, work_data):
 
 @app.task(base=StoreTask, bind=True)
 def delete_work(self, user_uri, work_uri):
+    """Delete work record from main store.
+    The work will be deleted from public store if required.
+    Automatically retries the task if the record is locked.
+
+    Arguments:
+        user_uri -- user identifier
+        work_uri -- work identifier
+    Returns:
+        None or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
@@ -90,6 +166,26 @@ def delete_work(self, user_uri, work_uri):
 
 @app.task(base=StoreTask, bind=True)
 def create_work_source(self, user_uri, work_uri, source_uri, source_data):
+    """
+    Create source related to a work in main store.
+    Automatically retries the task if the record is locked.
+    The source will be created in public store if the related work is public.
+
+    Arguments:
+        user_uri -- user identifier
+        work_uri -- work identifier
+        source_uri -- source identifier
+        source_data -- data as dict, must conform to the Source schema.
+        Keys used when creating the record are:
+            'id': Numeric source ID
+            'metadataGraph': Source metadata as RDF/JSON dict
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'resource': The source URI
+    Returns:
+        Normalized source record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
@@ -107,6 +203,24 @@ def create_work_source(self, user_uri, work_uri, source_uri, source_data):
 
 @app.task(base=StoreTask, bind=True)
 def create_stock_source(self, user_uri, source_uri, source_data):
+    """
+    Create a stock source (a work intended to be used later) in main store.
+    Automatically retries the task if the record is locked.
+
+    Arguments:
+        user_uri -- user identifier
+        source_uri -- source identifier
+        source_data -- data as dict, must conform to the Source schema.
+        Keys used when creating the record are:
+            'id': Numeric source ID
+            'metadataGraph': Source metadata as RDF/JSON dict
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'resource': The source URI
+    Returns:
+        Normalized source record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, user_uri):
             timestamp = int(time.time())
@@ -124,6 +238,24 @@ def create_stock_source(self, user_uri, source_uri, source_data):
 
 @app.task(base=StoreTask, bind=True)
 def update_source(self, user_uri, source_uri, source_data):
+    """
+    Update a source record (stock or work source) in main store.
+    Automatically retries the task if record is locked.
+    The source will be updated in public store if it's a work source and the related work is public.
+
+    Arguments:
+        user_uri -- user identifier
+        source_uri -- source identifier
+        source_data -- data as dict, must conform to the Source schema.
+        Only listed properties will be updated:
+            'metadataGraph': Source metadata as RDF/JSON dict
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'resource': The source URI
+    Returns:
+        Normalized source record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, source_uri):
             timestamp = int(time.time())
@@ -141,6 +273,18 @@ def update_source(self, user_uri, source_uri, source_data):
 
 @app.task(base=StoreTask, bind=True)
 def delete_source(self, user_uri, source_uri):
+    """Delete source record from main store.
+    Automatically retries the task if the record is locked.
+    The source will be deleted from public store if required.
+
+    Arguments:
+        user_uri -- user identifier
+        source_uri -- source identifier
+    Returns:
+        None or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, source_uri):
             timestamp = int(time.time())
@@ -156,6 +300,26 @@ def delete_source(self, user_uri, source_uri):
 
 @app.task(base=StoreTask, bind=True)
 def create_post(self, user_uri, work_uri, post_uri, post_data):
+    """
+    Create post related to a work in main store.
+    Automatically retries the task if the record is locked.
+    The post will be created in public store if the related work is public.
+
+    Arguments:
+        user_uri -- user identifier
+        work_uri -- work identifier
+        post_uri -- post identifier
+        post_data -- data as dict, must conform to the Post schema.
+        Keys used when creating the record are:
+            'id': Numeric post ID
+            'metadataGraph': Source metadata as RDF/JSON dict
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'resource': The post URI
+    Returns:
+        Normalized post record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, work_uri):
             timestamp = int(time.time())
@@ -173,6 +337,19 @@ def create_post(self, user_uri, work_uri, post_uri, post_data):
 
 @app.task(base=StoreTask, bind=True)
 def delete_post(self, user_uri, post_uri):
+    """
+    Delete post record from main store.
+    Automatically retries the task if the record is locked.
+    The post will be deleted from public store if required.
+
+    Arguments:
+        user_uri -- user identifier
+        post_uri -- post identifier
+    Returns:
+        None or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     try:
         with RedisLock(self.lock_db, post_uri):
             timestamp = int(time.time())
@@ -192,6 +369,8 @@ def delete_post(self, user_uri, post_uri):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_create_work(self, timestamp, user_uri, work_uri, work_data):
+    """Create a work record in public store.
+    See create_work documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.create_work(timestamp, user_uri, work_uri, work_data)
@@ -200,6 +379,8 @@ def public_create_work(self, timestamp, user_uri, work_uri, work_data):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_update_work(self, timestamp, user_uri, work_uri, work_data):
+    """Update a work record in public store.
+    See update_work documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.update_work(timestamp, user_uri, work_uri, work_data)
@@ -208,6 +389,8 @@ def public_update_work(self, timestamp, user_uri, work_uri, work_data):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_delete_work(self, timestamp, user_uri, work_uri):
+    """Delete a work record in public store.
+    See delete_work documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.delete_work(user_uri, work_uri, linked_entries=True)
@@ -218,6 +401,8 @@ def public_delete_work(self, timestamp, user_uri, work_uri):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_create_work_source(self, timestamp, user_uri, work_uri, source_uri, source_data):
+    """Create a work source record in public store.
+    See create_work_source documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
@@ -230,6 +415,8 @@ def public_create_work_source(self, timestamp, user_uri, work_uri, source_uri, s
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_update_source(self, timestamp, user_uri, source_uri, source_data):
+    """Update a source record in public store.
+    See update_source documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + source_uri):
             self.public_store.update_source(timestamp, user_uri, source_uri, source_data)
@@ -238,6 +425,8 @@ def public_update_source(self, timestamp, user_uri, source_uri, source_data):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_delete_source(self, timestamp, user_uri, source_uri, unlink=True):
+    """Delete a source record in public store.
+    See delete_source documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + source_uri):
             self.public_store.delete_source(user_uri, source_uri)
@@ -248,6 +437,8 @@ def public_delete_source(self, timestamp, user_uri, source_uri, unlink=True):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data):
+    """Create a post record in public store.
+    See create_post documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
             self.public_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
@@ -256,6 +447,8 @@ def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data)
 
 @app.task(base=StoreTask, bind=True, ignore_result=True)
 def public_delete_post(self, timestamp, user_uri, post_uri):
+    """Delete a post record in public store.
+    See delete_post documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + post_uri):
             self.public_store.delete_post(user_uri, post_uri)
@@ -270,6 +463,20 @@ def public_delete_post(self, timestamp, user_uri, post_uri):
 
 @app.task(base=StoreTask, bind=True)
 def get_work(self, user_uri, work_uri, subgraph=None):
+    """
+    Get work record from main or public store.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        work_uri -- work identifier
+    Keyword arguments:
+        subgraph -- Metadata graph to get instead of the full work record.
+            Possible subgraphs for works: "metadata" (default: None)
+    Returns:
+        Work record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.get_work(user_uri, work_uri, subgraph)
@@ -278,6 +485,17 @@ def get_work(self, user_uri, work_uri, subgraph=None):
 
 @app.task(base=StoreTask, bind=True)
 def get_work_sources(self, user_uri, work_uri):
+    """
+    Get work sources from main or public store.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        work_uri -- work identifier
+    Returns:
+        Source records as list or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.get_work_sources(user_uri, work_uri)
@@ -286,7 +504,17 @@ def get_work_sources(self, user_uri, work_uri):
 
 @app.task(base=StoreTask, bind=True)
 def get_stock_sources(self, user_uri):
-    store = self.main_store if user_uri is not None else self.public_store
+    """
+    Get stock sources from main store.
+
+    Arguments:
+        user_uri -- user identifier.
+    Returns:
+        Source records as list or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
+    store = self.main_store
     try:
         return store.get_stock_sources(user_uri)
     except CatalogError as e:
@@ -294,6 +522,20 @@ def get_stock_sources(self, user_uri):
 
 @app.task(base=StoreTask, bind=True)
 def get_source(self, user_uri, source_uri, subgraph=None):
+    """
+    Get source record from main store.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        source_uri -- source identifier
+    Keyword arguments:
+        subgraph -- Metadata graph to get instead of the full work record.
+            Possible subgraphs for Sources: "metadata" or "cachedExternalMetadata" (default: None)
+    Returns:
+        Source record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.get_source(user_uri, source_uri, subgraph)
@@ -302,6 +544,20 @@ def get_source(self, user_uri, source_uri, subgraph=None):
 
 @app.task(base=StoreTask, bind=True)
 def get_post(self, user_uri, post_uri, subgraph=None):
+    """
+    Get post record from main store.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        post_uri -- post identifier
+    Keyword arguments:
+        subgraph -- Metadata graph to get instead of the full work record.
+            Possible subgraphs for Posts: "metadata" or "cachedExternalMetadata" (default: None)
+    Returns:
+        Post record as dict or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.get_post(user_uri, post_uri, subgraph)
@@ -310,6 +566,17 @@ def get_post(self, user_uri, post_uri, subgraph=None):
 
 @app.task(base=StoreTask, bind=True)
 def get_posts(self, user_uri, work_uri):
+    """
+    Get posts for a work from main or public store.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        work_uri -- work identifier
+    Returns:
+        Post records as list or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.get_posts(user_uri, work_uri)
@@ -318,6 +585,21 @@ def get_posts(self, user_uri, work_uri):
 
 @app.task(base=StoreTask, bind=True)
 def get_complete_metadata(self, user_uri, work_uri, format='json'):
+    """
+    Get complete metadata for a work from main or public store, including
+    metadata for all work sources. The metadata will be returned as string
+    in the specified format.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        work_uri -- work identifier
+    Keyword arguments:
+        format -- Results format: 'ntriples', 'rdfxml' or 'json' (Default: 'json')
+    Returns:
+        Metadata as string in the specified format or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.get_complete_metadata(user_uri, work_uri, format)
@@ -326,6 +608,21 @@ def get_complete_metadata(self, user_uri, work_uri, format='json'):
 
 @app.task(base=StoreTask, bind=True)
 def query_works_simple(self, user_uri=None, offset=0, limit=0, query=None):
+    """
+    Get work records from main or public store using simple key/value matching.
+
+    Arguments:
+        user_uri -- user identifier. Use None to query public store (default: None)
+        offset -- results offset
+        limit -- results limit
+        query -- the query in the form of key=value dictionary.
+            The keys can either be work properties according to Work schema
+            or RDF predicates such as 'http://purl.org/dc/terms/title'.
+    Returns:
+        Full work records as list of work entries or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.main_store if user_uri is not None else self.public_store
     try:
         return store.query_works_simple(user_uri, offset, limit, query)
@@ -334,6 +631,17 @@ def query_works_simple(self, user_uri=None, offset=0, limit=0, query=None):
 
 @app.task(base=StoreTask, bind=True)
 def query_sparql(self, query_string=None, results_format='json'):
+    """
+    Query public store using SPARQL.
+
+    Arguments:
+        query_string -- SPARQL query
+        results_format -- Results format: 'json', 'n3' or 'xml' (Default: 'json')
+    Returns:
+        Query results in the specified format or an error message in the form of dict:
+        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Unhandled non-catalog errors will result in an exception.
+    """
     store = self.public_store
     try:
         return store.query_sparql(query_string, results_format)
@@ -342,6 +650,19 @@ def query_sparql(self, query_string=None, results_format='json'):
 
 @app.task(base=StoreTask, bind=True, ignore_result=True, max_retries=None, default_retry_delay=15)
 def log_event(self, type, time, user, resource, entry, data):
+    """
+    Log the catalog event. The task will retry infinitely.
+
+    Arguments:
+        type -- event type (str)
+        time -- event time in milliseconds (int)
+        user -- user who initiated the event
+        resource -- URI of primary resource related to the event (usually work)
+        entry -- URI of secondary resource (e.g. work source) related to the event
+        data -- event data as dict
+    Returns:
+        None
+    """
     try:
         self.log.log_event(type, time, user, resource, entry, data)
     except LogNotAvailable as e:
@@ -349,6 +670,21 @@ def log_event(self, type, time, user, resource, entry, data):
 
 @app.task(base=StoreTask, bind=True)
 def query_events(self, type=None, user=None, time_min=None, time_max=None, resource=None, limit=100, offset=0):
+    """
+    Query the event log using simple key/value matching.
+
+    Arguments:
+        type -- event type (default: None)
+        user -- user who initiated the event (default: None)
+        time_min -- minimum event time in milliseconds (default: None)
+        time_min -- maximum event time in milliseconds (default: None)
+        resource -- URI of primary resource related to the event (usually work, default: None)
+        entry -- URI of secondary resource (e.g. work source) related to the event (default: None)
+        limit -- query results limit (default: 100)
+        offset -- query results offset (default: 0)
+    Returns:
+        Event records as list
+    """
     return self.log.query_events(type, user, time_min, time_max, resource, limit, offset)
 
 
