@@ -63,42 +63,41 @@ function rest(app, localBackend, localCluster) {
     // TODO: add request sanity checking
 
     var checkSession = require('./sessions').checkSession;
-    var csrf = require('./csrf');
 
     /* works */
-    app.delete('/works/:workID', csrf.check, checkSession, deleteWork);
+    app.delete('/works/:workID', deleteWork);
     app.get('/works', getWorks);
-    app.get('/works/:workID', csrf.setToken, getWork);
+    app.get('/works/:workID', getWork);
     app.get('/works/:workID/completeMetadata', getCompleteWorkMetadata);
     app.get('/works/:workID/metadata', getWorkMetadata);
     // app.patch('/works/:workID', patchWork);
-    app.post('/works', checkSession, postWork);
-    app.put('/works/:workID', checkSession, putWork);
+    app.post('/works', postWork);
+    app.put('/works/:workID', putWork);
 
     /* sources */
-    app.delete('/users/:userID/sources/:sourceID', csrf.check, checkSession, deleteSource);
+    app.delete('/users/:userID/sources/:sourceID', deleteSource);
     app.get('/users/:userID/sources', getStockSources);
     app.get('/users/:userID/sources/:sourceID', getSource);
     app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/users/:userID/sources/:sourceID/metadata', getSourceMetadata);
     // app.patch('/users/:userID/sources/:sourceID', patchSource);
-    app.post('/users/:userID/sources', csrf.setToken, checkSession, postStockSource);
-    app.put('/users/:userID/sources/:sourceID', checkSession, putSource);
+    app.post('/users/:userID/sources', postStockSource);
+    app.put('/users/:userID/sources/:sourceID', putSource);
 
-    app.delete('/works/:workID/sources/:sourceID', csrf.check, checkSession, deleteSource);
+    app.delete('/works/:workID/sources/:sourceID', deleteSource);
     app.get('/works/:workID/sources', getWorkSources);
     app.get('/works/:workID/sources/:sourceID', getSource);
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getSourceMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    app.post('/works/:workID/sources', checkSession, postWorkSource);
-    app.put('/works/:workID/sources/:sourceID', checkSession, putSource);
+    app.post('/works/:workID/sources', postWorkSource);
+    app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
     app.get('/works/:workID/posts', getPosts);
     app.get('/works/:workID/posts/:postID', getPost);
-    app.post('/works/:workID/posts', checkSession, postPost);
-    app.delete('/works/:workID/posts/:postID', checkSession, deletePost);
+    app.post('/works/:workID/posts', postPost);
+    app.delete('/works/:workID/posts/:postID', deletePost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);

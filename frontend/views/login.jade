@@ -14,8 +14,6 @@ mixin loginForm()
 		br
 		input#signup(type="button" value="Sign up")
 
-	input#token(type="hidden" value="#{token}")
-
 if landing
 	include includes/top
 		+loginForm()

@@ -24,6 +24,41 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 	/* add backbone plugins */
 	require(['lib/Backbone.ModelBinder']);
 
+	function _init(){
+
+		/* If network timeout or internal server error, retry */
+		$.ajaxSetup({
+			tryCount: 0,
+			maxTries: 3,
+			statusCode: {
+				408: retry,
+				500: retry,
+				504: retry,
+				522: retry,
+				524: retry,
+				598: retry
+			}
+		});
+		login.init();
+		return;
+	}
+
+	function retry(xhr, status, error){
+		if(this.tryCount < this.maxTries){
+			console.error('%s: %s... retrying', xhr, status);
+			this.tryCount++;
+			var self = this;
+			setTimeout(function(){
+				$.ajax(self);
+			}, 3000);
+		}
+		else{
+			console.error("couldn't process request!");
+			//ToDo: show some message dialog to the user
+		}
+		return;
+	}
+
 	var Router = Backbone.Router.extend({
 		routes: {
 			"": 'home',
@@ -60,9 +95,6 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 	var app = new Router();
 	Backbone.history.start({pushState:true});
 
-	function _init(){
-		login.events();
-	}
 	if(document.readyState === 'complete'){
 		_init();
 	} else {

@@ -12,7 +12,6 @@
 'use strict';
 
 var debug = require('debug')('frontend:sessions');
-var csrf = require('./csrf');
 var persona = require('./persona');
 var Promise = require('bluebird');
 var User;
@@ -24,24 +23,27 @@ var sessions;
 var adminPanel, check_dummy_session, checkSession, isLogged, kickUser, loginScreen, logout, newSession, newUser, prefix, setGroup, start_dummy_session, userLock; 
 
 
-function init (app, express, db, sessionstore) {
+function init (app, sessionstore) {
+
+    var db = require('./wrappers/mongo');
+    var express = require('express');
 
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
-    sessions = sessionstore;
 
+    /* Session middlewares */
+    sessions = sessionstore;
     app.use(express.session({
         secret: env.CATALOG_SECRET,
         store: sessionstore
     }));
-
-    /* make the current user, if logged, always available to templates */
-    app.use(function(req, res, next){
-        res.locals.logged = req.session.uid;
-        next();
-        return;
-    });
+    if(dev){
+        app.use(check_dummy_session);
+    }
+    else {
+        app.use(checkSession);
+    }
 
     var user = require('./userSchema');
 
@@ -52,8 +54,8 @@ function init (app, express, db, sessionstore) {
     /* ================================ Routes ================================ */
 
     /* Screens */
-    app.get('/login', csrf.setToken, loginScreen);
-    app.get('/admin', checkSession, adminPanel);
+    app.get('/login', loginScreen);
+    app.get('/admin', adminPanel);
 
     /* Actions */
 
@@ -63,17 +65,17 @@ function init (app, express, db, sessionstore) {
         app.post('/signup', prefix, newUser);
     }
     else if (test){
-        app.post('/session', prefix, csrf.check, newSession);
-        app.post('/signup', prefix, csrf.check, newUser);
+        app.post('/session', prefix, newSession);
+        app.post('/signup', prefix, newUser);
     }
     else{
-        app.post('/session', csrf.check, newSession);
-        app.post('/signup', csrf.check, newUser);
+        app.post('/session', newSession);
+        app.post('/signup', newUser);
     }
 
-    app.post('/kick', checkSession, kickUser);
-    app.post('/lock', checkSession, userLock);
-    app.post('/setGroup', checkSession, setGroup);
+    app.post('/kick', kickUser);
+    app.post('/lock', userLock);
+    app.post('/setGroup', setGroup);
     app.del('/session', logout);
     
     return;
@@ -81,23 +83,34 @@ function init (app, express, db, sessionstore) {
 
 
 function checkSession(req, res, next) {
-
     var uid = req.session.uid;
     function respond(user){
         if (user) {
             if(user.locked) {
-                res.send('403');
+                debug('user is locked');
+                notLogged();
             }
             else{
                 res.locals.user = uid;
                 res.locals.group = user.group || null;
+                req.session.group = user.group || null;
                 next();
             }
         } 
         else {
-            res.redirect('/login');
+            notLogged();
         }
 
+        return;
+    }
+
+    function notLogged(){
+        if(req.method === 'GET' || req.path === '/session' || req.path === '/signup'){
+            next();
+        }
+        else {
+            res.redirect('/login');
+        }
         return;
     }
 
@@ -106,12 +119,12 @@ function checkSession(req, res, next) {
         .then(respond,
             function(err){
                 console.error(err);
-                return;
+                res.send(500);
             }
         );
     } 
-    else {
-        res.redirect('/login');
+    else{
+        notLogged();
     }
 
     return;
@@ -126,10 +139,15 @@ function loginScreen (req, res) {
     var referer = req.headers.referer;
     var landing = !referer || referer.search(env.CATALOG_BASE_URL) < 0;
 
-    res.render('login',{
-        landing: landing,
-        token: req.session.token
-    });
+    if(!req.session.uid){
+        res.render('login',{
+            landing: landing,
+        });
+    }
+    else{
+        res.redirect('/users/' + req.session.uid);
+    }
+    
     return;
 }
 
@@ -175,7 +193,7 @@ function kickUser (req, res) {
         for (i = 0; i < len; i++){
             sessions.kick(array[i]._sessionid);
         }
-        res.send('200');
+        res.send(500);
         return;
     }
 
@@ -185,7 +203,7 @@ function kickUser (req, res) {
         sessions.all({uid: user})
         .then(kick, function(err){
             console.error(err);
-            res.send('500');
+            res.send(500);
         });
     }
     return;
@@ -200,10 +218,10 @@ function userLock (req, res) {
         .then(
             function(){
                 debug('user %s locked', user);
-                res.send('200');
+                res.send(200);
             }, function(err){
                 console.error(err);
-                res.send('500');
+                res.send(500);
             }
         );
     }
@@ -212,7 +230,7 @@ function userLock (req, res) {
 
 function logout (req, res) {
     req.session.destroy(); 
-    res.send('200');
+    res.send(200);
     return;
 }
 
@@ -228,10 +246,10 @@ function setGroup (req, res) {
         .then(
             function(user){
                 debug('new admin: %s', uid);
-                res.send('200');
+                res.send(200);
             }, function(err){
                 console.error('error updating user: %s', err);
-                res.send('500');
+                res.send(500);
             }
         );
     }
@@ -243,7 +261,7 @@ function setGroup (req, res) {
 
 function newSession (req, res) {
     var uid = req.body.uid;
-    var provider = req.body.persona;
+    var provider = env.CATALOG_AUTHENTICATION;
     var pass = req.body.pass;
 
     debug('starting new session...');
@@ -255,11 +273,11 @@ function newSession (req, res) {
             req.session.group = user.group;
             res.send(uid);
         }
-        else if (provider == 'persona' && user) {
+        else if (provider === 'persona' && user) {
             uid = req.body.uid;
             req.session.uid = uid;
             req.session.group = user.group;
-            res.send(uid);
+            res.send(200, uid);
         } 
         else {
             res.redirect('/login');
@@ -272,18 +290,18 @@ function newSession (req, res) {
         .then(respond,
             function(err){
                 console.error(err);
-                res.send('403');
+                res.send(500);
             }
         );
     }
 
-    if(provider == 'persona'){
+    if(provider === 'persona'){
        persona.verify(req.body.assertion)
        .then(
             function(email){
                 findUser({email:email});
             }, function(err){
-                res.send('403');
+                res.send(403);
             }
         );
     }
@@ -296,9 +314,9 @@ function newSession (req, res) {
 
 function newUser (req, res) {
     var uid = req.body.uid;
-    var provider = req.body.provider;
+    var provider = env.CATALOG_AUTHENTICATION;
 
-    if (provider == 'persona'){
+    if (provider === 'persona'){
         persona.verify(req.body.assertion)
         .then(
             function(email){
@@ -311,14 +329,14 @@ function newUser (req, res) {
                 user.save(function(err){
                     if (err){
                         console.error(err);
-                        res.send('403');
+                        res.send(500);
                     }
                     else{
                         newSession(req, res);
                     }
                 });
             }, function(err){
-                res.send('403');
+                res.send(403);
             }
         );
     }
@@ -331,7 +349,7 @@ function newUser (req, res) {
         user.save(function(err){
             if (err){
                 console.error(err);
-                res.send('403');
+                res.send(500);
             }
             else {
                 newSession(req, res);
@@ -360,18 +378,18 @@ function prefix (req, res, next) {
 */
 function start_dummy_session (req, res) {
     var uid = req.body.uid;
-    var provider = req.body.provider;
+    var provider = env.CATALOG_AUTHENTICATION;
     debug('starting new session...');
 
     function respond (user) {
         debug('new session: %s ', uid);
 
-        if(!provider && user && pass && user.authenticate(pass)){
+        if(user && req.body.pass && user.authenticate(pass)){
             req.session.uid = uid;
             req.session.group = user.group;
             res.send(uid);
         }
-        else if (provider == 'persona' && user) {
+        else if (provider === 'persona' && user) {
             uid = user.uid;
             debug('user %s is registered', uid);
             req.session.uid = uid;
@@ -395,13 +413,13 @@ function start_dummy_session (req, res) {
         );
     }
 
-    if(provider == 'persona'){
+    if(provider === 'persona'){
        persona.verify(req.body.assertion)
        .then(
             function(email){
                 findUser({email:email});
             }, function(err){
-                res.send('403');
+                res.send(403);
             }
         );
     }
@@ -415,18 +433,18 @@ function start_dummy_session (req, res) {
 *  registered or not unless you want to check as admin
 */
 function check_dummy_session(req, res, next){
-
     var uid;
     function respond(user){
         if (user) {
             if(user.locked) {
                 debug('user is locked.');
-                res.send('403');
+                res.send(403);
             }
             else{
                 debug('user is logged in and registered.');
-                req.locals.user = uid;
-                req.locals.group = user.group || null;
+                res.locals.user = uid;
+                res.locals.group = user.group || null;
+                req.session.group = user.group || null;
                 next();
             }
         } 
@@ -445,10 +463,13 @@ function check_dummy_session(req, res, next){
         .then(respond, 
             function(err){
                 console.error(err);
-                res.send('403');
+                res.send(403);
             }
         );
     } 
+    else if(req.method === 'GET' || req.path === '/session' || req.path === '/signup'){
+        next();
+    }
     else {
         debug('there is no session running for this user.');
         res.redirect('/login');
@@ -458,10 +479,4 @@ function check_dummy_session(req, res, next){
 }
 
 
-module.exports.start = init;
-if(dev){
-    module.exports.checkSession = check_dummy_session;
-}
-else {
-    module.exports.checkSession = checkSession;
-}
+module.exports = init;

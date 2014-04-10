@@ -11,16 +11,15 @@ define(function(require){
 
 function kick (ev) {
 
-    function response (data) {
-        if(data == '200'){
-            console.log('user kicked');
-            $(ev.target).parent().remove();
-        }
+    function success (data, status) {
+        console.log('user kicked');
+        $(ev.target).parent().remove();
         return false;
     }
 
     var dataset = ev.target.dataset;
-    $.post('/kick', {uid: dataset.uid}, response);
+
+    $.post('/kick', {uid: dataset.uid}, success);
     return false;
 }
 
@@ -28,18 +27,16 @@ function kick (ev) {
 function lock (ev) {
 
     var dataset = ev.target.dataset;
-    function response (data) {
-        if(data == '200'){
-            console.log('user locked');
-            dataset.lock = !dataset.lock;
-            ev.target.value = ev.target.value == 'lock' ? 'unlock' : 'lock';
-        }
+    function success (data, status) {
+        console.log('user locked');
+        dataset.lock = !dataset.lock;
+        ev.target.value = ev.target.value == 'lock' ? 'unlock' : 'lock';
         return false;
     }
 
     $.post('/lock', {
         uid: dataset.uid,
         lock: dataset.lock
-    }, response);
+    }, success);
     return false;
 }

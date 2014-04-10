@@ -2,7 +2,8 @@
 {
     "common": {
         "style_dest": "/public",
-        "style_src": "/styles"
+        "style_src": "/styles",
+        "authentication": "persona"
     },
     "development":{
         "base_url": "http://localhost:8004",

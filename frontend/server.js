@@ -81,7 +81,7 @@ function main() {
             backend.connect(env.CATALOG_BROKER_URL),
             cluster.connect(env.CATALOG_REDIS_URL),
             db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB),
-			sessionStore(env.CATALOG_USERS_DB)
+			sessionStore(env.CATALOG_MONGODB_URL, env.CATALOG_USERS_DB)
         );
     }
 
@@ -91,7 +91,7 @@ function main() {
             console.log('Services connected... starting server...');
 
             /* Load REST API */
-            require('./lib/sessions').start(app, express, db, sessionstore);
+            require('./lib/sessions')(app, sessionstore);
             require('./lib/rest')(app, backend, cluster);
 
             app.listen(env.CATALOG_PORT);

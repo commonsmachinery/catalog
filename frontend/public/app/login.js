@@ -41,9 +41,7 @@ function authenticate (action) {
 				url: '/' + action,
 				data: {
 					assertion: assertion,
-					uid: $('#' + action + '-user').val(),
-					provider: 'persona',
-					_csrf: $('#token').val()
+					uid: $('#' + action + '-user').val()
 				},
 				success: function(res, status, xhr) { 
 					console.log('%s: success', action);

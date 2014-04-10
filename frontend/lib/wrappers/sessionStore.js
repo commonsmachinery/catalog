@@ -6,7 +6,7 @@ var Promise = require('bluebird');
 
 var promiseFilter;
 
-module.exports = function(dbname){
+module.exports = function(host, dbname, port){
     function promise (resolve, reject) {
         function settle (err, store){
             if(err){
@@ -21,9 +21,13 @@ module.exports = function(dbname){
             return;
         }
 
+        host = host.match(/\/\/([^:\/?#]*)/)[1];
+        console.log(host, port, dbname);
         sessionStore.createSessionStore({
             type: 'mongodb',
-            dbName: dbname
+            dbName: dbname,
+            host: host,
+            port: port
         }, settle);
 
         return;
