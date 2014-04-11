@@ -33,7 +33,11 @@ get_complete_metadata, query_works_simple, query_sparql
 
 If a CatalogError is raised when executing any of the above tasks,
 the error is returned to the frontend in the form of a dict:
-{ 'error': { 'type': 'foo', 'message': 'bar' } }.
+{ 'error': { 'type': 'FooError', 'message': 'bar' } }.
+
+'type' can be inspected to determine the correct HTTP response code.
+The message is intended for logging purposes only, and should not be
+forwarded to users in production mode.
 """
 
 from __future__ import absolute_import
@@ -80,11 +84,14 @@ def create_work(self, user_uri, work_uri, work_data):
         Keys looked for when storing the record:
             'id':           Numeric ID for work
             'visibility':   Possible values: 'private', 'group', 'public'
+                            Default: 'private'
             'state':        Possible values: 'draft', 'published'
-            'metadataGraph': Work metadata as RDF/JSON dict
+                            Default: 'draft'
+            'metadataGraph': Work metadata as RDF/JSON dict, default empty
     Returns:
-        Normalized work record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Normalized work record as dict or an error type:
+            ParamError: some entry data parameter is missing or invalid
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -116,10 +123,12 @@ def update_work(self, user_uri, work_uri, work_data):
         Only listed properties will be updated:
             'visibility':   Possible values: 'private', 'group', 'public'
             'state':        Possible values: 'draft', 'published'
-            'metadataGraph': Work metadata as RDF/JSON dict
+            'metadataGraph': Work metadata as RDF/JSON dict, default empty
     Returns:
-        Normalized work record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Normalized work record as dict or an error type:
+            ParamError: some entry data parameter is missing or invalid
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -148,7 +157,8 @@ def delete_work(self, user_uri, work_uri):
         work_uri -- work identifier
     Returns:
         None or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -178,12 +188,14 @@ def create_work_source(self, user_uri, work_uri, source_uri, source_data):
         source_data -- data as dict, must conform to the Source schema.
         Keys used when creating the record are:
             'id': Numeric source ID
-            'metadataGraph': Source metadata as RDF/JSON dict
-            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'metadataGraph': Source metadata as RDF/JSON dict, default empty
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict, default empty
             'resource': The source URI
     Returns:
-        Normalized source record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Normalized source record as dict or an error type:
+            ParamError: some entry data parameter is missing or invalid
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -213,12 +225,13 @@ def create_stock_source(self, user_uri, source_uri, source_data):
         source_data -- data as dict, must conform to the Source schema.
         Keys used when creating the record are:
             'id': Numeric source ID
-            'metadataGraph': Source metadata as RDF/JSON dict
-            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'metadataGraph': Source metadata as RDF/JSON dict, default empty
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict, default empty
             'resource': The source URI
     Returns:
-        Normalized source record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Normalized source record as dict or an error type:
+            ParamError: some entry data parameter is missing or invalid
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -247,13 +260,15 @@ def update_source(self, user_uri, source_uri, source_data):
         user_uri -- user identifier
         source_uri -- source identifier
         source_data -- data as dict, must conform to the Source schema.
-        Only listed properties will be updated:
+        Only the included properties will be updated:
             'metadataGraph': Source metadata as RDF/JSON dict
             'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
             'resource': The source URI
     Returns:
-        Normalized source record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Normalized source record as dict or an error type:
+            ParamError: some entry data parameter is missing or invalid
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -281,8 +296,9 @@ def delete_source(self, user_uri, source_uri):
         user_uri -- user identifier
         source_uri -- source identifier
     Returns:
-        None or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        None or an error type:
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -312,12 +328,14 @@ def create_post(self, user_uri, work_uri, post_uri, post_data):
         post_data -- data as dict, must conform to the Post schema.
         Keys used when creating the record are:
             'id': Numeric post ID
-            'metadataGraph': Source metadata as RDF/JSON dict
-            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'metadataGraph': Source metadata as RDF/JSON dict, default empty
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict, default empty
             'resource': The post URI
     Returns:
         Normalized post record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+            ParamError: some entry data parameter is missing or invalid
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -346,8 +364,9 @@ def delete_post(self, user_uri, post_uri):
         user_uri -- user identifier
         post_uri -- post identifier
     Returns:
-        None or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        None or an error type:
+            EntryAccessError: the user is not allowed to modify the entry
+
         Unhandled non-catalog errors will result in an exception.
     """
     try:
@@ -473,8 +492,10 @@ def get_work(self, user_uri, work_uri, subgraph=None):
         subgraph -- Metadata graph to get instead of the full work record.
             Possible subgraphs for works: "metadata" (default: None)
     Returns:
-        Work record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Work record as dict or an error type:
+            ParamError: an invalid graph was requested
+            EntryAccessError: the user is not allowed to see the work
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -492,8 +513,9 @@ def get_work_sources(self, user_uri, work_uri):
         user_uri -- user identifier. Use None to query public store (default: None)
         work_uri -- work identifier
     Returns:
-        Source records as list or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Source records as list or an error type:
+            EntryAccessError: the user is not allowed to see the work
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -510,8 +532,8 @@ def get_stock_sources(self, user_uri):
     Arguments:
         user_uri -- user identifier.
     Returns:
-        Source records as list or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Source records as list.
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store
@@ -532,8 +554,10 @@ def get_source(self, user_uri, source_uri, subgraph=None):
         subgraph -- Metadata graph to get instead of the full work record.
             Possible subgraphs for Sources: "metadata" or "cachedExternalMetadata" (default: None)
     Returns:
-        Source record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Source record as dict or an error type:
+            ParamError: an invalid graph was requested
+            EntryAccessError: the user is not allowed to see the work
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -554,8 +578,10 @@ def get_post(self, user_uri, post_uri, subgraph=None):
         subgraph -- Metadata graph to get instead of the full work record.
             Possible subgraphs for Posts: "metadata" or "cachedExternalMetadata" (default: None)
     Returns:
-        Post record as dict or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Post record as dict or an error type:
+            ParamError: an invalid graph was requested
+            EntryAccessError: the user is not allowed to see the work
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -573,8 +599,9 @@ def get_posts(self, user_uri, work_uri):
         user_uri -- user identifier. Use None to query public store (default: None)
         work_uri -- work identifier
     Returns:
-        Post records as list or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Post records as list or an error type:
+            EntryAccessError: the user is not allowed to see the work
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -596,8 +623,10 @@ def get_complete_metadata(self, user_uri, work_uri, format='json'):
     Keyword arguments:
         format -- Results format: 'ntriples', 'rdfxml' or 'json' (Default: 'json')
     Returns:
-        Metadata as string in the specified format or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Metadata as string in the specified format or an error type:
+            ParamError: an unsupported format was requested
+            EntryAccessError: the user is not allowed to see the work
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -619,8 +648,8 @@ def query_works_simple(self, user_uri=None, offset=0, limit=0, query=None):
             The keys can either be work properties according to Work schema
             or RDF predicates such as 'http://purl.org/dc/terms/title'.
     Returns:
-        Full work records as list of work entries or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        List of full work records.
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.main_store if user_uri is not None else self.public_store
@@ -638,8 +667,9 @@ def query_sparql(self, query_string=None, results_format='json'):
         query_string -- SPARQL query
         results_format -- Results format: 'json', 'n3' or 'xml' (Default: 'json')
     Returns:
-        Query results in the specified format or an error message in the form of dict:
-        { 'error': { 'type': 'foo', 'message': 'bar' } }
+        Query results in the specified format or an error type:
+            ParamError: an unsupported format was requested
+
         Unhandled non-catalog errors will result in an exception.
     """
     store = self.public_store
