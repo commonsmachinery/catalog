@@ -331,6 +331,12 @@ class MainStore(object):
 
         self._model = RDF.Model(self._store)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self._model.sync()
+
     def _get_linked_work(self, predicate, object):
         """
         Return linked work for a source or post (Entry type defined by predicate)
@@ -412,7 +418,6 @@ class MainStore(object):
         })
 
         work.to_model(self._model)
-        self._model.sync()
         return work.get_data()
 
     def update_work(self, timestamp, user_uri, work_uri, work_data):
@@ -438,7 +443,6 @@ class MainStore(object):
         self.delete_work(user_uri=user_uri, work_uri=work_uri)
 
         new_work.to_model(self._model)
-        self._model.sync()
         return new_work.get_data()
 
     def delete_work(self, user_uri, work_uri, linked_entries=False):
@@ -460,8 +464,6 @@ class MainStore(object):
 
         work_context = RDF.Node(RDF.Uri(work_uri))
         self._model.remove_statements_with_context(work_context)
-
-        self._model.sync()
 
     def get_work(self, user_uri, work_uri, subgraph=None):
         work = Work.from_model(self._model, work_uri)
@@ -518,7 +520,6 @@ class MainStore(object):
         if (statement, work_subject) not in self._model:
             self._model.append(statement, context=work_subject)
 
-        self._model.sync()
         return source.get_data()
 
     def create_stock_source(self, timestamp, user_uri, source_uri, source_data):
@@ -552,7 +553,6 @@ class MainStore(object):
             # TODO: do we need context for user-related stuff?
             self._model.append(statement, context=user_subject)
 
-        self._model.sync()
         return source.get_data()
 
     def update_source(self, timestamp, user_uri, source_uri, source_data):
@@ -573,7 +573,6 @@ class MainStore(object):
         self.delete_source(user_uri=user_uri, source_uri=source_uri, unlink=False)
 
         new_source.to_model(self._model)
-        self._model.sync()
         return new_source.get_data()
 
     def delete_source(self, user_uri, source_uri, unlink=True):
@@ -596,7 +595,6 @@ class MainStore(object):
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
         self._model.remove_statements_with_context(RDF.Node(RDF.Uri(source_uri)))
-        self._model.sync()
 
     def get_source(self, user_uri, source_uri, subgraph=None):
         source = Source.from_model(self._model, source_uri)
@@ -669,7 +667,6 @@ class MainStore(object):
         if (statement, work_subject) not in self._model:
             self._model.append(statement, context=work_subject)
 
-        self._model.sync()
         return post.get_data()
 
     def delete_post(self, user_uri, post_uri):
@@ -691,7 +688,6 @@ class MainStore(object):
             subgraph_context = RDF.Node(uri_string=str(subgraph_uri))
             self._model.remove_statements_with_context(subgraph_context)
         self._model.remove_statements_with_context(RDF.Node(RDF.Uri(post_uri)))
-        self._model.sync()
 
     def get_post(self, user_uri, post_uri, subgraph=None):
         post = Post.from_model(self._model, post_uri)
