@@ -471,8 +471,10 @@ class MainStore(object):
 
         if not subgraph:
             return work.get_data()
-        else:
+        elif subgraph == 'metadata':
             return work.get_data().get(subgraph + "Graph", {})
+        else:
+            raise ParamError('invalid metadata graph: {0}'.format(subgraph))
 
     def get_linked_work(self, entry_uri):
         # TODO: implement in SPARQL and unify with _get_linked_work above
@@ -491,16 +493,17 @@ class MainStore(object):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         try:
-            metadataGraph = source_data.get('metadataGraph', {})
-            cemGraph = source_data.get('cachedExternalMetadataGraph', {})
+            source_id = source_data['id']
+            metadata_graph = source_data.get('metadataGraph', {})
+            cem_graph = source_data.get('cachedExternalMetadataGraph', {})
             resource = source_data['resource']
         except KeyError, e:
             raise ParamError(str(e))
 
         source = Source(source_uri, {
-            'id': source_data['id'],
-            'metadataGraph': metadataGraph,
-            'cachedExternalMetadataGraph': cemGraph,
+            'id': source_id,
+            'metadataGraph': metadata_graph,
+            'cachedExternalMetadataGraph': cem_graph,
             'addedBy': user_uri,
             'added': timestamp,
             'resource': resource,
@@ -522,19 +525,21 @@ class MainStore(object):
         if self._entry_exists(source_uri):
             raise CatalogError("Entry {0} already exists".format(source_uri))
 
-        source_data = source_data.copy()
-
-        source_data['added'] = timestamp
-        source_data.setdefault('metadataGraph', {})
-        source_data.setdefault('cachedExternalMetadataGraph', {})
+        try:
+            source_id = source_data['id']
+            metadata_graph = source_data.get('metadataGraph', {})
+            cem_graph = source_data.get('cachedExternalMetadataGraph', {})
+            resource = source_data['resource']
+        except KeyError, e:
+            raise ParamError(str(e))
 
         source = Source(source_uri, {
-            'id': source_data['id'],
-            'metadataGraph': source_data['metadataGraph'],
-            'cachedExternalMetadataGraph': source_data['cachedExternalMetadataGraph'],
+            'id': source_id,
+            'metadataGraph': metadata_graph,
+            'cachedExternalMetadataGraph': cem_graph,
             'addedBy': user_uri,
-            'added': source_data['added'],
-            'resource': source_data['resource'],
+            'added': timestamp,
+            'resource': resource,
         })
 
         source.to_model(self._model)
@@ -601,8 +606,11 @@ class MainStore(object):
 
         if not subgraph:
             return source.get_data()
-        else:
+        elif subgraph in ('metadata', 'cachedExternalMetadata'):
             return source.get_data().get(subgraph + "Graph", {})
+        else:
+            raise ParamError('invalid metadata graph: {0}'.format(subgraph))
+
 
     def get_work_sources(self, user_uri, work_uri):
         sources = []
@@ -636,6 +644,7 @@ class MainStore(object):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         try:
+            post_id = post_data['id']
             metadataGraph = post_data.get('metadataGraph', {})
             cemGraph = post_data.get('cachedExternalMetadataGraph', {})
             resource = post_data['resource']
@@ -643,7 +652,7 @@ class MainStore(object):
             raise ParamError(str(e))
 
         post = Post(post_uri, {
-            'id': post_data['id'],
+            'id': post_id,
             'postedBy': user_uri,
             'posted': timestamp,
             'metadataGraph': metadataGraph,
@@ -692,8 +701,10 @@ class MainStore(object):
 
         if not subgraph:
             return post.get_data()
-        else:
+        elif subgraph in ('metadata', 'cachedExternalMetadata'):
             return post.get_data().get(subgraph + "Graph", {})
+        else:
+            raise ParamError('invalid metadata graph: {0}'.format(subgraph))
 
     def get_posts(self, user_uri, work_uri):
         posts = []
@@ -710,6 +721,9 @@ class MainStore(object):
 
         if not self._can_read(user_uri, work):
             raise EntryAccessError("Can't access work {0}".format(work_uri))
+
+        if format not in ('ntriples', 'rdfxml', 'json'):
+            raise ParamError('invalid RDF format: {0}'.format(format))
 
         query_format = """
             PREFIX dc: <http://purl.org/dc/elements/1.1/>
@@ -835,6 +849,9 @@ class PublicStore(MainStore):
         return True
 
     def query_sparql(self, query_string=None, results_format="json"):
+        if results_format not in ('json', 'n3', 'xml'):
+            raise ParamError('invalid SPARQL result format: {0}'.format(results_format))
+
         query = RDF.Query(querystring=query_string, query_language="sparql")
         query_results = query.execute(self._model)
         if query.get_limit() < 0:
