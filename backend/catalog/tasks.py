@@ -96,14 +96,15 @@ def create_work(self, user_uri, work_uri, work_data):
     """
     try:
         with RedisLock(self.lock_db, work_uri):
-            timestamp = int(time.time())
-            work_data = self.main_store.create_work(timestamp, user_uri, work_uri, work_data)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                work_data = store.create_work(timestamp, user_uri, work_uri, work_data)
 
-            log_data = json.dumps(work_data)
-            log_event.apply_async(args=('create_work', timestamp, user_uri, work_uri, None, log_data))
+                log_data = json.dumps(work_data)
+                log_event.apply_async(args=('create_work', timestamp, user_uri, work_uri, None, log_data))
 
-            on_create_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
-            return work_data
+                on_create_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+                return work_data
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -133,14 +134,15 @@ def update_work(self, user_uri, work_uri, work_data):
     """
     try:
         with RedisLock(self.lock_db, work_uri):
-            timestamp = int(time.time())
-            work_data = self.main_store.update_work(timestamp, user_uri, work_uri, work_data)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                work_data = store.update_work(timestamp, user_uri, work_uri, work_data)
 
-            log_data = json.dumps(work_data)
-            log_event.apply_async(args=('update_work', timestamp, user_uri, work_uri, None, log_data))
+                log_data = json.dumps(work_data)
+                log_event.apply_async(args=('update_work', timestamp, user_uri, work_uri, None, log_data))
 
-            on_update_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
-            return work_data
+                on_update_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
+                return work_data
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -163,12 +165,13 @@ def delete_work(self, user_uri, work_uri):
     """
     try:
         with RedisLock(self.lock_db, work_uri):
-            timestamp = int(time.time())
-            self.main_store.delete_work(user_uri, work_uri)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                store.delete_work(user_uri, work_uri)
 
-            log_event.apply_async(args=('delete_work', timestamp, user_uri, work_uri, None, None))
+                log_event.apply_async(args=('delete_work', timestamp, user_uri, work_uri, None, None))
 
-            on_delete_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
+                on_delete_work.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri)
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -200,14 +203,15 @@ def create_work_source(self, user_uri, work_uri, source_uri, source_data):
     """
     try:
         with RedisLock(self.lock_db, work_uri):
-            timestamp = int(time.time())
-            source_data = self.main_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                source_data = store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
 
-            log_data = json.dumps(source_data)
-            log_event.apply_async(args=('create_work_source', timestamp, user_uri, work_uri, source_uri, log_data))
+                log_data = json.dumps(source_data)
+                log_event.apply_async(args=('create_work_source', timestamp, user_uri, work_uri, source_uri, log_data))
 
-            on_create_work_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
-            return source_data
+                on_create_work_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
+                return source_data
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -236,14 +240,15 @@ def create_stock_source(self, user_uri, source_uri, source_data):
     """
     try:
         with RedisLock(self.lock_db, user_uri):
-            timestamp = int(time.time())
-            source_data = self.main_store.create_stock_source(timestamp, user_uri, source_uri, source_data)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                source_data = store.create_stock_source(timestamp, user_uri, source_uri, source_data)
 
-            log_data = json.dumps(source_data)
-            log_event.apply_async(args=('create_stock_source', timestamp, user_uri, None, source_uri, log_data))
+                log_data = json.dumps(source_data)
+                log_event.apply_async(args=('create_stock_source', timestamp, user_uri, None, source_uri, log_data))
 
-            on_create_stock_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
-            return source_data
+                on_create_stock_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+                return source_data
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -273,14 +278,15 @@ def update_source(self, user_uri, source_uri, source_data):
     """
     try:
         with RedisLock(self.lock_db, source_uri):
-            timestamp = int(time.time())
-            source_data = self.main_store.update_source(timestamp, user_uri, source_uri, source_data)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                source_data = store.update_source(timestamp, user_uri, source_uri, source_data)
 
-            log_data = json.dumps(source_data)
-            log_event.apply_async(args=('update_source', timestamp, user_uri, None, source_uri, log_data))
+                log_data = json.dumps(source_data)
+                log_event.apply_async(args=('update_source', timestamp, user_uri, None, source_uri, log_data))
 
-            on_update_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
-            return source_data
+                on_update_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+                return source_data
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -303,12 +309,13 @@ def delete_source(self, user_uri, source_uri):
     """
     try:
         with RedisLock(self.lock_db, source_uri):
-            timestamp = int(time.time())
-            self.main_store.delete_source(user_uri, source_uri)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                store.delete_source(user_uri, source_uri)
 
-            log_event.apply_async(args=('delete_source', timestamp, user_uri, None, source_uri, None))
+                log_event.apply_async(args=('delete_source', timestamp, user_uri, None, source_uri, None))
 
-            on_delete_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri)
+                on_delete_source.send(sender=self, timestamp=timestamp, user_uri=user_uri, source_uri=source_uri)
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -340,14 +347,15 @@ def create_post(self, user_uri, work_uri, post_uri, post_data):
     """
     try:
         with RedisLock(self.lock_db, work_uri):
-            timestamp = int(time.time())
-            post_data = self.main_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                post_data = store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
 
-            log_data = json.dumps(post_data)
-            log_event.apply_async(args=('create_post', timestamp, user_uri, work_uri, post_uri, log_data))
+                log_data = json.dumps(post_data)
+                log_event.apply_async(args=('create_post', timestamp, user_uri, work_uri, post_uri, log_data))
 
-            on_create_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
-            return post_data
+                on_create_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
+                return post_data
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -371,12 +379,13 @@ def delete_post(self, user_uri, post_uri):
     """
     try:
         with RedisLock(self.lock_db, post_uri):
-            timestamp = int(time.time())
-            self.main_store.delete_post(user_uri, post_uri)
+            with self.main_store as store:
+                timestamp = int(time.time())
+                store.delete_post(user_uri, post_uri)
 
-            log_event.apply_async(args=('delete_post', timestamp, user_uri, None, post_uri, None))
+                log_event.apply_async(args=('delete_post', timestamp, user_uri, None, post_uri, None))
 
-            on_delete_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, post_uri=post_uri)
+                on_delete_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, post_uri=post_uri)
     except CatalogError as e:
         return error(e)
     except LockedError as e:
@@ -392,7 +401,8 @@ def public_create_work(self, timestamp, user_uri, work_uri, work_data):
     See create_work documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
-            self.public_store.create_work(timestamp, user_uri, work_uri, work_data)
+            with self.public_store as store:
+                store.create_work(timestamp, user_uri, work_uri, work_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
 
@@ -412,7 +422,8 @@ def public_delete_work(self, timestamp, user_uri, work_uri):
     See delete_work documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
-            self.public_store.delete_work(user_uri, work_uri, linked_entries=True)
+            with self.public_store as store:
+                store.delete_work(user_uri, work_uri, linked_entries=True)
     except EntryNotFoundError:
         pass
     except LockedError as e:
@@ -424,7 +435,8 @@ def public_create_work_source(self, timestamp, user_uri, work_uri, source_uri, s
     See create_work_source documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
-            self.public_store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
+            with self.public_store as store:
+                store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
 
@@ -438,7 +450,8 @@ def public_update_source(self, timestamp, user_uri, source_uri, source_data):
     See update_source documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + source_uri):
-            self.public_store.update_source(timestamp, user_uri, source_uri, source_data)
+            with self.public_store as store:
+                store.update_source(timestamp, user_uri, source_uri, source_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
 
@@ -448,7 +461,8 @@ def public_delete_source(self, timestamp, user_uri, source_uri, unlink=True):
     See delete_source documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + source_uri):
-            self.public_store.delete_source(user_uri, source_uri)
+            with self.public_store as store:
+                store.delete_source(user_uri, source_uri)
     except EntryNotFoundError:
         pass
     except LockedError as e:
@@ -460,7 +474,8 @@ def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data)
     See create_post documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + work_uri):
-            self.public_store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
+            with self.public_store as store:
+                store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
 
@@ -470,7 +485,8 @@ def public_delete_post(self, timestamp, user_uri, post_uri):
     See delete_post documentation for description of parameters."""
     try:
         with RedisLock(self.lock_db, "public." + post_uri):
-            self.public_store.delete_post(user_uri, post_uri)
+            with self.public_store as store:
+                store.delete_post(user_uri, post_uri)
     except EntryNotFoundError:
         pass
     except LockedError as e:
