@@ -23,12 +23,17 @@
     "crypto": "0.0.x",
     "mongoose": "3.8.x",
     "bluebird": "1.1.x",
-    "then-redis": "0.3.x"
+    "then-redis": "0.3.x",
+    "sessionstore": "0.2.x",
+    "uid2": "0.0.x"
   },
   "devDependencies": {
-    "jslint": "*",
-    "nodemon": "*",
-    "volo": "0.3.x"
+    "jslint": "0.3.x",
+    "nodemon": "1.x.x",
+    "volo": "0.3.x",
+    "expect.js": "0.3.x",
+    "mocha": "1.x.x",
+    "supertest": "0.x.x"
   },
   "license": "AGPLv3",
   "amd": {},
