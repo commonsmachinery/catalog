@@ -24,6 +24,9 @@ var backend = require('./lib/backend');
 var db = require('./lib/wrappers/mongo');
 var cluster = require('./lib/cluster');
 
+var sessions = require('./lib/sessions');
+var rest = require('./lib/rest');
+
 var config = require('./config.json');
 var err = require('./err.json');
 
@@ -53,6 +56,13 @@ function main() {
     //var redisClient = redis.createClient();
     var app = express();
     var env = process.env;
+
+    if (env.NODE_ENV !== 'production') {
+        console.warn('NODE_ENV: %s', env.NODE_ENV);
+    }
+    else {
+        console.log('starting in production mode');
+    }
 
     app.set('err', err);
 
@@ -91,8 +101,8 @@ function main() {
             console.log('Services connected... starting server...');
 
             /* Load REST API */
-            require('./lib/sessions')(app, sessionstore);
-            require('./lib/rest')(app, backend, cluster);
+            sessions.init(app, sessionstore);
+            rest(app, backend, cluster);
 
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);

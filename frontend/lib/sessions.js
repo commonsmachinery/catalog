@@ -12,22 +12,32 @@
 'use strict';
 
 var debug = require('debug')('frontend:sessions');
-var persona = require('./persona');
+
 var Promise = require('bluebird');
-var User;
+var express = require('express');
+
+var cluster = require('./cluster');
+var db = require('./wrappers/mongo');
+//var persona = require('./persona');
+var User = require('./model/user');
+
 var env;
 var dev, test;
 var sessions;
+var cluster;
 
 
-var adminPanel, check_dummy_session, checkSession, isLogged, kickUser, loginScreen, logout, newSession, newUser, prefix, setGroup, start_dummy_session, userLock; 
+var useTestAccount
+  , checkUserSession
+  , loginScreen
+  , logout
+  ;
 
 
-function init (app, sessionstore) {
+//var adminPanel, check_dummy_session, checkSession, isLogged, kickUser, loginScreen, logout, newSession, newUser, prefix, setGroup, start_dummy_session, userLock;
 
-    var db = require('./wrappers/mongo');
-    var express = require('express');
 
+function init (app, theCluster, sessionstore) {
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
@@ -38,96 +48,206 @@ function init (app, sessionstore) {
         secret: env.CATALOG_SECRET,
         store: sessionstore
     }));
-    if(dev){
-        app.use(check_dummy_session);
-    }
-    else {
-        app.use(checkSession);
+
+    if (dev) {
+        // Allow account creation/login with simple HTTP basic auth
+        app.use(useTestAccount);
     }
 
-    var user = require('./userSchema');
+    // TODO: persona setup
 
-    var userSchema = new db.Schema(user.schema,{autoIndex: env.CATALOG_USERS_AUTOINDEX});
-    userSchema.method(user.methods);
-    User = db.model('User', userSchema);
+    // Common session checks
+    app.use(checkUserSession);
+
 
     /* ================================ Routes ================================ */
 
     /* Screens */
     app.get('/login', loginScreen);
-    app.get('/admin', adminPanel);
+//    app.get('/admin', adminPanel);
 
-    /* Actions */
+    // app.post('/lock', userLock);
 
-    if(dev){
-        app.post('/session', prefix, start_dummy_session);
-        app.get('/session', check_dummy_session);
-        app.post('/signup', prefix, newUser);
-    }
-    else if (test){
-        app.post('/session', prefix, newSession);
-        app.post('/signup', prefix, newUser);
-    }
-    else{
-        app.post('/session', newSession);
-        app.post('/signup', newUser);
-    }
-
-    app.post('/kick', kickUser);
-    app.post('/lock', userLock);
-    app.post('/setGroup', setGroup);
+    // Generic session logout - beware that these doesn't log out the
+    // persona session, so perhaps they should not be allowed outside
+    // dev?
+    app.get('/logout', logout);
     app.del('/session', logout);
-    
-    return;
+}
+
+exports.init = init;
+
+
+/*
+ * Middleware on routes that require a valid user session to work
+ */
+function requireUser(req, res, next) {
+    if (req.session.uid) {
+        next();
+    }
+    else {
+        res.send(401);
+    }
+}
+
+exports.requireUser = requireUser;
+
+
+/*
+ * Internal middleware to allow simple auth in development mode for
+ * special test accounts that are set with basic HTTP auth.  This will
+ * set req.session.email, just like persona login would.
+ *
+ * To use, run: curl --user test: rest-of-command-line...
+ */
+function useTestAccount(req, res, next) {
+    var auth, encoded, buf, len, decoded, nameLen, email;
+
+    // Simple basic auth implementation to dig out username
+    auth = req.get('Authorization');
+
+    if (auth) {
+        if (auth.indexOf('Basic ') === 0) {
+            encoded = auth.slice(6);
+            buf = new Buffer(encoded.length);
+            len = buf.write(encoded, 0, encoded.length, 'base64');
+            decoded = buf.toString('utf8', 0, len);
+
+            nameLen = decoded.indexOf(':');
+
+            if (nameLen > 0) {
+                email = decoded.slice(0, nameLen) + '@test';
+
+                debug('got email from basic auth: %s', email);
+
+                if (req.session.email !== email) {
+                    debug('changing test session to %s', email);
+
+                    // By dropping uid checkSession will load or
+                    // create a user accounts, as necessary
+                    req.session.uid = null;
+                    req.session.email = email;
+                }
+
+                // Let checkSession take over
+                return next();
+            }
+        }
+
+        console.error("can't parse test Authorization header: %s", auth);
+    }
+
+    // Always fall through to let regular session handling do it's job
+    next();
 }
 
 
-function checkSession(req, res, next) {
+/*
+ * Middleware to ookup user from email, if necessary, and check that
+ * the account isn't locked.  If it is, drop the session.
+ */
+function checkUserSession(req, res, next) {
     var uid = req.session.uid;
-    function respond(user){
-        if (user) {
-            if(user.locked) {
-                debug('user is locked');
-                notLogged();
-            }
-            else{
-                res.locals.user = uid;
-                res.locals.group = user.group || null;
-                req.session.group = user.group || null;
-                next();
-            }
-        } 
-        else {
-            notLogged();
-        }
+    var email = req.session.email;
 
-        return;
+    if (!email) {
+        // No valid session without an email, reset just to be sure
+        req.session.uid = null;
+        return next();
     }
 
-    function notLogged(){
-        if(req.method === 'GET' || req.path === '/session' || req.path === '/signup'){
-            next();
-        }
-        else {
-            res.redirect('/login');
-        }
-        return;
-    }
+    if (!uid) {
+        // Look up user from email, or create one if necessary
 
-    if (uid) {
-        User.findOne({uid: uid})
-        .then(respond,
-            function(err){
-                console.error(err);
-                res.send(500);
-            }
-        );
-    } 
-    else{
-        notLogged();
-    }
+        User.findOne({ email: email }).
+            then(
+                function(user) {
+                    if (user) {
+                        debug('found user %s from email %s', user.uid, email);
+                        return Promise.resolve(user);
+                    }
+                    else {
+                        return cluster.increment('next-user-id').
+                            then(
+                                function(newId) {
+                                    // Reduce the risk of overlapping accounts by
+                                    // having prefixes on the dev and test accounts
+                                    if (dev) {
+                                        newId = 'dev_' + newId;
+                                    }
+                                    else if (dev) {
+                                        newId = 'test_' + newId;
+                                    }
 
-    return;
+                                    debug('creating new user with id %s for %s', newId, email);
+
+                                    return new Promise(function(resolve, reject) {
+                                        var user = new User({
+                                            uid: newId,
+                                            email: email,
+                                        });
+
+                                        user.save(function(err, savedUser) {
+                                            if (err) {
+                                                console.error('error saving new user: %s %j', err, user);
+                                                reject(err);
+                                            }
+                                            else {
+                                                resolve(user);
+                                            }
+                                        });
+                                    });
+                                }
+                            );
+                    }
+                }
+            ).then(
+                function(user) {
+                    debug('creating new session for user %s', user.uid);
+
+                    if (user.locked) {
+                        console.warning('removing session for locked user: %s', user.uid);
+                        req.session.destroy();
+                    }
+                    else {
+                        req.session.uid = user.uid;
+                        res.locals.user = uid;
+                    }
+
+                    // Proceed to whatever the request is supposed to do
+                    next();
+                }
+            ).catch(
+                function(err) {
+                    console.error('error looking up/creating user from email %s: %s', email, err);
+                    res.send(500, dev ? err.stack : '');
+                }
+            ).done();
+    }
+    else {
+        // Just check that the user isn't locked
+
+        User.findOne({ uid: uid }).
+            then(
+                function(user) {
+                    if (user.locked) {
+                        console.warning('removing session for locked user: %s', user.uid);
+                        req.session.destroy();
+                    }
+                    else {
+                        res.locals.user = user.uid;
+                    }
+
+                    // Proceed to whatever the request is supposed to do
+                    next();
+                }
+            ).catch(
+                function(err) {
+                    console.error('error looking up user from uid %s: %s', uid, err);
+                    res.send(500, dev ? err.stack : '');
+                }
+            ).done();
+    }
 }
 
 /* ========================== REST Functions =============================== */
@@ -152,6 +272,7 @@ function loginScreen (req, res) {
 }
 
 /* for now it can kill sessions or lock users */
+/*
 function adminPanel (req, res){
     if(req.session.group === 'admin'){
         var q = req.query;
@@ -182,33 +303,11 @@ function adminPanel (req, res){
     }
     return;
 }
+*/
 
 /* Actions */
 
-function kickUser (req, res) {
-
-    function kick (array) {
-        var len = array.length;
-        var i;
-        for (i = 0; i < len; i++){
-            sessions.kick(array[i]._sessionid);
-        }
-        res.send(500);
-        return;
-    }
-
-    if(req.session.group === 'admin'){
-        var user = req.body.uid;
-
-        sessions.all({uid: user})
-        .then(kick, function(err){
-            console.error(err);
-            res.send(500);
-        });
-    }
-    return;
-}
-
+/*
 function userLock (req, res) {
 
     if(req.session.group === 'admin'){
@@ -227,256 +326,12 @@ function userLock (req, res) {
     }
     return;
 }
+*/
 
 function logout (req, res) {
     req.session.destroy(); 
-    res.send(200);
-    return;
-}
-
-/* for now setGroup can only be done by curl on dev mode. Otherwise, 
-*  they need to be set by a DBA on mongo
-*/
-function setGroup (req, res) {
-
-    var uid = req.body.uid;
-
-    if(req.session.group === 'admin'){
-        User.findOneAndUpdate({uid: uid}, {group: req.body.group})
-        .then(
-            function(user){
-                debug('new admin: %s', uid);
-                res.send(200);
-            }, function(err){
-                console.error('error updating user: %s', err);
-                res.send(500);
-            }
-        );
-    }
-    else{
-        res.redirect('/login');
-    }
-    return;
-}
-
-function newSession (req, res) {
-    var uid = req.body.uid;
-    var provider = env.CATALOG_AUTHENTICATION;
-    var pass = req.body.pass;
-
-    debug('starting new session...');
-
-    function respond (user) {
-        uid = user.uid;
-        if(!provider && user && pass && user.authenticate(pass)){
-            req.session.uid = uid;
-            req.session.group = user.group;
-            res.send(uid);
-        }
-        else if (provider === 'persona' && user) {
-            uid = req.body.uid;
-            req.session.uid = uid;
-            req.session.group = user.group;
-            res.send(200, uid);
-        } 
-        else {
-            res.redirect('/login');
-        }
-        return;
-    }
-
-    function findUser (param) {
-        User.findOne(param)
-        .then(respond,
-            function(err){
-                console.error(err);
-                res.send(500);
-            }
-        );
-    }
-
-    if(provider === 'persona'){
-       persona.verify(req.body.assertion)
-       .then(
-            function(email){
-                findUser({email:email});
-            }, function(err){
-                res.send(403);
-            }
-        );
-    }
-    else {
-        findUser({uid:uid});
-    }
-    
-    return;
-}
-
-function newUser (req, res) {
-    var uid = req.body.uid;
-    var provider = env.CATALOG_AUTHENTICATION;
-
-    if (provider === 'persona'){
-        persona.verify(req.body.assertion)
-        .then(
-            function(email){
-                var user = new User({
-                    uid: uid,
-                    email: email,
-                    provider: provider,
-                    group: req.body.group || null
-                });
-                user.save(function(err){
-                    if (err){
-                        console.error(err);
-                        res.send(500);
-                    }
-                    else{
-                        newSession(req, res);
-                    }
-                });
-            }, function(err){
-                res.send(403);
-            }
-        );
-    }
-    else if(!provider && uid && req.body.pass){
-        var user = new User({
-            uid: uid,
-            hash: req.body.pass,
-            group: req.body.group || null
-        });
-        user.save(function(err){
-            if (err){
-                console.error(err);
-                res.send(500);
-            }
-            else {
-                newSession(req, res);
-            }
-        });
-    }
+    res.send(204);
     return;
 }
 
 
-
-/* ======================== Dummies ===================== */
-
-/* If running on dev/test mode, every username will be prefixed to
-*  prevent accidents
-*/
-function prefix (req, res, next) {
-    req.body.uid = 'test_' + req.body.uid;
-    next();
-
-    return;
-}
-
-/* If running dev mode, you can log in via a script with only a username 
-*  which doesn't need to be previously registered
-*/
-function start_dummy_session (req, res) {
-    var uid = req.body.uid;
-    var provider = env.CATALOG_AUTHENTICATION;
-    debug('starting new session...');
-
-    function respond (user) {
-        debug('new session: %s ', uid);
-
-        if(user && req.body.pass && user.authenticate(pass)){
-            req.session.uid = uid;
-            req.session.group = user.group;
-            res.send(uid);
-        }
-        else if (provider === 'persona' && user) {
-            uid = user.uid;
-            debug('user %s is registered', uid);
-            req.session.uid = uid;
-            req.session.group = user.group;
-            res.send(uid);
-        } 
-        else {
-            debug('user is not registered, started dummy session');
-            req.session.uid = uid;
-            res.send(uid);
-        }
-
-        return;
-    }
-    function findUser (param) {
-        User.findOne(param)
-        .then(respond,
-            function(err) {
-                console.error(err);
-            }
-        );
-    }
-
-    if(provider === 'persona'){
-       persona.verify(req.body.assertion)
-       .then(
-            function(email){
-                findUser({email:email});
-            }, function(err){
-                res.send(403);
-            }
-        );
-    }
-    else {
-        findUser({uid: uid});
-    }
-    return;
-}
-
-/* if running in dev mode, checks your session and it doesn't matter if you are
-*  registered or not unless you want to check as admin
-*/
-function check_dummy_session(req, res, next){
-    var uid;
-    function respond(user){
-        if (user) {
-            if(user.locked) {
-                debug('user is locked.');
-                res.send(403);
-            }
-            else{
-                debug('user is logged in and registered.');
-                res.locals.user = uid;
-                res.locals.group = user.group || null;
-                req.session.group = user.group || null;
-                next();
-            }
-        } 
-        else {
-            debug('user is running a dummy session.');
-            req.locals.user = uid;
-            next();
-        }
-        return;
-    }
-
-    if (req.session && req.session.uid) {
-        debug('checking session for user: %s...', uid);
-        uid = req.session.uid;
-        User.findOne({uid: uid})
-        .then(respond, 
-            function(err){
-                console.error(err);
-                res.send(403);
-            }
-        );
-    } 
-    else if(req.method === 'GET' || req.path === '/session' || req.path === '/signup'){
-        next();
-    }
-    else {
-        debug('there is no session running for this user.');
-        res.redirect('/login');
-    }
-
-    return;
-}
-
-
-module.exports = init;

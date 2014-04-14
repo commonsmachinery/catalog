@@ -15,6 +15,7 @@ var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
 
 var BackendError = require('./backend').BackendError;
+var requireUser = require('./sessions').requireUser;
 
 var backend;
 var env;
@@ -65,39 +66,39 @@ function rest(app, localBackend, localCluster) {
     var checkSession = require('./sessions').checkSession;
 
     /* works */
-    app.delete('/works/:workID', deleteWork);
+    app.delete('/works/:workID', requireUser, deleteWork);
     app.get('/works', getWorks);
     app.get('/works/:workID', getWork);
     app.get('/works/:workID/completeMetadata', getCompleteWorkMetadata);
     app.get('/works/:workID/metadata', getWorkMetadata);
     // app.patch('/works/:workID', patchWork);
-    app.post('/works', postWork);
-    app.put('/works/:workID', putWork);
+    app.post('/works', requireUser, postWork);
+    app.put('/works/:workID', requireUser, putWork);
 
     /* sources */
-    app.delete('/users/:userID/sources/:sourceID', deleteSource);
-    app.get('/users/:userID/sources', getStockSources);
-    app.get('/users/:userID/sources/:sourceID', getSource);
-    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
-    app.get('/users/:userID/sources/:sourceID/metadata', getSourceMetadata);
+    app.delete('/users/:userID/sources/:sourceID', requireUser, deleteSource);
+    app.get('/users/:userID/sources', requireUser, getStockSources);
+    app.get('/users/:userID/sources/:sourceID', requireUser, getSource);
+    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', requireUser, getSourceCEM);
+    app.get('/users/:userID/sources/:sourceID/metadata', requireUser, getSourceMetadata);
     // app.patch('/users/:userID/sources/:sourceID', patchSource);
-    app.post('/users/:userID/sources', postStockSource);
-    app.put('/users/:userID/sources/:sourceID', putSource);
+    app.post('/users/:userID/sources', requireUser, postStockSource);
+    app.put('/users/:userID/sources/:sourceID', requireUser, putSource);
 
-    app.delete('/works/:workID/sources/:sourceID', deleteSource);
+    app.delete('/works/:workID/sources/:sourceID', requireUser, deleteSource);
     app.get('/works/:workID/sources', getWorkSources);
     app.get('/works/:workID/sources/:sourceID', getSource);
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getSourceMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    app.post('/works/:workID/sources', postWorkSource);
-    app.put('/works/:workID/sources/:sourceID', putSource);
+    app.post('/works/:workID/sources', requireUser, postWorkSource);
+    app.put('/works/:workID/sources/:sourceID', requireUser, putSource);
 
     /* posts */
     app.get('/works/:workID/posts', getPosts);
     app.get('/works/:workID/posts/:postID', getPost);
-    app.post('/works/:workID/posts', postPost);
-    app.delete('/works/:workID/posts/:postID', deletePost);
+    app.post('/works/:workID/posts', requireUser, postPost);
+    app.delete('/works/:workID/posts/:postID', requireUser, deletePost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);
@@ -158,7 +159,7 @@ function workPostURIFromReq(req) {
 function stockSourceURIFromReq(req) {
     // Ugly, but this should anyway be changed into collections
     if (req.params.sourceID) {
-        return buildStockSourceURI('test_1', req.params.sourceID);
+        return buildStockSourceURI(req.session.uid, req.params.sourceID);
     }
 
     throw new Error('missing sourceID param');
@@ -212,10 +213,8 @@ function call (res, queryData, action, view, callback) {
 
 /* when we only need user and id */
 function commonData (req) { 
-    var user_uri = buildUserURI('test_1');
-
     return {
-        user_uri: user_uri,
+        user_uri: req.session.uid ? buildUserURI(req.session.uid) : null,
     };
 }
 
@@ -361,7 +360,7 @@ function postStockSource(req, res) {
     cluster.increment('next-source-id')
     .then(
         function(sourceID){
-            sourceURI = buildStockSourceURI('test_1', sourceID);
+            sourceURI = buildStockSourceURI(req.session.uid, sourceID);
             queryData.source_uri = sourceURI;
             queryData.source_data.id = sourceID;
             call(res, queryData, 'create_stock_source', null, respond);
