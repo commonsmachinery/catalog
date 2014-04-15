@@ -668,6 +668,26 @@ class MainStore(object):
 
         return post.get_data()
 
+    def update_post(self, timestamp, user_uri, post_uri, post_data):
+        post = Post.from_model(self._model, post_uri)
+
+        if not self._can_modify(user_uri, post):
+            raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user_uri))
+
+        old_data = post.get_data()
+        editable_keys = ['metadataGraph', 'cachedExternalMetadataGraph', 'resource']
+        new_data = {key: post_data[key] for key in editable_keys if key in post_data}
+
+        new_data['updated'] = timestamp
+        new_data['updatedBy'] = user_uri
+        old_data.update(new_data)
+
+        new_post = Post(post_uri, old_data)
+        self.delete_post(user_uri=user_uri, post_uri=post_uri)
+
+        new_post.to_model(self._model)
+        return new_post.get_data()
+
     def delete_post(self, user_uri, post_uri):
         post = Post.from_model(self._model, post_uri)
 

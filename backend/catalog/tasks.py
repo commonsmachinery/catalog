@@ -16,7 +16,7 @@ Main store update tasks:
 
 create_work, update_work, delete_work
 create_work_source, create_stock_source, update_source, delete_source
-create_post, delete_post
+create_post, update_post, delete_post
 
 On success all the main store update tasks return the normalized Entry
 (Work, Source or Post) as dict, or None in case the entry was deleted.
@@ -24,7 +24,8 @@ On success all the main store update tasks return the normalized Entry
 Public store update tasks: (never should be called directly):
 
 public_create_work, public_update_work, public_delete_work, public_create_work_source
-public_update_source, public_delete_source, public_create_post, public_delete_post
+public_update_source, public_delete_source, public_create_post, public_update_post,
+public_delete_post
 
 Query tasks:
 
@@ -55,6 +56,7 @@ from catalog.celery import on_create_stock_source
 from catalog.celery import on_update_source
 from catalog.celery import on_delete_source
 from catalog.celery import on_create_post
+from catalog.celery import on_update_post
 from catalog.celery import on_delete_post
 
 from catalog.log import LogNotAvailable
@@ -362,6 +364,44 @@ def create_post(self, user_uri, work_uri, post_uri, post_data):
         raise self.retry(exc=e, countdown=1)
 
 @app.task(base=StoreTask, bind=True)
+def update_post(self, user_uri, post_uri, post_data):
+    """
+    Update post record in main store.
+    Automatically retries the task if record is locked.
+    The post will be updated in public store if the related work is public.
+
+    Arguments:
+        user_uri -- user identifier
+        post_uri -- post identifier
+        post_data -- data as dict, must conform to the Post schema.
+        Only the included properties will be updated:
+            'metadataGraph': Post metadata as RDF/JSON dict
+            'cachedExternalMetadataGraph': External metadata as RDF/JSON dict
+            'resource': The post URI
+    Returns:
+        Normalized post record as dict or an error type:
+            ParamError: some entry data parameter is missing or invalid
+            EntryAccessError: the user is not allowed to modify the entry
+
+        Unhandled non-catalog errors will result in an exception.
+    """
+    try:
+        with RedisLock(self.lock_db, post_uri):
+            with self.main_store as store:
+                timestamp = int(time.time())
+                post_data = store.update_post(timestamp, user_uri, post_uri, post_data)
+
+                log_data = json.dumps(post_data)
+                log_event.apply_async(args=('update_post', timestamp, user_uri, None, post_uri, log_data))
+
+                on_update_post.send(sender=self, timestamp=timestamp, user_uri=user_uri, post_uri=post_uri, post_data=post_data)
+                return post_data
+    except CatalogError as e:
+        return error(e)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=1)
+
+@app.task(base=StoreTask, bind=True)
 def delete_post(self, user_uri, post_uri):
     """
     Delete post record from main store.
@@ -476,6 +516,17 @@ def public_create_post(self, timestamp, user_uri, work_uri, post_uri, post_data)
         with RedisLock(self.lock_db, "public." + work_uri):
             with self.public_store as store:
                 store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
+    except LockedError as e:
+        raise self.retry(exc=e, countdown=5, max_retries=None)
+
+@app.task(base=StoreTask, bind=True, ignore_result=True)
+def public_update_post(self, timestamp, user_uri, post_uri, post_data):
+    """Update a post record in public store.
+    See update_post documentation for description of parameters."""
+    try:
+        with RedisLock(self.lock_db, "public." + post_uri):
+            with self.public_store as store:
+                store.update_post(timestamp, user_uri, post_uri, post_data)
     except LockedError as e:
         raise self.retry(exc=e, countdown=5, max_retries=None)
 
@@ -742,6 +793,7 @@ def query_events(self, type=None, user=None, time_min=None, time_max=None, resou
 @on_update_source.connect
 @on_delete_source.connect
 @on_create_post.connect
+@on_update_post.connect
 @on_delete_post.connect
 def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, work_data=None,
                     source_uri=None, source_data=None, post_uri=None, post_data=None, **kwargs):
@@ -782,10 +834,10 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
         pass
 
     elif sender == update_source:
-        if work_uri:
-            work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
-            if visibility == 'public':
-                public_update_source.delay(timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
+        work_data = task.main_store.get_linked_work(source_uri).get_data()
+        visibility = work_data.get('visibility')
+        if visibility == 'public':
+            public_update_source.delay(timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
 
     elif sender == delete_source:
         public_delete_source.delay(timestamp=timestamp, user_uri=user_uri, source_uri=source_uri)
@@ -795,6 +847,12 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
         visibility = work_data.get('visibility')
         if visibility == 'public':
             public_create_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri, post_data=post_data)
+
+    elif sender == update_post:
+        work_data = task.main_store.get_linked_work(post_uri).get_data()
+        visibility = work_data.get('visibility')
+        if visibility == 'public':
+            public_update_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri, post_data=post_data)
 
     elif sender == delete_post:
         public_delete_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri)

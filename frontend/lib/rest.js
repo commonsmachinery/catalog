@@ -51,6 +51,7 @@ var deletePost,
     postStockSource,
     postWork,
     postWorkSource,
+    putPost,
     putSource,
     putWork;
 
@@ -92,12 +93,13 @@ function rest(app, localBackend, localCluster) {
     app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
+    app.delete('/works/:workID/posts/:postID', deletePost);
     app.get('/works/:workID/posts', getPosts);
     app.get('/works/:workID/posts/:postID', getPost);
     app.get('/works/:workID/posts/:postID/cachedExternalMetadata', getPostCEM);
     app.get('/works/:workID/posts/:postID/metadata', getPostMetadata);
     app.post('/works/:workID/posts', postPost);
-    app.delete('/works/:workID/posts/:postID', deletePost);
+    app.put('/works/:workID/post/:postID', putPost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);
@@ -296,6 +298,25 @@ function postPost(req, res) {
                     res.redirect(postURI);
                 }
             ),
+        res);
+}
+
+function putPost(req, res) {
+    var queryData = commonData(req);
+    queryData.post_uri = workPostURIFromReq(req);
+
+    queryData.post_data = _.pick(
+        req.body, 'metadataGraph', 'cachedExternalMetadataGraph', 'resource');
+    if (queryData.post_data.metadataGraph) {
+        updateMetadata(queryData.post_data.metadataGraph, queryData.post_uri);
+    }
+
+    handleErrors(
+        backend.call('update_post', queryData).
+            then(function (data) {
+                debug('successfully updated post');
+                res.send(data);
+            }),
         res);
 }
 
