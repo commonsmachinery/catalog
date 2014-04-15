@@ -35,6 +35,8 @@ var deletePost,
     deleteWork,
     getCompleteWorkMetadata,
     getPost,
+    getPostMetadata,
+    getPostCEM,
     getPosts,
     getSource,
     getSourceCEM,
@@ -44,9 +46,7 @@ var deletePost,
     getWorkMetadata,
     getWorkSources,
     getSPARQL,
-    getWork,
     getWorks,
-    patchSource,
     postPost,
     postStockSource,
     postWork,
@@ -94,6 +94,8 @@ function rest(app, localBackend, localCluster) {
     /* posts */
     app.get('/works/:workID/posts', getPosts);
     app.get('/works/:workID/posts/:postID', getPost);
+    app.get('/works/:workID/posts/:postID/cachedExternalMetadata', getPostCEM);
+    app.get('/works/:workID/posts/:postID/metadata', getPostMetadata);
     app.post('/works/:workID/posts', postPost);
     app.delete('/works/:workID/posts/:postID', deletePost);
 
@@ -309,6 +311,31 @@ function deletePost (req, res) {
             }),
         res);
 }
+
+function getPostMetadata (req, res) {
+    var queryData = commonData(req);
+
+    queryData.post_uri = workPostURIFromReq(req);
+    queryData.subgraph = 'metadata';
+
+    handleErrors(
+        backend.call('get_post', queryData).
+            then(formatResult(res, 'postMetadata')),
+        res);
+}
+
+function getPostCEM (req, res) {
+    var queryData = commonData(req);
+
+    queryData.post_uri = workPostURIFromReq(req);
+    queryData.subgraph = 'cachedExternalMetadata';
+
+    handleErrors(
+        backend.call('get_post', queryData).
+            then(formatResult(res, 'postCEM')),
+        res);
+}
+
 
 function getSource (req, res) {
     var queryData = commonData(req);
