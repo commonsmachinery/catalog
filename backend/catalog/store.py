@@ -35,8 +35,6 @@ NS_REM3 = "http://scam.sf.net/schema#"
 NS_XSD = "http://www.w3.org/2001/XMLSchema#"
 NS_RDF = "http://www.w3.org/1999/02/22-rdf-syntax-ns#"
 
-CREATE_WORK_SUBJECT = "about:resource"
-
 # convert Entry schemas to dicts with URI keys for serializing to JSON
 def schema2json(s):
     json_schema = {}
@@ -210,11 +208,7 @@ class Entry(object):
                 graph = self._dict[property_name + "Graph"]
 
                 for subject in graph.keys():
-                    if subject == CREATE_WORK_SUBJECT:
-                        # alias for the new subject of the work
-                        subject_node = context # ex work_subject
-                    else:
-                        subject_node = RDF.Node(uri_string=str(subject))
+                    subject_node = RDF.Node(uri_string=str(subject))
 
                     for predicate in graph[subject].keys():
                         predicate_node = RDF.Node(uri_string=str(predicate))
