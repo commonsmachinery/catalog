@@ -3,17 +3,19 @@ meta(http-equiv="X-UA-Compatible" content="IE=Edge")
 
 mixin loginForm()
 	form
-		h2 Log in to elog.io 
+		h2 Log in to elog.io using Persona.org
+		p  No signup required here.
 		br
 		input#login(type="button" value="Email")
-	form
-		h2 ¿Don't have an account yet?:
-		br
-		label(for="signup-user") Pick a username: 
-		input#signup-user(type="text")
-		br
-		input#signup(type="button" value="Sign up")
-
+	if isDev
+		form(action="/test/login" method="post")
+			h2 DEVELOPMENT MODE TEST LOGIN
+			br
+			label(for="test-username") Username:
+			input#test-username(name="testuser" type="text")
+			br
+			input(type="submit" value="Login")
+	
 if landing
 	include includes/top
 		+loginForm()

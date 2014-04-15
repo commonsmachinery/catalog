@@ -5,7 +5,7 @@ var $, authenticate;
 
 define(function(require){
 	$ = require('jquery');
-	require('persona');
+    // require('persona');
 
 	/* Remember logout happens outside */
 	return {
@@ -15,15 +15,9 @@ define(function(require){
 
 
 function init(){
-	$('#login, #signup').on('click', function(ev){
-		var btn = ev.target.id;
-		if(btn == 'login'){
-			authenticate('session');
-		}
-		else {
-			authenticate('signup');
-		}
-		return false;
+    $('#login').on('click', function(ev) {
+        authenticate('session');
+        return false;
 	}); 
 	$('#logout').on('click', function(){
 		authenticate('logout');

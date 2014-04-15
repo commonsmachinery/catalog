@@ -73,6 +73,35 @@ function init (app, theCluster, sessionstore) {
     // dev?
     app.get('/logout', logout);
     app.del('/session', logout);
+
+    if (dev) {
+        // Handle test account logins by generating an email from the
+        // provided username and then rerunning the normal session
+        // code.
+        app.post('/test/login',
+                 function(req, res, next) {
+                     var user = req.body.testuser;
+                     if (/^[-_a-zA-Z0-9]+$/.test(user)) {
+                         var email = user + '@test';
+                         debug('test login from web: %s', email);
+                         req.session.email = email;
+                     }
+                     else {
+                         debug('invalid test user name: %s', user);
+                         req.session.destroy();
+                     }
+                     next();
+                 },
+                 checkUserSession,
+                 function(req, res) {
+                     if (req.session && req.session.uid) {
+                         res.redirect('/users/' + req.session.uid);
+                     }
+                     else {
+                         res.redirect('/login');
+                     }
+                 });
+    }
 }
 
 exports.init = init;
@@ -82,7 +111,7 @@ exports.init = init;
  * Middleware on routes that require a valid user session to work
  */
 function requireUser(req, res, next) {
-    if (req.session.uid) {
+    if (req.session && req.session.uid) {
         next();
     }
     else {
@@ -120,7 +149,7 @@ function useTestAccount(req, res, next) {
 
                 debug('got email from basic auth: %s', email);
 
-                if (req.session.email !== email) {
+                if ((req.session && req.session.email) !== email) {
                     debug('changing test session to %s', email);
 
                     // By dropping uid checkSession will load or
@@ -147,12 +176,14 @@ function useTestAccount(req, res, next) {
  * the account isn't locked.  If it is, drop the session.
  */
 function checkUserSession(req, res, next) {
-    var uid = req.session.uid;
-    var email = req.session.email;
+    var uid = req.session && req.session.uid;
+    var email = req.session && req.session.email;
 
     if (!email) {
         // No valid session without an email, reset just to be sure
-        req.session.uid = null;
+        if (req.session) {
+            req.session.uid = null;
+        }
         return next();
     }
 
@@ -261,6 +292,7 @@ function loginScreen (req, res) {
 
     if(!req.session.uid){
         res.render('login',{
+            isDev: dev,
             landing: landing,
         });
     }
