@@ -316,6 +316,14 @@ class MainStore(object):
         elif storage_type == 'memory':
             options = "contexts='yes'"
 
+        elif storage_type == 'sqlite':
+            # workaround for Redland sqlite store initialization bug:
+            # only use option 'new' if database doesn't exist
+            if not os.path.exists(name):
+                options = "new='true'"
+            else:
+                options = None
+
         else:
             raise RuntimeError('invalid storage type: {0}'.format(storage_type))
 

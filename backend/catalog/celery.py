@@ -56,12 +56,13 @@ class DefaultConfig:
     # Name of event log DB (when using MongoDB)
     EVENT_LOG_DB = 'events'
 
-    # backend store type: hashes, postgres or memory
-    BACKEND_STORE_TYPE = 'hashes'
+    # backend store type: hashes, postgres, memory or sqlite
+    BACKEND_STORE_TYPE = 'sqlite'
 
     # hash store options
     BACKEND_STORE_HASH_TYPE = os.getenv('CATALOG_BACKEND_STORE_HASH_TYPE', 'bdb')
-    BACKEND_STORE_DIR = os.getenv('CATALOG_BACKEND_STORE_DIR', 'data')
+    # BACKEND_STORE_DIR will be relative to $CATALOG_DATA_DIR if run-local.sh is used
+    BACKEND_STORE_DIR = os.getenv('CATALOG_BACKEND_STORE_DIR', '.')
 
     # postgres store options
     BACKEND_STORE_DB_HOST = os.getenv('CATALOG_BACKEND_STORE_DB_HOST', 'localhost')
