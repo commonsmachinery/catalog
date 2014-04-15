@@ -298,10 +298,7 @@ class MainStore(object):
     def get_store_options(name, config):
         storage_type = config.BACKEND_STORE_TYPE
         if storage_type == 'hashes':
-            options = "hash-type='{hash_type}',dir='{dir}',contexts='yes'".format(
-                hash_type = config.BACKEND_STORE_HASH_TYPE,
-                dir = config.BACKEND_STORE_DIR,
-            )
+            options = "hash-type='bdb',contexts='yes'"
 
         elif storage_type in ('postgresql', 'mysql'):
             options = "host='{host}',port='{port}',database='{database}_{name}',user='{user}',password='{password}'".format(
