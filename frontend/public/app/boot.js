@@ -11,8 +11,7 @@ requirejs.config({
 		collections: '../app/collections',
 		underscore: '../lib/underscore',
 		jquery : '../lib/jquery',
-		persona : 'https://login.persona.org/include'
-	},
+        },
 	map: {
 		'lib': {
 			backbone: 'lib/backbone'

@@ -67,6 +67,14 @@ function main() {
     app.set('err', err);
 
     // Middlewares
+
+    app.configure('development', function(){
+        app.use(express.errorHandler());
+        app.locals.pretty = true;
+    });
+
+    app.use(express.static(__dirname + env.CATALOG_STATIC));
+
     app.use(express.logger());
     app.use(express.json());
     app.use(express.bodyParser());
@@ -81,7 +89,6 @@ function main() {
         compress: true
     }));
 
-    app.use(express.static(__dirname + env.CATALOG_STATIC));
 
 
     /* ======================= Connect services and start ======================= */
@@ -100,9 +107,17 @@ function main() {
         function(backend, redis, mongo, sessionstore){
             console.log('Services connected... starting server...');
 
-            /* Load REST API */
+            // Wire up the rest of the app that depended on the
+            // infrastructure being available
             sessions.init(app, sessionstore);
+            sessions.routes(app);
             rest(app, backend, cluster);
+
+            // TODO: the non-REST stuff should be served properly, but
+            // for now just provide a home link
+            app.get('/', function(req, res) {
+                res.render('home');
+            });
 
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);

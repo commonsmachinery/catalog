@@ -63,8 +63,6 @@ function rest(app, localBackend, localCluster) {
     // TODO: add request ID checking
     // TODO: add request sanity checking
 
-    var checkSession = require('./sessions').checkSession;
-
     /* works */
     app.delete('/works/:workID', requireUser, deleteWork);
     app.get('/works', getWorks);

@@ -20,6 +20,12 @@ On Ubuntu:
 
 Make sure that Node.js is installed to run the frontend.
 
+
+Docker
+------
+
+There are docker images to help run the catalog.  For details, see `doc/docker.html`.
+
 Deploying locally
 =================
 
@@ -52,8 +58,33 @@ To run the frontend manually:
 Using
 =====
 
+User accounts
+-------------
+
+The primary login mechanism on the web pages is Mozilla Persona:
+https://login.persona.org/
+
+For testing the mocked IDs from https://mockmyid.com/ can be used:
+simply login with `something@mockmyid.com`, if you don't want to use a
+real email adress.
+
+When the frontend is run in development mode there are also simple
+test accounts that doesn't require any password at all.  Either login
+on the web page or pass `--user test:` to curl (choosing whichever
+username you need).  For these test accounts, a faked email address
+`user@test` is created.
+
+TODO: OAuth access to the REST API.
+
+
 REST API
 --------
+
+All `PUT`, `POST` and `DELETE` require a valid user session (see above
+about development accounts).  `GET` without a session queries the
+public store, and when a session is available it queries the main
+store applying the access rules.
+
 
 List works:
 
@@ -66,36 +97,36 @@ Filter works:
 Create a work (the subject in the metadata will be rewritten to the
 generated subject):
 
-    curl -v -X POST -d '{"visibility":"public", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "Example Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' http://localhost:8004/works
+    curl --user test: -v -X POST -d '{"visibility":"public", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "Example Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' http://localhost:8004/works
 
 Get a work:
 
-    curl -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+    curl --user test: -H 'Accept: application/json' http://localhost:8004/works/1392318412903
 
 Update a work:
 
-    curl -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+    curl --user test: -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1392318412903
 
 Delete a work:
 
-    curl -v -X DELETE http://localhost:8004/works/1392318412903
+    curl --user test: -v -X DELETE http://localhost:8004/works/1392318412903
 
 Add a source:
 
-    curl -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/sources
+    curl --user test: -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/sources
 
 Update a source:
 
-    curl -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' http://localhost:8004/works/1392318412903/sources/1
+    curl --user test: -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' http://localhost:8004/works/1392318412903/sources/1
 
 Add post:
 
-    curl -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/posts
+    curl --user test: -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/posts
 
 Delete source or post:
 
-     curl -v -X DELETE http://localhost:8004/works/1392318412903/sources/12345
-     curl -v -X DELETE http://localhost:8004/works/1392318412903/posts/12345
+     curl --user test: -v -X DELETE http://localhost:8004/works/1392318412903/sources/12345
+     curl --user test: -v -X DELETE http://localhost:8004/works/1392318412903/posts/12345
 
 Query SPARQL endpoint:
 

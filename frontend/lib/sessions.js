@@ -13,12 +13,13 @@
 
 var debug = require('debug')('frontend:sessions');
 
+var url = require('url');
 var Promise = require('bluebird');
 var express = require('express');
+var persona = require('express-persona');
 
 var cluster = require('./cluster');
 var db = require('./wrappers/mongo');
-//var persona = require('./persona');
 var User = require('./model/user');
 
 var env;
@@ -29,15 +30,17 @@ var cluster;
 
 var useTestAccount
   , checkUserSession
+  , setLocals
+  , personaAudience
   , loginScreen
   , logout
   ;
 
 
-//var adminPanel, check_dummy_session, checkSession, isLogged, kickUser, loginScreen, logout, newSession, newUser, prefix, setGroup, start_dummy_session, userLock;
-
-
-function init (app, theCluster, sessionstore) {
+/*
+ * Set up middlewares for session management.
+ */
+function init(app, sessionstore) {
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
@@ -54,25 +57,31 @@ function init (app, theCluster, sessionstore) {
         app.use(useTestAccount);
     }
 
-    // TODO: persona setup
-
     // Common session checks
     app.use(checkUserSession);
+    app.use(setLocals);
+}
 
+exports.init = init;
 
-    /* ================================ Routes ================================ */
+/*
+ * Setup routes for session management.
+ */
+function routes(app) {
+    // AJAX Persona routes
+    persona(app, {
+        audience: personaAudience(),
+        middleware: function(req, res, next) {
+            req.session.loginType = 'persona';
+            next();
+        },
+    });
 
     /* Screens */
     app.get('/login', loginScreen);
 //    app.get('/admin', adminPanel);
 
     // app.post('/lock', userLock);
-
-    // Generic session logout - beware that these doesn't log out the
-    // persona session, so perhaps they should not be allowed outside
-    // dev?
-    app.get('/logout', logout);
-    app.del('/session', logout);
 
     if (dev) {
         // Handle test account logins by generating an email from the
@@ -85,6 +94,7 @@ function init (app, theCluster, sessionstore) {
                          var email = user + '@test';
                          debug('test login from web: %s', email);
                          req.session.email = email;
+                         req.session.loginType = 'test';
                      }
                      else {
                          debug('invalid test user name: %s', user);
@@ -95,16 +105,18 @@ function init (app, theCluster, sessionstore) {
                  checkUserSession,
                  function(req, res) {
                      if (req.session && req.session.uid) {
-                         res.redirect('/users/' + req.session.uid);
+                         res.redirect('/');
                      }
                      else {
                          res.redirect('/login');
                      }
                  });
+
+        app.get('/test/logout', logout);
     }
 }
 
-exports.init = init;
+exports.routes = routes;
 
 
 /*
@@ -242,7 +254,6 @@ function checkUserSession(req, res, next) {
                     }
                     else {
                         req.session.uid = user.uid;
-                        res.locals.user = uid;
                     }
 
                     // Proceed to whatever the request is supposed to do
@@ -265,9 +276,6 @@ function checkUserSession(req, res, next) {
                         console.warning('removing session for locked user: %s', user.uid);
                         req.session.destroy();
                     }
-                    else {
-                        res.locals.user = user.uid;
-                    }
 
                     // Proceed to whatever the request is supposed to do
                     next();
@@ -281,6 +289,38 @@ function checkUserSession(req, res, next) {
     }
 }
 
+
+function setLocals(req, res, next) {
+    res.locals({
+        user: req.session.uid,
+        loginEmail: req.session.email,
+        loginType: req.session.loginType,
+    });
+    next();
+}
+
+
+/*
+ * Return the Persona audience URL that corresponds to the catalog
+ * base URL
+ */
+function personaAudience() {
+    var u = url.parse(env.CATALOG_BASE_URL);
+    var port = u.port;
+    var audience;
+
+    if (!port) {
+        port = u.protocol === 'https:' ? 443 : 80;
+    }
+
+    audience = u.protocol + '//' + u.hostname + ':' + port;
+    debug('using persona audience: %s', audience);
+
+    return audience;
+}
+
+
+
 /* ========================== REST Functions =============================== */
 
 /* Screens */
@@ -290,14 +330,14 @@ function loginScreen (req, res) {
     var referer = req.headers.referer;
     var landing = !referer || referer.search(env.CATALOG_BASE_URL) < 0;
 
-    if(!req.session.uid){
+    if (!req.session.uid){
         res.render('login',{
             isDev: dev,
             landing: landing,
         });
     }
-    else{
-        res.redirect('/users/' + req.session.uid);
+    else {
+        res.redirect('/');
     }
     
     return;
@@ -362,7 +402,7 @@ function userLock (req, res) {
 
 function logout (req, res) {
     req.session.destroy(); 
-    res.send(204);
+    res.redirect('/');
     return;
 }
 
