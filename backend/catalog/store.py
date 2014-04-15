@@ -426,20 +426,25 @@ class MainStore(object):
         if not self._can_modify(user_uri, work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
-        if work_data['visibility'] not in valid_work_visibility:
-            raise ParamError('invalid visibility: {0}'.format(visibility))
-        if work_data['state'] not in valid_work_state:
-            raise ParamError('invalid state: {0}'.format(state))
+        new_data = work.get_data()
 
-        old_data = work.get_data()
-        editable_keys = ['metadataGraph', 'visibility', 'state']
-        new_data = {key: work_data[key] for key in editable_keys if key in work_data}
+        if 'visibility' in work_data:
+            if work_data['visibility'] not in valid_work_visibility:
+                raise ParamError('invalid visibility: {0}'.format(work_data['visibility']))
+            new_data['visibility'] = work_data['visibility']
+
+        if 'state' in work_data:
+            if work_data['state'] not in valid_work_state:
+                raise ParamError('invalid state: {0}'.format(work_data['state']))
+            new_data['state'] = work_data['state']
+
+        if 'metadataGraph' in work_data:
+            new_data['metadataGraph'] = work_data['metadataGraph']
 
         new_data['updated'] = timestamp
         new_data['updatedBy'] = user_uri
-        old_data.update(new_data)
 
-        new_work = Work(work_uri, old_data)
+        new_work = Work(work_uri, new_data)
         self.delete_work(user_uri=user_uri, work_uri=work_uri)
 
         new_work.to_model(self._model)
