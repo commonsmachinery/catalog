@@ -33,9 +33,8 @@ work1_uri = 'http://src/works/1'
 work1_data = {
     'id': 1,
     'metadataGraph': {
-        'about:resource': {
-            'http://purl.org/dc/terms/title': [ { 'value': 'First Work',
-        'type': 'literal' } ]
+        'http://src/works/1': {
+            'http://purl.org/dc/terms/title': [ { 'value': 'First Work', 'type': 'literal' } ]
         }
     },
 }
@@ -44,9 +43,8 @@ work2_uri = 'http://src/works/2'
 work2_data = {
     'id': 2,
     'metadataGraph': {
-        'about:resource': {
-            'http://purl.org/dc/terms/title': [ { 'value': 'Second Work',
-        'type': 'literal' } ]
+        'http://src/works/2': {
+            'http://purl.org/dc/terms/title': [ { 'value': 'Second Work', 'type': 'literal' } ]
         }
     },
 }
@@ -63,12 +61,27 @@ source1_data = {
     'id': 1,
     'user_uri': 'http://src/users/test',
     'metadataGraph': {
-        'about:resource': {
+        'http://src/works/1/sources/1': {
             'http://purl.org/dc/terms/provenance': [ { 'value': 'For testing only', 'type': 'literal' } ]
         }
     },
     'cachedExternalMetadataGraph': {
-        'about:resource': {
+        'http://src/works/1/sources/1': {
+            'http://purl.org/dc/terms/creator': [ { 'value': 'Cached Author', 'type': 'literal' } ]
+        }
+    },
+}
+source1_stock_data = {
+    'resource': 'http://src/works/2',
+    'id': 1,
+    'user_uri': 'http://src/users/test',
+    'metadataGraph': {
+        'http://src/users/test/sources/1': {
+            'http://purl.org/dc/terms/provenance': [ { 'value': 'For testing only', 'type': 'literal' } ]
+        }
+    },
+    'cachedExternalMetadataGraph': {
+        'http://src/users/test/sources/1': {
             'http://purl.org/dc/terms/creator': [ { 'value': 'Cached Author', 'type': 'literal' } ]
         }
     },
@@ -83,8 +96,17 @@ post1_data = {
     'id': 1,
     'resource': 'http://example.com/post1',
     'metadataGraph': {
-        'about:resource': {
+        'http://src/works/1/post/1': {
             'http://purl.org/dc/terms/type': [ { 'value': 'Embed', 'type': 'literal' } ]
+        }
+    },
+}
+
+post_update_data = {
+    'resource': 'http://example.com/other-post',
+    'metadataGraph': {
+        'http://src/works/1/post/1': {
+            'http://purl.org/dc/terms/type': [ { 'value': 'Unknown', 'type': 'literal' } ]
         }
     },
 }
@@ -106,7 +128,7 @@ def test_create_work_data(store):
         'creator': 'http://src/users/test',
         'created': 1,
         'visibility': 'private',
-        'metadataGraph': {'about:resource': {'http://purl.org/dc/terms/title': [{'type': 'literal', 'value': 'Second Work'}]}},
+        'metadataGraph': {'http://src/works/2': {'http://purl.org/dc/terms/title': [{'type': 'literal', 'value': 'Second Work'}]}},
         'state': 'draft',
         'id': 2,
         'metadata': 'http://src/works/2/metadata',
@@ -175,8 +197,8 @@ def test_create_work_source_data(store):
     expected = {
         'added': 3, 'resource': 'http://src/works/2',
         'addedBy': 'http://src/users/test',
-        'metadataGraph': {'about:resource': {'http://purl.org/dc/terms/provenance': [{'type': 'literal', 'value': 'For testing only'}]}},
-        'cachedExternalMetadataGraph': {'about:resource': {'http://purl.org/dc/terms/creator': [{'type': 'literal', 'value': 'Cached Author'}]}},
+        'metadataGraph': {'http://src/works/1/sources/1': {'http://purl.org/dc/terms/provenance': [{'type': 'literal', 'value': 'For testing only'}]}},
+        'cachedExternalMetadataGraph': {'http://src/works/1/sources/1': {'http://purl.org/dc/terms/creator': [{'type': 'literal', 'value': 'Cached Author'}]}},
         'cachedExternalMetadata': 'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1, 'metadata': 'http://src/works/1/sources/1/metadata',
         'type': 'Source',
@@ -235,18 +257,18 @@ def test_get_source(store):
     assert source == expected
 
 def test_create_stock_source_model(store):
-    store.create_stock_source(timestamp=3, user_uri='http://src/users/test', source_uri=source1_uri_user, source_data=source1_data)
+    store.create_stock_source(timestamp=3, user_uri='http://src/users/test', source_uri=source1_uri_user, source_data=source1_stock_data)
     result = serialize_model(store)
     expected = load_testdata('source1_stock.nt')
     assert result == expected
 
 def test_create_stock_source_data(store):
-    source = store.create_stock_source(timestamp=3, user_uri='http://src/users/test', source_uri=source1_uri_user, source_data=source1_data)
+    source = store.create_stock_source(timestamp=3, user_uri='http://src/users/test', source_uri=source1_uri_user, source_data=source1_stock_data)
     expected = {
         'added': 3, 'resource': 'http://src/works/2',
         'addedBy': 'http://src/users/test',
-        'metadataGraph': {'about:resource': {'http://purl.org/dc/terms/provenance': [{'type': 'literal',
-        'value': 'For testing only'}]}}, 'cachedExternalMetadataGraph': {'about:resource': {'http://purl.org/dc/terms/creator': [{'type': 'literal', 'value': 'Cached Author'}]}},
+        'metadataGraph': {'http://src/users/test/sources/1': {'http://purl.org/dc/terms/provenance': [{'type': 'literal',
+        'value': 'For testing only'}]}}, 'cachedExternalMetadataGraph': {'http://src/users/test/sources/1': {'http://purl.org/dc/terms/creator': [{'type': 'literal', 'value': 'Cached Author'}]}},
         'cachedExternalMetadata': 'http://src/users/test/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': 'http://src/users/test/sources/1/metadata',
@@ -278,7 +300,7 @@ def test_create_post_data(store):
     expected = {
         'resource': 'http://example.com/post1',
         'postedBy': 'http://src/users/test',
-        'metadataGraph': {'about:resource': {'http://purl.org/dc/terms/type': [{'type': 'literal', 'value': 'Embed'}]}},
+        'metadataGraph': {'http://src/works/1/post/1': {'http://purl.org/dc/terms/type': [{'type': 'literal', 'value': 'Embed'}]}},
         'cachedExternalMetadataGraph': {},
         'cachedExternalMetadata': 'http://src/works/1/post/1/cachedExternalMetadata',
         'metadata': 'http://src/works/1/post/1/metadata',
@@ -295,6 +317,32 @@ def test_delete_post(store):
     result = serialize_model(store)
     expected = load_testdata('work1.nt')
     assert result == expected
+
+def test_update_post_model(store):
+    work = store.create_work(timestamp=0, user_uri='http://src/users/test', work_uri=work1_uri, work_data=work1_data)
+    store.create_post(timestamp=5, user_uri='http://src/users/test', work_uri=work1_uri, post_uri=post1_uri, post_data=post1_data)
+    store.update_post(timestamp=6, user_uri='http://src/users/test', post_uri=post1_uri, post_data=post_update_data)
+    result = serialize_model(store)
+    expected = load_testdata('post1_updated.nt')
+    assert result == expected
+
+def test_update_post_data(store):
+    work = store.create_work(timestamp=0, user_uri='http://src/users/test', work_uri=work1_uri, work_data=work1_data)
+    store.create_post(timestamp=5, user_uri='http://src/users/test', work_uri=work1_uri, post_uri=post1_uri, post_data=post1_data)
+    post = store.update_post(timestamp=6, user_uri='http://src/users/test', post_uri=post1_uri, post_data=post_update_data)
+    expected = {
+        'updated': 6, 'updatedBy': 'http://src/users/test',
+        'resource': u'http://example.com/other-post',
+        'postedBy': u'http://src/users/test',
+        'metadataGraph': {u'http://src/works/1/post/1': {u'http://purl.org/dc/terms/type': [{u'type': u'literal', u'value': u'Unknown'}]}},
+        'cachedExternalMetadataGraph': {},
+        'cachedExternalMetadata': u'http://src/works/1/post/1/cachedExternalMetadata',
+        'metadata': u'http://src/works/1/post/1/metadata',
+        'id': 1,
+        'posted': u'5',
+        'type': u'Post',
+    }
+    assert post == expected
 
 def test_get_post(store):
     work = store.create_work(timestamp=0, user_uri='http://src/users/test', work_uri=work1_uri, work_data=work1_data)
