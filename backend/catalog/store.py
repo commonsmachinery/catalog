@@ -297,10 +297,8 @@ class MainStore(object):
     @staticmethod
     def get_store_options(name, config):
         storage_type = config.BACKEND_STORE_TYPE
-        if storage_type == 'hashes':
-            options = "hash-type='bdb',contexts='yes'"
 
-        elif storage_type in ('postgresql', 'mysql'):
+        if storage_type in ('postgresql', 'mysql'):
             options = "host='{host}',port='{port}',database='{database}_{name}',user='{user}',password='{password}'".format(
                 host = config.BACKEND_STORE_DB_HOST,
                 port = config.BACKEND_STORE_DB_PORT,
@@ -314,12 +312,7 @@ class MainStore(object):
             options = "contexts='yes'"
 
         elif storage_type == 'sqlite':
-            # workaround for Redland sqlite store initialization bug:
-            # only use option 'new' if database doesn't exist
-            if not os.path.exists(name):
-                options = "new='true'"
-            else:
-                options = None
+            options = None
 
         else:
             raise RuntimeError('invalid storage type: {0}'.format(storage_type))

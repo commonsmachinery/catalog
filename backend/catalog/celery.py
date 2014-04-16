@@ -56,7 +56,7 @@ class DefaultConfig:
     # Name of event log DB (when using MongoDB)
     EVENT_LOG_DB = 'events'
 
-    # backend store type: hashes, postgres, memory or sqlite
+    # backend store type: postgres, memory or sqlite
     BACKEND_STORE_TYPE = 'sqlite'
 
     # postgres store options
