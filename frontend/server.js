@@ -48,6 +48,7 @@ var cluster = require('./lib/cluster');
 
 var sessions = require('./lib/sessions');
 var rest = require('./lib/rest');
+var admin = require('./lib/admin');
 
 var err = require('./err.json');
 
@@ -114,9 +115,11 @@ function main() {
             // infrastructure being available
             sessions.init(app, sessionstore);
             rest.init(app, backend, cluster);
+            admin.init(app);
 
             sessions.routes(app);
             rest.routes(app);
+            admin.routes(app);
 
             // TODO: the non-REST stuff should be served properly, but
             // for now just provide a home link

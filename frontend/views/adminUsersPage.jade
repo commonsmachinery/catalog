@@ -1,0 +1,15 @@
+
+include includes/adminTop
+
+h2 Users
+for user in users
+	- var lockCaption
+	if (user.locked)
+		- lockCaption = 'Unlock'
+	else
+		- lockCaption = 'Lock'
+	li
+		input.lock(type="button" data-uid="#{user.uid}" data-locked="#{user.locked}" value="#{lockCaption}")
+		| #{user.uid} - #{user.emails}
+
+include includes/adminBottom

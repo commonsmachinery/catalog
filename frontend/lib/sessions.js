@@ -81,9 +81,6 @@ function routes(app) {
 
     /* Screens */
     app.get('/login', loginScreen);
-//    app.get('/admin', adminPanel);
-
-    // app.post('/lock', userLock);
 
     if (dev) {
         // Handle test account logins by generating an email from the
@@ -258,7 +255,7 @@ function checkUserSession(req, res, next) {
                     debug('creating new session for user %s', user.uid);
 
                     if (user.locked) {
-                        console.warning('removing session for locked user: %s', user.uid);
+                        console.warn('removing session for locked user: %s', user.uid);
                         req.session.destroy();
                     }
                     else {
@@ -282,7 +279,7 @@ function checkUserSession(req, res, next) {
             then(
                 function(user) {
                     if (user.locked) {
-                        console.warning('removing session for locked user: %s', user.uid);
+                        console.warn('removing session for locked user: %s', user.uid);
                         req.session.destroy();
                     }
 
@@ -300,11 +297,13 @@ function checkUserSession(req, res, next) {
 
 
 function setLocals(req, res, next) {
-    res.locals({
-        user: req.session.uid,
-        loginEmail: req.session.email,
-        loginType: req.session.loginType,
-    });
+    if (req.session) {
+        res.locals({
+            user: req.session.uid,
+            loginEmail: req.session.email,
+            loginType: req.session.loginType,
+        });
+    }
     next();
 }
 
@@ -352,62 +351,6 @@ function loginScreen (req, res) {
     return;
 }
 
-/* for now it can kill sessions or lock users */
-/*
-function adminPanel (req, res){
-    if(req.session.group === 'admin'){
-        var q = req.query;
-        Promise.join(
-            sessions.all(
-                {}, 
-                q.sessOffset || 0, 
-                q.sessLimit || 50
-            ),
-            User.find(null, null, {
-                sort: {created: -1}, 
-                skip: q.usrOffset || 0, 
-                limit: q.usrLimit || 50
-            })
-        ).spread(
-            function(sessions, users){
-                res.render('adminPanel', {
-                    sessions: sessions,
-                    users: users
-                });
-            }, function(err){
-                console.error(err);
-            }
-        );
-    }
-    else {
-        res.redirect('/login');
-    }
-    return;
-}
-*/
-
-/* Actions */
-
-/*
-function userLock (req, res) {
-
-    if(req.session.group === 'admin'){
-        var user = req.body.uid;
-
-        User.findOneAndUpdate({uid: user}, {locked: req.body.lock})
-        .then(
-            function(){
-                debug('user %s locked', user);
-                res.send(200);
-            }, function(err){
-                console.error(err);
-                res.send(500);
-            }
-        );
-    }
-    return;
-}
-*/
 
 function logout (req, res) {
     req.session.destroy(); 

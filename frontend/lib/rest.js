@@ -153,9 +153,11 @@ function call (res, queryData, action, view, callback) {
 }
 
 /* when we only need user and id */
-function commonData (req) { 
+function commonData (req) {
+    var uid = req.session && req.session.uid;
+
     return {
-        user_uri: req.session.uid ? uris.buildUserURI(req.session.uid) : null,
+        user_uri: uid ? uris.buildUserURI(uid) : null,
     };
 }
 
