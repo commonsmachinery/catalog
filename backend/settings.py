@@ -14,8 +14,8 @@ EVENT_LOG_TYPE = os.getenv('CATALOG_EVENT_LOG_TYPE', 'sqlite')
 # Name of event log DB (when using MongoDB)
 EVENT_LOG_DB = 'events'
 
-# backend store type: hashes, postgres or memory
-BACKEND_STORE_TYPE = 'hashes'
+# backend store type: sqlite, postgres or memory
+BACKEND_STORE_TYPE = 'sqlite'
 
 # hash store options
 BACKEND_STORE_HASH_TYPE = os.getenv('CATALOG_BACKEND_STORE_HASH_TYPE', 'bdb')

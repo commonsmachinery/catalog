@@ -71,7 +71,8 @@ else
     cd "$BASE_DIR"
 fi
 
-
+echo "Initializing local database..."
+./init_sqlite.sh
 
 #
 # Frontend

@@ -16,7 +16,7 @@ Installing prerequisites
 
 On Ubuntu:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev swig autoconf automake libtool curl
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev librdf-storage-sqlite swig autoconf automake libtool curl
 
 Make sure that Node.js is installed to run the frontend.
 
@@ -26,6 +26,10 @@ Deploying locally
 Run the following command to setup virtualenv under build/backend with all the required dependencies.
 
     sh ./bootstrap.sh
+
+Local store (sqlite) will be initialized from bootstrap.sh, and can be re-created later by running
+
+    ./init-sqlite.sh
 
 Running
 -------
