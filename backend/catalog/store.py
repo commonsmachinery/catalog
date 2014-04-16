@@ -455,7 +455,7 @@ class MainStore(object):
                 self.delete_source(user_uri=user_uri, source_uri=source_uri, unlink=True)
 
             for post_uri in work.get('post', []):
-                self.delete_post(user_uri=user_uri, post_uri=post_uri)
+                self.delete_post(user_uri=user_uri, post_uri=post_uri, unlink=True)
 
         for subgraph_uri in work.get_subgraphs():
             subgraph_context = RDF.Node(RDF.Uri(subgraph_uri))
@@ -683,24 +683,25 @@ class MainStore(object):
         old_data.update(new_data)
 
         new_post = Post(post_uri, old_data)
-        self.delete_post(user_uri=user_uri, post_uri=post_uri)
+        self.delete_post(user_uri=user_uri, post_uri=post_uri, unlink=False)
 
         new_post.to_model(self._model)
         return new_post.get_data()
 
-    def delete_post(self, user_uri, post_uri):
+    def delete_post(self, user_uri, post_uri, unlink=True):
         post = Post.from_model(self._model, post_uri)
 
         if not self._can_modify(user_uri, post):
             raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user_uri))
 
-        # delete any links to this post
-        # is it safe to assume that catalog:post will precisely
-        # enumerate works linked to the post?
-        query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "post"), RDF.Uri(post_uri))
+        # delete the link to work, if exists
+        if unlink:
+            # is it safe to assume that catalog:post will precisely
+            # enumerate works linked to the post?
+            query_statement = RDF.Statement(None, RDF.Uri(NS_CATALOG + "post"), RDF.Uri(post_uri))
 
-        for statement, context in self._model.find_statements_context(query_statement):
-            self._model.remove_statement(statement, context)
+            for statement, context in self._model.find_statements_context(query_statement):
+                self._model.remove_statement(statement, context)
 
         # delete post data
         for subgraph_uri in post.get_subgraphs():

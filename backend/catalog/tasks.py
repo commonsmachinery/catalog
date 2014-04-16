@@ -846,7 +846,7 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
         work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
         visibility = work_data.get('visibility')
         if visibility == 'public':
-            public_create_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri, post_data=post_data)
+            public_create_post.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
 
     elif sender == update_post:
         work_data = task.main_store.get_linked_work(post_uri).get_data()
