@@ -99,7 +99,7 @@ function rest(app, localBackend, localCluster) {
     app.get('/works/:workID/posts/:postID/cachedExternalMetadata', getPostCEM);
     app.get('/works/:workID/posts/:postID/metadata', getPostMetadata);
     app.post('/works/:workID/posts', postPost);
-    app.put('/works/:workID/post/:postID', putPost);
+    app.put('/works/:workID/posts/:postID', putPost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);
