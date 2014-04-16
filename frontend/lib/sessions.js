@@ -20,13 +20,12 @@ var persona = require('express-persona');
 
 var cluster = require('./cluster');
 var db = require('./wrappers/mongo');
-var User = require('./model/user');
+var uris = require('./uris');
 
 var env;
 var dev, test;
 var sessions;
-var cluster;
-
+var User;
 
 var useTestAccount
   , checkUserSession
@@ -44,6 +43,9 @@ function init(app, sessionstore) {
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
+
+    // We can load the User model now that mongodb is connected
+    User = require('./model/user');
 
     /* Session middlewares */
     sessions = sessionstore;
@@ -90,7 +92,7 @@ function routes(app) {
         app.post('/test/login',
                  function(req, res, next) {
                      var user = req.body.testuser;
-                     if (/^[-_a-zA-Z0-9]+$/.test(user)) {
+                     if (/^[\-_a-zA-Z0-9]+$/.test(user)) {
                          var email = user + '@test';
                          debug('test login from web: %s', email);
                          req.session.email = email;
@@ -112,7 +114,7 @@ function routes(app) {
                      }
                  });
 
-        app.get('/test/logout', logout);
+        app.all('/test/logout', logout);
     }
 }
 
@@ -202,47 +204,54 @@ function checkUserSession(req, res, next) {
     if (!uid) {
         // Look up user from email, or create one if necessary
 
-        User.findOne({ email: email }).
+        User.findOne({ emails: email }).
             then(
                 function(user) {
                     if (user) {
                         debug('found user %s from email %s', user.uid, email);
                         return Promise.resolve(user);
                     }
-                    else {
-                        return cluster.increment('next-user-id').
-                            then(
-                                function(newId) {
-                                    // Reduce the risk of overlapping accounts by
-                                    // having prefixes on the dev and test accounts
-                                    if (dev) {
-                                        newId = 'dev_' + newId;
-                                    }
-                                    else if (dev) {
-                                        newId = 'test_' + newId;
-                                    }
 
-                                    debug('creating new user with id %s for %s', newId, email);
-
-                                    return new Promise(function(resolve, reject) {
-                                        var user = new User({
-                                            uid: newId,
-                                            email: email,
-                                        });
-
-                                        user.save(function(err, savedUser) {
-                                            if (err) {
-                                                console.error('error saving new user: %s %j', err, user);
-                                                reject(err);
-                                            }
-                                            else {
-                                                resolve(user);
-                                            }
-                                        });
-                                    });
+                    return cluster.increment('next-user-id').
+                        then(
+                            function(newId) {
+                                // Reduce the risk of overlapping accounts by
+                                // having prefixes on the dev and test accounts
+                                if (dev) {
+                                    newId = 'dev_' + newId;
                                 }
-                            );
-                    }
+                                else if (dev) {
+                                    newId = 'test_' + newId;
+                                }
+
+                                debug('creating new user with id %s for %s', newId, email);
+
+                                return new Promise(function(resolve, reject) {
+                                    var newUser = new User({
+                                        uid: newId,
+                                        uri: uris.buildUserURI(newId),
+                                        emails: [email],
+                                    });
+
+                                    newUser.save(function(err, savedUser, affected) {
+                                        if (err) {
+                                            console.error('error saving new user: %s %j', err, newUser);
+                                            reject(err);
+                                        }
+                                        else {
+                                            if (affected > 0) {
+                                                // the uniqueness on uid should ensure that
+                                                // this never happens, but can't-happens have
+                                                // a tendency to happen.
+                                                console.error('overwrote existing user with %j', savedUser);
+                                            }
+
+                                            resolve(savedUser);
+                                        }
+                                    });
+                                });
+                            }
+                        );
                 }
             ).then(
                 function(user) {

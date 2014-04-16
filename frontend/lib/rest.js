@@ -15,6 +15,7 @@ var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
 
 var BackendError = require('./backend').BackendError;
+var uris = require('./uris');
 var requireUser = require('./sessions').requireUser;
 
 var backend;
@@ -55,14 +56,17 @@ var deletePost,
     putSource,
     putWork;
 
-function rest(app, localBackend, localCluster) {
+function init(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
     cluster = localCluster;
 
     // TODO: add request ID checking
     // TODO: add request sanity checking
+}
+exports.init = init;
 
+function routes(app) {
     /* works */
     app.delete('/works/:workID', requireUser, deleteWork);
     app.get('/works', getWorks);
@@ -100,69 +104,8 @@ function rest(app, localBackend, localCluster) {
 
     /* sparql */
     app.get('/sparql', getSPARQL);
-
-    return;
 }
-
-
-function buildURI() {
-    return env.CATALOG_BASE_URL + '/' + Array.prototype.join.call(arguments, '/');
-}
-
-function buildUserURI(userID) {
-    return buildURI('users', userID);
-}
-
-function buildWorkURI(workID) {
-    return buildURI('works', workID);
-}
-
-function buildWorkSourceURI(workID, sourceID) {
-    return buildURI('works', workID, 'sources', sourceID);
-}
-
-function buildWorkPostURI(workID, postID) {
-    return buildURI('works', workID, 'posts', postID);
-}
-
-function buildStockSourceURI(userID, sourceID) {
-    return buildURI('users', userID, 'sources', sourceID);
-}
-
-
-function workURIFromReq(req) {
-    if (req.params.workID) {
-        return buildWorkURI(req.params.workID);
-    }
-
-    throw new Error('missing workID param');
-}
-
-function workSourceURIFromReq(req) {
-    if (req.params.workID && req.params.sourceID) {
-        return buildWorkSourceURI(req.params.workID, req.params.sourceID);
-    }
-
-    throw new Error('missing workID or sourceID param');
-}
-
-function workPostURIFromReq(req) {
-    if (req.params.workID && req.params.postID) {
-        return buildWorkPostURI(req.params.workID, req.params.postID);
-    }
-
-    throw new Error('missing workID or postID param');
-}
-
-function stockSourceURIFromReq(req) {
-    // Ugly, but this should anyway be changed into collections
-    if (req.params.sourceID) {
-        return buildStockSourceURI(req.session.uid, req.params.sourceID);
-    }
-
-    throw new Error('missing sourceID param');
-}
-
+exports.routes = routes;
 
 
 function call (res, queryData, action, view, callback) {
@@ -212,7 +155,7 @@ function call (res, queryData, action, view, callback) {
 /* when we only need user and id */
 function commonData (req) { 
     return {
-        user_uri: req.session.uid ? buildUserURI(req.session.uid) : null,
+        user_uri: req.session.uid ? uris.buildUserURI(req.session.uid) : null,
     };
 }
 
@@ -226,7 +169,7 @@ function deleteWork(req, res) {
     }
 
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     call(res, queryData, 'delete_work', null, respond);
     return;
@@ -234,7 +177,7 @@ function deleteWork(req, res) {
 
 function getPosts (req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     call(res, queryData, 'get_posts', 'posts');
     return;
@@ -242,7 +185,7 @@ function getPosts (req, res) {
 
 function getPost (req, res) {
     var queryData = commonData(req);
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
 
     call(res, queryData, 'get_post', 'workPost');
     return;
@@ -258,7 +201,7 @@ function postPost(req, res) {
     }
 
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     queryData.post_data = {
         metadataGraph: req.body.metadataGraph || {},
@@ -269,7 +212,7 @@ function postPost(req, res) {
     cluster.increment('next-post-id')
     .then(
         function(postID){
-            postURI = buildWorkPostURI(req.params.workID, postID);
+            postURI = uris.buildWorkPostURI(req.params.workID, postID);
             queryData.post_uri = postURI;
             queryData.post_data.id = postID;
             call(res, queryData, 'create_post', null, respond);
@@ -288,7 +231,7 @@ function deletePost (req, res) {
     }
 
     var queryData = commonData(req);
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
 
     call(res, queryData, 'delete_post', null, respond);
     return;
@@ -297,10 +240,10 @@ function deletePost (req, res) {
 function getSource (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     call(res, queryData, 'get_source', 'source');
@@ -316,7 +259,7 @@ function postWorkSource(req, res) {
     }
 
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     queryData.source_data = {
         metadataGraph: req.body.metadataGraph || {},
@@ -327,7 +270,7 @@ function postWorkSource(req, res) {
     cluster.increment('next-source-id')
     .then(
         function(sourceID){
-            sourceURI = buildWorkSourceURI(
+            sourceURI = uris.buildWorkSourceURI(
                 req.params.workID, sourceID);
             queryData.source_uri = sourceURI;
             queryData.source_data.id = sourceID;
@@ -358,7 +301,7 @@ function postStockSource(req, res) {
     cluster.increment('next-source-id')
     .then(
         function(sourceID){
-            sourceURI = buildStockSourceURI(req.session.uid, sourceID);
+            sourceURI = uris.buildStockSourceURI(req.session.uid, sourceID);
             queryData.source_uri = sourceURI;
             queryData.source_data.id = sourceID;
             call(res, queryData, 'create_stock_source', null, respond);
@@ -378,10 +321,10 @@ function putSource(req, res) {
 
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     queryData.source_data = _.pick(
@@ -400,10 +343,10 @@ function deleteSource (req, res) {
 
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     call(res, queryData, 'delete_source', null, respond);
@@ -413,10 +356,10 @@ function deleteSource (req, res) {
 function getSourceMetadata (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     queryData.subgraph = 'metadata';
@@ -428,10 +371,10 @@ function getSourceMetadata (req, res) {
 function getSourceCEM (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     queryData.subgraph = 'cachedExternalMetadata';
@@ -442,7 +385,7 @@ function getSourceCEM (req, res) {
 
 function getWorkSources (req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     call(res, queryData, 'get_work_sources', 'sources');
     return;
@@ -457,7 +400,7 @@ function getStockSources (req, res) {
 
 function getWork(req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     call(res, queryData, 'get_work', 'workPermalink');
     return;
@@ -477,7 +420,7 @@ function getWorks(req, res) {
 
 function getWorkMetadata(req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
     queryData.subgraph = "metadata";
 
     call(res, queryData, 'get_work', 'workMetadata');
@@ -486,7 +429,7 @@ function getWorkMetadata(req, res) {
 
 function getCompleteWorkMetadata(req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
     queryData.format = 'json';
 
     call(res, queryData, 'get_complete_metadata', 'completeMetadata');
@@ -511,7 +454,7 @@ function postWork(req, res) {
     cluster.increment('next-work-id')
     .then(
         function(workID){
-            workURI = buildWorkURI(workID);
+            workURI = uris.buildWorkURI(workID);
             queryData.work_uri = workURI;
             queryData.work_data.id = workID;
             call(res, queryData, 'create_work', null, respond);
@@ -529,7 +472,7 @@ function putWork(req, res) {
     }
 
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
     queryData.work_data = _.pick(
         req.body, 'metadataGraph', 'state', 'visiblity');
 
@@ -561,4 +504,3 @@ function getSPARQL(req, res) {
     return;
 }
 
-module.exports = rest;

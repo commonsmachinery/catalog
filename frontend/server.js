@@ -14,24 +14,9 @@
 
 var debug = require('debug')('frontend:server');
 
-var cons = require('consolidate');
-var express = require('express');
-var stylus = require('stylus');
-var Promise = require('bluebird');
-
-var sessionStore = require('./lib/wrappers/sessionStore');
-var backend = require('./lib/backend');
-var db = require('./lib/wrappers/mongo');
-var cluster = require('./lib/cluster');
-
-var sessions = require('./lib/sessions');
-var rest = require('./lib/rest');
-
-var config = require('./config.json');
-var err = require('./err.json');
-
-
-/*  Override config.json with enviroment variables  */
+/*  Override config.json with enviroment variables.  Do it very early
+ *  to let all our modules use the values later.
+ */
 function setEnv (obj) {
     var key;
     var env = process.env;
@@ -45,8 +30,26 @@ function setEnv (obj) {
     }
     return;
 }
+
+var config = require('./config.json');
 setEnv(config.common);
 setEnv(config[process.env.NODE_ENV || 'development']);
+
+
+var cons = require('consolidate');
+var express = require('express');
+var stylus = require('stylus');
+var Promise = require('bluebird');
+
+var sessionStore = require('./lib/wrappers/sessionStore');
+var backend = require('./lib/backend');
+var db = require('./lib/wrappers/mongo');
+var cluster = require('./lib/cluster');
+
+var sessions = require('./lib/sessions');
+var rest = require('./lib/rest');
+
+var err = require('./err.json');
 
 
 function main() {
@@ -110,8 +113,10 @@ function main() {
             // Wire up the rest of the app that depended on the
             // infrastructure being available
             sessions.init(app, sessionstore);
+            rest.init(app, backend, cluster);
+
             sessions.routes(app);
-            rest(app, backend, cluster);
+            rest.routes(app);
 
             // TODO: the non-REST stuff should be served properly, but
             // for now just provide a home link

@@ -8,40 +8,31 @@
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
-// TODO: this is just a placeholder for the password stuff from the
-// user model while we decide how to handle frontend admin accounts
-
 'use strict';
 
+var crypto = require('crypto');
 var db = require('../wrappers/mongo');
 
 var schema = new db.Schema(
     {
-        uid: {
+        username: {
             type: String,
+            required: true,
             index: {
                 unique: true
             }
         },
-        email: {
+        password: {
             type: String,
-            index: {
-                unique: true
-            }
-        },
-        hash: {
-            type: String,
+            required: true,
             set: function(password) {
                 this.salt = this.makeSalt();
                 return this.encrypt(password);
             }
         },
         salt: {
-            type: String
-        },
-        created: {
-            type: Date,
-            default: Date.now()
+            type: String,
+            required: true,
         },
         locked: {
             type: Boolean,
@@ -52,16 +43,16 @@ var schema = new db.Schema(
     // Options
     {
         autoIndex: process.env.CATALOG_USERS_AUTOINDEX
-    },
+    }
 );
 
 schema.methods({
-    authenticate: function(string) {
-        return this.encrypt(string) === this.hash;
+    authenticate: function(password) {
+        return this.encrypt(password) === this.password;
     },
 
-    encrypt: function(string) {
-        return crypto.createHmac('sha1', this.salt).update(string).digest('hex');
+    encrypt: function(password) {
+        return crypto.createHmac('sha1', this.salt).update(password).digest('hex');
     },
 
     makeSalt: function() {

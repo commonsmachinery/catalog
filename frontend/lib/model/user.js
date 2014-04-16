@@ -16,12 +16,21 @@ var schema = new db.Schema(
     {
         uid: {
             type: String,
+            required: true,
             index: {
                 unique: true
             }
         },
-        email: {
+        uri: {
             type: String,
+            required: true,
+            index: {
+                unique: true
+            }
+        },
+        emails: {
+            type: [String],
+            required: true,
             index: {
                 unique: true
             }
@@ -38,7 +47,7 @@ var schema = new db.Schema(
 
     // Options
     {
-        autoIndex: process.env.CATALOG_USERS_AUTOINDEX
+        autoIndex: process.env.CATALOG_USERS_AUTOINDEX === "true",
     }
 );
 
