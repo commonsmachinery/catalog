@@ -27,6 +27,7 @@ var errorMap = {
     'EntryNotFoundError': 404,
 };
 
+var createWorkSubject = "about:resource";
 
 /* API functions */
 var deletePost,
@@ -34,6 +35,8 @@ var deletePost,
     deleteWork,
     getCompleteWorkMetadata,
     getPost,
+    getPostMetadata,
+    getPostCEM,
     getPosts,
     getSource,
     getSourceCEM,
@@ -43,13 +46,12 @@ var deletePost,
     getWorkMetadata,
     getWorkSources,
     getSPARQL,
-    getWork,
     getWorks,
-    patchSource,
     postPost,
     postStockSource,
     postWork,
     postWorkSource,
+    putPost,
     putSource,
     putWork;
 
@@ -91,10 +93,13 @@ function rest(app, localBackend, localCluster) {
     app.put('/works/:workID/sources/:sourceID', putSource);
 
     /* posts */
+    app.delete('/works/:workID/posts/:postID', deletePost);
     app.get('/works/:workID/posts', getPosts);
     app.get('/works/:workID/posts/:postID', getPost);
+    app.get('/works/:workID/posts/:postID/cachedExternalMetadata', getPostCEM);
+    app.get('/works/:workID/posts/:postID/metadata', getPostMetadata);
     app.post('/works/:workID/posts', postPost);
-    app.delete('/works/:workID/posts/:postID', deletePost);
+    app.put('/works/:workID/posts/:postID', putPost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);
@@ -213,6 +218,20 @@ function commonData (req) {
     };
 }
 
+/* Translate about:resource in the RDF/JSON metadata
+ *  into the real resource URI for POST and PUT
+ */
+function updateMetadata(obj, uri) {
+    if (obj.hasOwnProperty(createWorkSubject)) {
+        if (obj.hasOwnProperty(uri)) {
+            obj[uri] = _.extend(obj[uri], obj[createWorkSubject]);
+        } else {
+            obj[uri] = obj[createWorkSubject];
+        }
+        delete obj[createWorkSubject];
+    }
+}
+
 /* API functions */
 
 function deleteWork(req, res) {
@@ -269,6 +288,8 @@ function postPost(req, res) {
                     postURI = buildWorkPostURI(req.params.workID, postID);
                     queryData.post_uri = postURI;
                     queryData.post_data.id = postID;
+                    updateMetadata(queryData.post_data.metadataGraph, postURI);
+
                     return backend.call('create_post', queryData);
                 }
             ).then(
@@ -277,6 +298,25 @@ function postPost(req, res) {
                     res.redirect(postURI);
                 }
             ),
+        res);
+}
+
+function putPost(req, res) {
+    var queryData = commonData(req);
+    queryData.post_uri = workPostURIFromReq(req);
+
+    queryData.post_data = _.pick(
+        req.body, 'metadataGraph', 'cachedExternalMetadataGraph', 'resource');
+    if (queryData.post_data.metadataGraph) {
+        updateMetadata(queryData.post_data.metadataGraph, queryData.post_uri);
+    }
+
+    handleErrors(
+        backend.call('update_post', queryData).
+            then(function (data) {
+                debug('successfully updated post');
+                res.send(data);
+            }),
         res);
 }
 
@@ -292,6 +332,31 @@ function deletePost (req, res) {
             }),
         res);
 }
+
+function getPostMetadata (req, res) {
+    var queryData = commonData(req);
+
+    queryData.post_uri = workPostURIFromReq(req);
+    queryData.subgraph = 'metadata';
+
+    handleErrors(
+        backend.call('get_post', queryData).
+            then(formatResult(res, 'postMetadata')),
+        res);
+}
+
+function getPostCEM (req, res) {
+    var queryData = commonData(req);
+
+    queryData.post_uri = workPostURIFromReq(req);
+    queryData.subgraph = 'cachedExternalMetadata';
+
+    handleErrors(
+        backend.call('get_post', queryData).
+            then(formatResult(res, 'postCEM')),
+        res);
+}
+
 
 function getSource (req, res) {
     var queryData = commonData(req);
@@ -328,6 +393,8 @@ function postWorkSource(req, res) {
                         req.params.workID, sourceID);
                     queryData.source_uri = sourceURI;
                     queryData.source_data.id = sourceID;
+                    updateMetadata(queryData.source_data.metadataGraph, sourceURI);
+
                     return backend.call('create_work_source', queryData);
                 }
             ).then(
@@ -357,6 +424,8 @@ function postStockSource(req, res) {
                     sourceURI = buildStockSourceURI('test_1', sourceID);
                     queryData.source_uri = sourceURI;
                     queryData.source_data.id = sourceID;
+                    updateMetadata(queryData.source_data.metadataGraph, sourceURI);
+
                     return backend.call('create_stock_source', queryData);
                 }
             ).then(
@@ -380,6 +449,9 @@ function putSource(req, res) {
 
     queryData.source_data = _.pick(
         req.body, 'metadataGraph', 'cachedExternalMetadataGraph', 'resource');
+    if (queryData.source_data.metadataGraph) {
+        updateMetadata(queryData.source_data.metadataGraph, queryData.source_uri);
+    }
 
     handleErrors(
         backend.call('update_source', queryData).
@@ -531,6 +603,8 @@ function postWork(req, res) {
                     workURI = buildWorkURI(workID);
                     queryData.work_uri = workURI;
                     queryData.work_data.id = workID;
+                    updateMetadata(queryData.work_data.metadataGraph, workURI);
+
                     return backend.call('create_work', queryData);
                 }
             ).then(
@@ -549,6 +623,9 @@ function putWork(req, res) {
     queryData.work_uri = workURIFromReq(req);
     queryData.work_data = _.pick(
         req.body, 'metadataGraph', 'state', 'visiblity');
+    if (queryData.work_data.metadataGraph) {
+        updateMetadata(queryData.work_data.metadataGraph, queryData.work_uri);
+    }
 
     handleErrors(
         backend.call('update_work', queryData).

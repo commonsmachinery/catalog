@@ -74,32 +74,36 @@ generated subject):
 
 Get a work:
 
-    curl -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+    curl -H 'Accept: application/json' http://localhost:8004/works/1
 
 Update a work:
 
-    curl -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+    curl -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1
 
 Delete a work:
 
-    curl -v -X DELETE http://localhost:8004/works/1392318412903
+    curl -v -X DELETE http://localhost:8004/works/1
 
 Add a source:
 
-    curl -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/sources
+    curl -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1/sources
 
 Update a source:
 
-    curl -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' http://localhost:8004/works/1392318412903/sources/1
+    curl -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1/sources/1
 
 Add post:
 
-    curl -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/posts
+    curl -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1/posts
+
+Update post:
+
+    curl -X PUT -d '{"resource": "http://example.com/other_post"}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1/posts/1
 
 Delete source or post:
 
-     curl -v -X DELETE http://localhost:8004/works/1392318412903/sources/12345
-     curl -v -X DELETE http://localhost:8004/works/1392318412903/posts/12345
+     curl -v -X DELETE http://localhost:8004/works/1/sources/1
+     curl -v -X DELETE http://localhost:8004/works/1/posts/1
 
 Query SPARQL endpoint:
 

@@ -101,6 +101,7 @@ on_create_stock_source  = Signal(providing_args=('timestamp', 'user_uri', 'sourc
 on_update_source        = Signal(providing_args=('timestamp', 'user_uri', 'source_uri', 'source_data'))
 on_delete_source        = Signal(providing_args=('timestamp', 'user_uri', 'source_uri'))
 on_create_post          = Signal(providing_args=('timestamp', 'user_uri', 'work_uri', 'post_uri', 'post_data'))
+on_update_post          = Signal(providing_args=('timestamp', 'user_uri', 'post_uri', 'post_data'))
 on_delete_post          = Signal(providing_args=('timestamp', 'user_uri', 'post_uri'))
 
 
