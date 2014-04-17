@@ -47,7 +47,7 @@ class DefaultConfig:
     MONGODB_URL = os.getenv('CATALOG_MONGODB_URL', 'mongodb://localhost:27017/')
     REDIS_URL = os.getenv('CATALOG_REDIS_URL', 'localhost')
 
-    # Used for sqlite and Redland local storage, typically only used in devevelopment
+    # Used for sqlite, typically only used in devevelopment
     DATA_DIR = os.getenv('CATALOG_DATA_DIR', './data')
 
     # Event log type: sqlite or mongodb
@@ -56,12 +56,8 @@ class DefaultConfig:
     # Name of event log DB (when using MongoDB)
     EVENT_LOG_DB = 'events'
 
-    # backend store type: hashes, postgres or memory
-    BACKEND_STORE_TYPE = 'hashes'
-
-    # hash store options
-    BACKEND_STORE_HASH_TYPE = os.getenv('CATALOG_BACKEND_STORE_HASH_TYPE', 'bdb')
-    BACKEND_STORE_DIR = os.getenv('CATALOG_BACKEND_STORE_DIR', 'data')
+    # backend store type: postgres, memory or sqlite
+    BACKEND_STORE_TYPE = 'sqlite'
 
     # postgres store options
     BACKEND_STORE_DB_HOST = os.getenv('CATALOG_BACKEND_STORE_DB_HOST', 'localhost')
@@ -105,6 +101,7 @@ on_create_stock_source  = Signal(providing_args=('timestamp', 'user_uri', 'sourc
 on_update_source        = Signal(providing_args=('timestamp', 'user_uri', 'source_uri', 'source_data'))
 on_delete_source        = Signal(providing_args=('timestamp', 'user_uri', 'source_uri'))
 on_create_post          = Signal(providing_args=('timestamp', 'user_uri', 'work_uri', 'post_uri', 'post_data'))
+on_update_post          = Signal(providing_args=('timestamp', 'user_uri', 'post_uri', 'post_data'))
 on_delete_post          = Signal(providing_args=('timestamp', 'user_uri', 'post_uri'))
 
 

@@ -16,7 +16,7 @@ Installing prerequisites
 
 On Ubuntu:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev swig autoconf automake libtool curl
+    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev librdf-storage-sqlite swig autoconf automake libtool curl
 
 Make sure that Node.js is installed to run the frontend.
 
@@ -32,6 +32,10 @@ Deploying locally
 Run the following command to setup virtualenv under build/backend with all the required dependencies.
 
     sh ./bootstrap.sh
+
+Local store (sqlite) will be initialized from bootstrap.sh, and can be re-created later by running
+
+    ./init-sqlite.sh
 
 Running
 -------
@@ -101,32 +105,36 @@ generated subject):
 
 Get a work:
 
-    curl --user test: -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+    curl --user test: -H 'Accept: application/json' http://localhost:8004/works/1
 
 Update a work:
 
-    curl --user test: -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1392318412903
+    curl --user test: -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1
 
 Delete a work:
 
-    curl --user test: -v -X DELETE http://localhost:8004/works/1392318412903
+    curl --user test: -v -X DELETE http://localhost:8004/works/1
 
 Add a source:
 
-    curl --user test: -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/sources
+    curl --user test: -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1/sources
 
 Update a source:
 
-    curl --user test: -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' http://localhost:8004/works/1392318412903/sources/1
+    curl --user test: -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1/sources/1
 
 Add post:
 
-    curl --user test: -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1392318412903/posts
+    curl --user test: -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1/posts
+
+Update post:
+
+    curl --user test: -X PUT -d '{"resource": "http://example.com/other_post"}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1/posts/1
 
 Delete source or post:
 
-     curl --user test: -v -X DELETE http://localhost:8004/works/1392318412903/sources/12345
-     curl --user test: -v -X DELETE http://localhost:8004/works/1392318412903/posts/12345
+     curl --user test: -v -X DELETE http://localhost:8004/works/1/sources/1
+     curl --user test: -v -X DELETE http://localhost:8004/works/1/posts/1
 
 Query SPARQL endpoint:
 

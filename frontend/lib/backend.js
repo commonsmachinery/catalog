@@ -16,6 +16,10 @@ var util = require('util');
 var celery = require('node-celery');
 var Promise = require('bluebird');
 
+/* Call timeout - no real need to make this configurable */
+var gCallTimeoutSecs = 15;
+
+
 /* Exceptions thrown on timeouts, connection errors or exceptions
  * coming from the backend itself.
  */
@@ -36,6 +40,12 @@ exports.BackendError = BackendError;
  */
 function Backend(client) {
     this._client = client;
+
+    // We must have an event handler for error, otherwise the server
+    // will die if the broker fails.
+    client.on('error', function(e) {
+        debug('celery error: %j', e);
+    });
 }
 
 
@@ -61,26 +71,58 @@ Backend.prototype.call = function(name, params) {
     var self = this;
 
     return new Promise(function(resolve, reject) {
-        var options, result;
+        var options, result, timeout;
 
         options = {};
 
         // TODO: proper logging
         debug('calling %s: %j', name, params);
 
-        result = self._client.call(
-            'catalog.tasks.' + name,
-            params, options);
+        try {
+            // TODO: extend celery call() method to allow us to
+            // tighten up the call.  We should specify mandatory,
+            // immediate, deliveryMode and expiration to avoid
+            // clogging up the queue on backend problems.  This might
+            // also/alternatively be reflected in the celery message
+            // options here.
 
-        // TODO: timeout handling
+            result = self._client.call(
+                'catalog.tasks.' + name,
+                params, options);
+        }
+        catch (e) {
+            // Refine this into a BackendError to get a 503
+            console.error('celery error when calling %s: %s', name, e);
+            throw new BackendError(util.format(
+                'celery error when calling %s: %s', name, e));
+        }
 
-        // TODO: listen on client for errors?  But then it will be
-        // difficult to determine which task caused it.  On the other
-        // hand, such errors probably signal that the broker is dead
-        // and all current tasks should fail...  To be tested.
+
+        // We let the timeout handle all kinds of network and amqp
+        // errors, since the amqp client library will try to reconnect
+        // if it loses the connection.
+
+        timeout = setTimeout(function() {
+            // There's no support to cancel a Celery call in
+            // node-celery at the moment, so just stop listening
+            result.removeAllListeners();
+
+            console.error('timeout calling %s', name);
+
+            // We need to throw this within a promise to get the
+            // proper .error()/.catch() treatment since we're in a
+            // callback.
+            resolve(Promise.try(function() {
+                throw new BackendError(util.format(
+                    'calling %s: timeout waiting for response',
+                    name));
+            }));
+        }, gCallTimeoutSecs * 1000);
 
         result.on('ready', function(message) {
+            // Avoid resolving more than once
             result.removeAllListeners();
+            clearTimeout(timeout);
 
             if (message.status === 'SUCCESS') {
                 debug('result of %s: %j', name, message.result);
@@ -98,13 +140,14 @@ Backend.prototype.call = function(name, params) {
                 console.error('backend task %s failed: %j', name, message);
 
                 // We need to throw this within a promise to get the
-                // proper .error()/.catch() treatment.  For some
-                // reason just throwing here won't be treated as a rejection.
+                // proper .error()/.catch() treatment since we're in a
+                // callback.
                 resolve(Promise.try(function() {
-                    throw(new BackendError(util.format(
-                        'backend %s: %s',
+                    throw new BackendError(util.format(
+                        'calling %s: %s: %s',
+                        name,
                         message.status,
-                        message.result.exc_message)));
+                        message.result.exc_message));
                 }));
             }
         });
