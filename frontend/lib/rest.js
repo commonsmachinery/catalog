@@ -15,6 +15,8 @@ var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
 
 var BackendError = require('./backend').BackendError;
+var uris = require('./uris');
+var requireUser = require('./sessions').requireUser;
 
 var backend;
 var env;
@@ -55,117 +57,59 @@ var deletePost,
     putSource,
     putWork;
 
-function rest(app, localBackend, localCluster) {
+function init(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
     cluster = localCluster;
 
     // TODO: add request ID checking
     // TODO: add request sanity checking
+}
+exports.init = init;
 
+function routes(app) {
     /* works */
-    app.delete('/works/:workID', deleteWork);
+    app.delete('/works/:workID', requireUser, deleteWork);
     app.get('/works', getWorks);
     app.get('/works/:workID', getWork);
     app.get('/works/:workID/completeMetadata', getCompleteWorkMetadata);
     app.get('/works/:workID/metadata', getWorkMetadata);
     // app.patch('/works/:workID', patchWork);
-    app.post('/works', postWork);
-    app.put('/works/:workID', putWork);
+    app.post('/works', requireUser, postWork);
+    app.put('/works/:workID', requireUser, putWork);
 
     /* sources */
-    app.delete('/users/:userID/sources/:sourceID', deleteSource);
-    app.get('/users/:userID/sources', getStockSources);
-    app.get('/users/:userID/sources/:sourceID', getSource);
-    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
-    app.get('/users/:userID/sources/:sourceID/metadata', getSourceMetadata);
+    app.delete('/users/:userID/sources/:sourceID', requireUser, deleteSource);
+    app.get('/users/:userID/sources', requireUser, getStockSources);
+    app.get('/users/:userID/sources/:sourceID', requireUser, getSource);
+    app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', requireUser, getSourceCEM);
+    app.get('/users/:userID/sources/:sourceID/metadata', requireUser, getSourceMetadata);
     // app.patch('/users/:userID/sources/:sourceID', patchSource);
-    app.post('/users/:userID/sources', postStockSource);
-    app.put('/users/:userID/sources/:sourceID', putSource);
+    app.post('/users/:userID/sources', requireUser, postStockSource);
+    app.put('/users/:userID/sources/:sourceID', requireUser, putSource);
 
-    app.delete('/works/:workID/sources/:sourceID', deleteSource);
+    app.delete('/works/:workID/sources/:sourceID', requireUser, deleteSource);
     app.get('/works/:workID/sources', getWorkSources);
     app.get('/works/:workID/sources/:sourceID', getSource);
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getSourceMetadata);
     // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    app.post('/works/:workID/sources', postWorkSource);
-    app.put('/works/:workID/sources/:sourceID', putSource);
+    app.post('/works/:workID/sources', requireUser, postWorkSource);
+    app.put('/works/:workID/sources/:sourceID', requireUser, putSource);
 
     /* posts */
-    app.delete('/works/:workID/posts/:postID', deletePost);
+    app.delete('/works/:workID/posts/:postID', requireUser, deletePost);
     app.get('/works/:workID/posts', getPosts);
     app.get('/works/:workID/posts/:postID', getPost);
     app.get('/works/:workID/posts/:postID/cachedExternalMetadata', getPostCEM);
     app.get('/works/:workID/posts/:postID/metadata', getPostMetadata);
-    app.post('/works/:workID/posts', postPost);
-    app.put('/works/:workID/posts/:postID', putPost);
+    app.post('/works/:workID/posts', requireUser, postPost);
+    app.put('/works/:workID/posts/:postID', requireUser, putPost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);
-
-    return;
 }
-
-
-function buildURI() {
-    return env.CATALOG_BASE_URL + '/' + Array.prototype.join.call(arguments, '/');
-}
-
-function buildUserURI(userID) {
-    return buildURI('users', userID);
-}
-
-function buildWorkURI(workID) {
-    return buildURI('works', workID);
-}
-
-function buildWorkSourceURI(workID, sourceID) {
-    return buildURI('works', workID, 'sources', sourceID);
-}
-
-function buildWorkPostURI(workID, postID) {
-    return buildURI('works', workID, 'posts', postID);
-}
-
-function buildStockSourceURI(userID, sourceID) {
-    return buildURI('users', userID, 'sources', sourceID);
-}
-
-
-function workURIFromReq(req) {
-    if (req.params.workID) {
-        return buildWorkURI(req.params.workID);
-    }
-
-    throw new Error('missing workID param');
-}
-
-function workSourceURIFromReq(req) {
-    if (req.params.workID && req.params.sourceID) {
-        return buildWorkSourceURI(req.params.workID, req.params.sourceID);
-    }
-
-    throw new Error('missing workID or sourceID param');
-}
-
-function workPostURIFromReq(req) {
-    if (req.params.workID && req.params.postID) {
-        return buildWorkPostURI(req.params.workID, req.params.postID);
-    }
-
-    throw new Error('missing workID or postID param');
-}
-
-function stockSourceURIFromReq(req) {
-    // Ugly, but this should anyway be changed into collections
-    if (req.params.sourceID) {
-        return buildStockSourceURI('test_1', req.params.sourceID);
-    }
-
-    throw new Error('missing sourceID param');
-}
-
+exports.routes = routes;
 
 
 /* Add error handlers to a call promise to ensure proper HTTP
@@ -211,10 +155,10 @@ function formatResult(res, view) {
 /* Basic data needed for all task calls.
  */
 function commonData (req) { 
-    var user_uri = buildUserURI('test_1');
+    var uid = req.session && req.session.uid;
 
     return {
-        user_uri: user_uri,
+        user_uri: uid ? uris.buildUserURI(uid) : null,
     };
 }
 
@@ -236,7 +180,7 @@ function updateMetadata(obj, uri) {
 
 function deleteWork(req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     handleErrors(
         backend.call('delete_work', queryData).
@@ -250,7 +194,7 @@ function deleteWork(req, res) {
 
 function getPosts (req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     handleErrors(
         backend.call('get_posts', queryData).
@@ -260,7 +204,7 @@ function getPosts (req, res) {
 
 function getPost (req, res) {
     var queryData = commonData(req);
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
 
     handleErrors(
         backend.call('get_post', queryData).
@@ -273,7 +217,7 @@ function postPost(req, res) {
     var postURI;
 
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     queryData.post_data = {
         metadataGraph: req.body.metadataGraph || {},
@@ -285,7 +229,7 @@ function postPost(req, res) {
         cluster.increment('next-post-id')
             .then(
                 function(postID) {
-                    postURI = buildWorkPostURI(req.params.workID, postID);
+                    postURI = uris.buildWorkPostURI(req.params.workID, postID);
                     queryData.post_uri = postURI;
                     queryData.post_data.id = postID;
                     updateMetadata(queryData.post_data.metadataGraph, postURI);
@@ -303,7 +247,7 @@ function postPost(req, res) {
 
 function putPost(req, res) {
     var queryData = commonData(req);
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
 
     queryData.post_data = _.pick(
         req.body, 'metadataGraph', 'cachedExternalMetadataGraph', 'resource');
@@ -322,7 +266,7 @@ function putPost(req, res) {
 
 function deletePost (req, res) {
     var queryData = commonData(req);
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
 
     handleErrors(
         backend.call('delete_post', queryData).
@@ -361,10 +305,10 @@ function getPostCEM (req, res) {
 function getSource (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     handleErrors(
@@ -377,7 +321,7 @@ function postWorkSource(req, res) {
     var sourceURI;
 
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     queryData.source_data = {
         metadataGraph: req.body.metadataGraph || {},
@@ -389,7 +333,7 @@ function postWorkSource(req, res) {
         cluster.increment('next-source-id')
             .then(
                 function(sourceID) {
-                    sourceURI = buildWorkSourceURI(
+                    sourceURI = uris.buildWorkSourceURI(
                         req.params.workID, sourceID);
                     queryData.source_uri = sourceURI;
                     queryData.source_data.id = sourceID;
@@ -421,7 +365,7 @@ function postStockSource(req, res) {
         cluster.increment('next-source-id')
             .then(
                 function(sourceID) {
-                    sourceURI = buildStockSourceURI('test_1', sourceID);
+                    sourceURI = uris.buildStockSourceURI('test_1', sourceID);
                     queryData.source_uri = sourceURI;
                     queryData.source_data.id = sourceID;
                     updateMetadata(queryData.source_data.metadataGraph, sourceURI);
@@ -441,10 +385,10 @@ function putSource(req, res) {
     var queryData = commonData(req);
 
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     queryData.source_data = _.pick(
@@ -466,10 +410,10 @@ function deleteSource (req, res) {
     var queryData = commonData(req);
 
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     handleErrors(
@@ -484,11 +428,11 @@ function deleteSource (req, res) {
 function getSourceMetadata (req, res) {
     var queryData = commonData(req);
 
-   if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+    if (req.params.workID) {
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     queryData.subgraph = 'metadata';
@@ -502,10 +446,10 @@ function getSourceMetadata (req, res) {
 function getSourceCEM (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
-        queryData.source_uri = workSourceURIFromReq(req);
+        queryData.source_uri = uris.workSourceURIFromReq(req);
     }
     else {
-        queryData.source_uri = stockSourceURIFromReq(req);
+        queryData.source_uri = uris.stockSourceURIFromReq(req);
     }
 
     queryData.subgraph = 'cachedExternalMetadata';
@@ -518,7 +462,7 @@ function getSourceCEM (req, res) {
 
 function getWorkSources (req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     handleErrors(
         backend.call('get_work_sources', queryData).
@@ -538,7 +482,7 @@ function getStockSources (req, res) {
 
 function getWork(req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
 
     handleErrors(
         backend.call('get_work', queryData).
@@ -564,7 +508,7 @@ function getWorks(req, res) {
 function getWorkMetadata(req, res) {
     var queryData = commonData(req);
 
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
     queryData.subgraph = "metadata";
 
     handleErrors(
@@ -576,7 +520,7 @@ function getWorkMetadata(req, res) {
 
 function getCompleteWorkMetadata(req, res) {
     var queryData = commonData(req);
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
     queryData.format = 'json';
 
     handleErrors(
@@ -600,7 +544,7 @@ function postWork(req, res) {
         cluster.increment('next-work-id')
             .then(
                 function(workID) {
-                    workURI = buildWorkURI(workID);
+                    workURI = uris.buildWorkURI(workID);
                     queryData.work_uri = workURI;
                     queryData.work_data.id = workID;
                     updateMetadata(queryData.work_data.metadataGraph, workURI);
@@ -619,8 +563,7 @@ function postWork(req, res) {
 
 function putWork(req, res) {
     var queryData = commonData(req);
-
-    queryData.work_uri = workURIFromReq(req);
+    queryData.work_uri = uris.workURIFromReq(req);
     queryData.work_data = _.pick(
         req.body, 'metadataGraph', 'state', 'visiblity');
     if (queryData.work_data.metadataGraph) {
@@ -659,4 +602,3 @@ function getSPARQL(req, res) {
         res);
 }
 
-module.exports = rest;

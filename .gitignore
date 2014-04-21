@@ -59,6 +59,7 @@ build
 node_modules
 frontend/public/css/
 frontend/public/lib/
+frontend/public/build/
 
 # Catalog-specific directories
 data
