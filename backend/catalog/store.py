@@ -13,6 +13,7 @@ import re
 import RDF
 import os
 from urlparse import urlsplit, urlunsplit
+from catalog.config import config
 
 import logging
 _log = logging.getLogger("catalog")
@@ -290,16 +291,16 @@ Post.json_schema = schema2json(Post.schema)
 class MainStore(object):
     @staticmethod
     def get_store_options(name, config):
-        storage_type = config.BACKEND_STORE_TYPE
+        storage_type = config.CATALOG_BACKEND_STORE_TYPE
 
         if storage_type in ('postgresql', 'mysql'):
             options = "host='{host}',port='{port}',database='{database}_{name}',user='{user}',password='{password}'".format(
-                host = config.BACKEND_STORE_DB_HOST,
-                port = config.BACKEND_STORE_DB_PORT,
-                database = config.BACKEND_STORE_DB_NAME,
+                host = config.CATALOG_BACKEND_STORE_DB_HOST,
+                port = config.CATALOG_BACKEND_STORE_DB_PORT,
+                database = config.CATALOG_BACKEND_STORE_DB_NAME,
                 name = name,
-                user = config.BACKEND_STORE_DB_USER,
-                password = config.BACKEND_STORE_DB_PASSWORD,
+                user = config.CATALOG_BACKEND_STORE_DB_USER,
+                password = config.CATALOG_BACKEND_STORE_DB_PASSWORD,
             )
 
         elif storage_type == 'memory':
@@ -316,11 +317,11 @@ class MainStore(object):
     def __init__(self, name, config):
         storage_type, options = self.get_store_options(name, config)
 
-        self._store = RDF.Storage(
-            storage_name = storage_type,
-            name = name,
-            options_string = options)
+        # workaround: sqlite doesn't support 'dir' so prepend directory to the name
+        if storage_type == 'sqlite':
+            name = os.path.join(config.CATALOG_DATA_DIR, name)
 
+        self._store = RDF.Storage(storage_name=storage_type, name=name, options_string=options)
         self._model = RDF.Model(self._store)
 
     def __enter__(self):

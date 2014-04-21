@@ -9,11 +9,17 @@ mkdir -p "$DATA_DIR"
 
 function init_stores() {
 python <<END
-import RDF
-store = RDF.Storage(name="public", storage_name="sqlite", options_string="new='true'")
+import RDF, os
+from catalog.config import config
+
+works_name = os.path.join(config.CATALOG_DATA_DIR, "works")
+public_name = os.path.join(config.CATALOG_DATA_DIR, "public")
+
+store = RDF.Storage(name=works_name, storage_name="sqlite", options_string="new='true'")
 model = RDF.Model(store)
 model.sync()
-store = RDF.Storage(name="works", storage_name="sqlite", options_string="new='true'")
+
+store = RDF.Storage(name=public_name, storage_name="sqlite", options_string="new='true'")
 model = RDF.Model(store)
 model.sync()
 END
