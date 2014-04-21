@@ -29,11 +29,13 @@ mixin workView(data)
 		span(name="updated") #{data.updated || ' --- '}
 		a(href="#{data.metadata || ''}" name="metadata") (see metadata...)
 
-script#workTemplate
-	+workView()
-div.bootstrapData #{stringData}
-
 include includes/top
 	for work in works
 		+workView(work)
 include includes/bottom
+
+script#workTemplate(type="text/template")
+	+workView()
+
+div.bootstrapData #{stringData}
+

@@ -13,11 +13,9 @@ function connect (opt) {
                 debug('redis ready!');
                 cluster = conn;
                 resolve(cluster);
-                return;
             }, function(err){
                 console.error('redis connection error: %s', err);
                 reject(err);
-                return;
             }
         );
         return;
@@ -32,11 +30,9 @@ function increment(key) {
             function(count){
                 debug('Count for %s incremented to: %s', key, count);
                 resolve(count);
-                return;
             }, function(err){
                 debug('Counter error: %s', err);
-                reject(err) || null;
-                return;
+                reject(err);
             }
         );
     }

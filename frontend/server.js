@@ -14,20 +14,9 @@
 
 var debug = require('debug')('frontend:server');
 
-var cons = require('consolidate');
-var express = require('express');
-var stylus = require('stylus');
-var Promise = require('bluebird');
-
-var backend = require('./lib/backend');
-var db = require('./lib/wrappers/mongo');
-var cluster = require('./lib/cluster');
-
-var config = require('./config.json');
-var err = require('./err.json');
-
-
-/*  Override config.json with enviroment variables  */
+/*  Override config.json with enviroment variables.  Do it very early
+ *  to let all our modules use the values later.
+ */
 function setEnv (obj) {
     var key;
     var env = process.env;
@@ -41,8 +30,27 @@ function setEnv (obj) {
     }
     return;
 }
+
+var config = require('./config.json');
 setEnv(config.common);
 setEnv(config[process.env.NODE_ENV || 'development']);
+
+
+var cons = require('consolidate');
+var express = require('express');
+var stylus = require('stylus');
+var Promise = require('bluebird');
+
+var sessionStore = require('./lib/wrappers/sessionStore');
+var backend = require('./lib/backend');
+var db = require('./lib/wrappers/mongo');
+var cluster = require('./lib/cluster');
+
+var sessions = require('./lib/sessions');
+var rest = require('./lib/rest');
+var admin = require('./lib/admin');
+
+var err = require('./err.json');
 
 
 function main() {
@@ -53,11 +61,28 @@ function main() {
     var app = express();
     var env = process.env;
 
+    if (env.NODE_ENV !== 'production') {
+        console.warn('NODE_ENV: %s', env.NODE_ENV);
+    }
+    else {
+        console.log('starting in production mode');
+    }
+
     app.set('err', err);
 
     // Middlewares
+
+    app.configure('development', function(){
+        app.use(express.errorHandler());
+        app.locals.pretty = true;
+    });
+
+    app.use(express.static(__dirname + env.CATALOG_STATIC));
+
     app.use(express.logger());
     app.use(express.json());
+    app.use(express.bodyParser());
+    app.use(express.cookieParser());
 
     // Templating
     app.engine('.jade', cons.jade);
@@ -67,7 +92,8 @@ function main() {
         dest: __dirname + env.CATALOG_STYLE_DEST,
         compress: true
     }));
-    app.use(express.static(__dirname + env.CATALOG_STATIC));
+
+
 
     /* ======================= Connect services and start ======================= */
 
@@ -75,17 +101,31 @@ function main() {
         return new Promise.join(
             backend.connect(env.CATALOG_BROKER_URL),
             cluster.connect(env.CATALOG_REDIS_URL),
-            db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB)
+            db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB),
+			sessionStore(env.CATALOG_MONGODB_URL, env.CATALOG_USERS_DB)
         );
     }
 
-    connectServices().spread(
-        function(backend, redis, mongo){
+    connectServices()
+    .spread(
+        function(backend, redis, mongo, sessionstore){
             console.log('Services connected... starting server...');
 
-            /* Load REST API */
-            require('./lib/rest')(app, backend, cluster);
-            require('./lib/sessions')(app, express, db);
+            // Wire up the rest of the app that depended on the
+            // infrastructure being available
+            sessions.init(app, sessionstore);
+            rest.init(app, backend, cluster);
+            admin.init(app);
+
+            sessions.routes(app);
+            rest.routes(app);
+            admin.routes(app);
+
+            // TODO: the non-REST stuff should be served properly, but
+            // for now just provide a home link
+            app.get('/', function(req, res) {
+                res.render('home');
+            });
 
             app.listen(env.CATALOG_PORT);
             console.log('listening on port %s', env.CATALOG_PORT);
@@ -93,7 +133,6 @@ function main() {
             return;
         }, function(err){
             console.error('Services connection error: %s', err);
-            return;
         }
     );
 
