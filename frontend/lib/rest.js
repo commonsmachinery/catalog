@@ -280,7 +280,7 @@ function deletePost (req, res) {
 function getPostMetadata (req, res) {
     var queryData = commonData(req);
 
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
     queryData.subgraph = 'metadata';
 
     handleErrors(
@@ -292,7 +292,7 @@ function getPostMetadata (req, res) {
 function getPostCEM (req, res) {
     var queryData = commonData(req);
 
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
     queryData.subgraph = 'cachedExternalMetadata';
 
     handleErrors(
