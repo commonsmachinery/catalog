@@ -14,28 +14,6 @@
 
 var debug = require('debug')('frontend:server');
 
-/*  Override config.json with enviroment variables.  Do it very early
- *  to let all our modules use the values later.
- */
-function setEnv (obj) {
-    var key;
-    var env = process.env;
-    var envKey;
-    for(key in obj){
-        if (obj.hasOwnProperty(key)) {
-            envKey = 'CATALOG_' + key.toUpperCase();
-            env[envKey] = env[envKey] || obj[key];
-            debug('setting %s = %s', envKey, env[envKey]);
-        }
-    }
-    return;
-}
-
-var config = require('./config.json');
-setEnv(config.common);
-setEnv(config[process.env.NODE_ENV || 'development']);
-
-
 var cons = require('consolidate');
 var express = require('express');
 var stylus = require('stylus');
@@ -51,6 +29,7 @@ var rest = require('./lib/rest');
 var admin = require('./lib/admin');
 
 var err = require('./err.json');
+var config = require('./lib/config');
 
 
 function main() {
@@ -77,7 +56,7 @@ function main() {
         app.locals.pretty = true;
     });
 
-    app.use(express.static(__dirname + env.CATALOG_STATIC));
+    app.use(express.static(__dirname + config.catalog.static));
 
     app.use(express.logger());
     app.use(express.json());
@@ -88,8 +67,8 @@ function main() {
     app.engine('.jade', cons.jade);
     app.set('view engine', 'jade');
     app.use(stylus.middleware({
-        src: __dirname + env.CATALOG_STYLE_SRC,
-        dest: __dirname + env.CATALOG_STYLE_DEST,
+        src: __dirname + config.catalog.style_src,
+        dest: __dirname + config.catalog.style_dest,
         compress: true
     }));
 
@@ -99,10 +78,10 @@ function main() {
 
     function connectServices () {
         return new Promise.join(
-            backend.connect(env.CATALOG_BROKER_URL),
-            cluster.connect(env.CATALOG_REDIS_URL),
-            db.connect(env.CATALOG_MONGODB_URL + env.CATALOG_USERS_DB),
-			sessionStore(env.CATALOG_MONGODB_URL, env.CATALOG_USERS_DB)
+            backend.connect(config.catalog.brokerURL),
+            cluster.connect(config.catalog.redisURL),
+            db.connect(config.catalog.mongodbURL + config.catalog.usersDB),
+			sessionStore(config.catalog.mongodbURL + config.catalog.usersDB)
         );
     }
 
@@ -127,8 +106,8 @@ function main() {
                 res.render('home');
             });
 
-            app.listen(env.CATALOG_PORT);
-            console.log('listening on port %s', env.CATALOG_PORT);
+            app.listen(config.catalog.port);
+            console.log('listening on port %s', config.catalog.port);
 
             return;
         }, function(err){
