@@ -1,4 +1,5 @@
 
+'use strict';
 
 var config = require('../../frontend/config.json').test;
 var app = require('express')();
@@ -8,10 +9,11 @@ var expect = require('expect.js');
 var baseURL = config.base_url;
 var exports = module.exports;
 
-exports.post = function(data, done){
+exports.post = function post(data, auth){
     return request.post('/works')
     .send(data)
     .set('Content-type', 'application/json')
+    .set('Authorization', auth)
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
@@ -21,39 +23,43 @@ exports.post = function(data, done){
     });
 }
 
-exports.get = function(data){
-    return request.get(data.replace(baseURL,''))
+exports.get = function get(data, auth){
+    return request.get(data.resource.replace(baseURL,''))
     .set('Accept', 'application/json')
+    .set('Authorization', auth)
     .expect(function(res){
         expect(res.status).to.be(200);
         var work = res.body;
-        expect(work.resource).to.be(data);
+        expect(work.resource).to.be(data.resource);
+        data.updated = work.updated;
         expect(new Date(work.created)).to.not.be('Invalid Date');
-        data = work;
     });
 }
 
-exports.put = function(data){
-    return request.get(data.resource.replace(baseURL,''))
+exports.put = function put(data, auth){
+    return request.put(data.resource.replace(baseURL,''))
     .set('Content-type', 'application/json')
+    .set('Authorization', auth)
     .send(data)
     .expect(function(res){
         expect(res.status).to.be(200);
         var work = res.body;
         var created = new Date(work.created);
         var updated = new Date(work.updated);
+        data.updated = work.updated;
         expect(work.resource).to.be(data.resource);
         expect(created).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
-        expect(updated).to.be.greater.than(created);
+        expect(updated).to.be.greaterThan(created);
         /* ToDo: check updated By equals user */
     });
 }
 
-exports.delete = function(data){
-    return request.delete(data.resource.replace(baseURL,''))
+exports.delete = function delete(data, auth){
+    return request.delete(data.replace(baseURL,''))
+    .set('Authorization', auth)
     .expect(function(res){
-        expect(res.status).to.be(200);
+        expect(res.status).to.be(204);
         exports.get(data).end(function(err, res){
             expect(err).to.be(404);
         });
