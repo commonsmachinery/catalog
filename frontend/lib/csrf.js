@@ -1,3 +1,6 @@
+// TODO: we'll probably remove this file, so for now ignore lint errors
+/*jshint ignore:start */
+
 'use strict';
 
 var debug = require('debug')('frontend:csrf');

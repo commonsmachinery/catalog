@@ -1,7 +1,8 @@
 /*global define*/
-'use strict';
 
 define(['jquery'], function($) {
+	'use strict';
+
     // TODO: this should really be backbonified on a REST API
 
     function onLock (ev) {

@@ -1,7 +1,8 @@
-/*global define, navigator, window*/
-'use strict';
+/*global navigator*/
 
 define(['jquery'], function($) {
+	'use strict';
+
     function init() {
         var personaEmail = null;
 
