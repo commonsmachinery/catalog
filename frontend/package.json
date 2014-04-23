@@ -30,7 +30,7 @@
     "parse-env": "*"
   },
   "devDependencies": {
-    "jslint": "*",
+    "jshint": "*",
     "nodemon": "*",
     "volo": "0.3.x",
     "expect": "*",

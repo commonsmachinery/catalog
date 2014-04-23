@@ -19,28 +19,28 @@ var express = require('express');
 var persona = require('express-persona');
 
 var cluster = require('./cluster');
-var db = require('./wrappers/mongo');
 var uris = require('./uris');
 var config = require('./config');
 
+/* Module globals */
 var env;
 var dev, test;
 var sessions;
 var User;
 
-var useTestAccount
-  , checkUserSession
-  , setLocals
-  , personaAudience
-  , loginScreen
-  , logout
-  ;
+/* Functions defined later */
+var useTestAccount,
+	checkUserSession,
+	setLocals,
+	personaAudience,
+	loginScreen,
+	logout;
 
 
 /*
  * Set up middlewares for session management.
  */
-function init(app, sessionstore) {
+exports.init = function init(app, sessionstore) {
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
@@ -63,14 +63,13 @@ function init(app, sessionstore) {
     // Common session checks
     app.use(checkUserSession);
     app.use(setLocals);
-}
+};
 
-exports.init = init;
 
 /*
  * Setup routes for session management.
  */
-function routes(app) {
+exports.routes = function routes(app) {
     // AJAX Persona routes
     persona(app, {
         audience: personaAudience(),
@@ -114,24 +113,20 @@ function routes(app) {
 
         app.all('/test/logout', logout);
     }
-}
-
-exports.routes = routes;
+};
 
 
 /*
  * Middleware on routes that require a valid user session to work
  */
-function requireUser(req, res, next) {
+exports.requireUser = function requireUser(req, res, next) {
     if (req.session && req.session.uid) {
         next();
     }
     else {
         res.send(401);
     }
-}
-
-exports.requireUser = requireUser;
+};
 
 
 /*
@@ -141,7 +136,7 @@ exports.requireUser = requireUser;
  *
  * To use, run: curl --user test: rest-of-command-line...
  */
-function useTestAccount(req, res, next) {
+useTestAccount = function useTestAccount(req, res, next) {
     var auth, encoded, buf, len, decoded, nameLen, email;
 
     // Simple basic auth implementation to dig out username
@@ -180,14 +175,14 @@ function useTestAccount(req, res, next) {
 
     // Always fall through to let regular session handling do it's job
     next();
-}
+};
 
 
 /*
  * Middleware to ookup user from email, if necessary, and check that
  * the account isn't locked.  If it is, drop the session.
  */
-function checkUserSession(req, res, next) {
+checkUserSession = function checkUserSession(req, res, next) {
     var uid = req.session && req.session.uid;
     var email = req.session && req.session.email;
 
@@ -294,10 +289,10 @@ function checkUserSession(req, res, next) {
                 }
             ).done();
     }
-}
+};
 
 
-function setLocals(req, res, next) {
+setLocals = function setLocals(req, res, next) {
     if (req.session) {
         res.locals({
             user: req.session.uid,
@@ -306,14 +301,14 @@ function setLocals(req, res, next) {
         });
     }
     next();
-}
+};
 
 
 /*
  * Return the Persona audience URL that corresponds to the catalog
  * base URL
  */
-function personaAudience() {
+personaAudience = function personaAudience() {
     var u = url.parse(config.catalog.baseURL);
     var port = u.port;
     var audience;
@@ -326,7 +321,7 @@ function personaAudience() {
     debug('using persona audience: %s', audience);
 
     return audience;
-}
+};
 
 
 
@@ -334,7 +329,7 @@ function personaAudience() {
 
 /* Screens */
 
-function loginScreen (req, res) {
+loginScreen = function loginScreen (req, res) {
     res.setHeader('X-UA-Compatible', 'IE=Edge'); //requirement for persona
     var referer = req.headers.referer;
     var landing = !referer || referer.search(config.catalog.baseURL) < 0;
@@ -350,13 +345,13 @@ function loginScreen (req, res) {
     }
     
     return;
-}
+};
 
 
-function logout (req, res) {
+logout = function logout (req, res) {
     req.session.destroy(); 
     res.redirect('/');
     return;
-}
+};
 
 

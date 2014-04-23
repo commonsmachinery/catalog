@@ -1,7 +1,15 @@
 
-JSLINT = ./node_modules/.bin/jslint
+JSHINT = ./node_modules/.bin/jshint
 
-node-js-dirs = . lib lib/* public/app public/app/*
+node-js = *.js lib/*.js lib/*/*.js
+browser-js = public/app/*.js public/app/*/*.js
+
+REPORTER=
+ifeq ($(EMACS),t)
+REPORTER=--reporter=.jshint-emacs.js
+endif
 
 lint:
-	$(JSLINT) --node -- $(node-js-dirs:%=%/*.js)
+	$(JSHINT) $(REPORTER) $(node-js) $(browser-js)
+
+.PHONY: lint

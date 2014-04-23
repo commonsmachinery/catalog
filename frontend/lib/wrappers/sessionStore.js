@@ -6,8 +6,6 @@ var Promise = require('bluebird');
 var url = require('url');
 var config = require('../config');
 
-var promiseFilter;
-
 module.exports = function() {
     function promise (resolve, reject) {
         var u = url.parse(config.catalog.mongodbURL);
