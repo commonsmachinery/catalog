@@ -9,32 +9,17 @@ var expect = require('expect.js');
 var baseURL = config.base_url;
 var exports = module.exports;
 
-exports.post = function post(data, user){
-    var auth = 'Basic ' + new Buffer(user + ':').toString('base64')
-    return request.post('/works')
-    .send(data)
-    .set('Content-type', 'application/json')
-    .set('Authorization', auth)
-    .expect(function(res){
-        expect(res.status).to.be(302);
-        var redirectURL = res.header.location;
-        var pattern = new RegExp(baseURL + '(\\/works\\/\\d+)');
-        data.resource = redirectURL;
-        expect(redirectURL).to.match(pattern);
-    });
-}
-
 exports.get = function get(data, user){
     var auth = 'Basic ' + new Buffer(user + ':').toString('base64')
-    return request.get(data.resource.replace(baseURL,''))
+    return request.get('/works')
     .set('Accept', 'application/json')
     .set('Authorization', auth)
     .expect(function(res){
+        console.log(res.body);
         expect(res.status).to.be(200);
-        var work = res.body;
-        expect(work.resource).to.be(data.resource);
-        data.updated = work.updated;
-        expect(new Date(work.created)).to.not.be('Invalid Date');
+        var works = res.body;
+        var len = works.length;
+        expect(len).to.be(data.length);
     });
 }
 
