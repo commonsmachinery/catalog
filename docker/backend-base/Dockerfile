@@ -7,7 +7,8 @@
 FROM dockerfile/ubuntu
 
 # dockerfile/ubuntu has already added the apt repository and updated itself
-  
+
+RUN apt-get update
 RUN apt-get install -y \
     git \
     build-essential \

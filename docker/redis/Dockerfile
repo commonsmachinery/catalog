@@ -4,10 +4,6 @@
 
 FROM dockerfile/ubuntu
 
-# Docker work around for upstart: [https://github.com/dotcloud/docker/issues/1024]
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -s /bin/true /sbin/initctl
-
 # Install Redis.
 RUN apt-get install -y software-properties-common
 RUN add-apt-repository -y ppa:chris-lea/redis-server
