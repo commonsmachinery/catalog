@@ -38,7 +38,7 @@ else:
     _log.addHandler(logging.StreamHandler())
     _log.warning('no %s, using default logging configuration', LOG_SETTINGS_FILENAME)
 
-app = Celery('catalog', include=['catalog.tasks'])
+app = Celery('catalog', include=['catalog.tasks'], broker=config.CATALOG_BROKER_URL)
 
 # Use configuration provided by user
 app.config_from_object(config)
