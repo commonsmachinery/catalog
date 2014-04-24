@@ -6,19 +6,12 @@
 
 var dbgfn = require('debug');
 var config = require('../frontend/config.json').test;
-var app = require('express')();
-var request = require('supertest')(config.base_url);
 var expect = require('expect.js');
+var util = require('./modules/util');
 
-/* Make a shallow clone of the object */
-var clone = function clone(obj){
-    var extend = require('util')._extend;
-    return extend({}, obj);
-}
-
-
-var baseURL = config.base_url;
-var work = require('./unit/work');
+var baseURL = config.base_url + '/works';
+var work = require('./modules/work');
+work.setPath(baseURL);
 
 /* data we are going to use along the tests */
 var data = {
@@ -26,7 +19,7 @@ var data = {
     status: 'inprogress'
 }; 
 var user = 'user';
-var otherUser = 'otherUser'
+var otherUser = 'otherUser';
 
 describe('Work', function(){
 
@@ -37,7 +30,7 @@ describe('Work', function(){
             work.post(data, user).end(done);
         });
         it('should reject invalid attributes', function(done){
-            var failData = clone(data);
+            var failData = util.clone(data);
             failData.visibility = 'invalid';
             debug('input data %j', failData);
             work.post(failData, user) .end(function(err, res){
@@ -56,7 +49,7 @@ describe('Work', function(){
             work.get(data, user).end(done);
         });
         it('should return 404 when getting unexistent work', function(done){
-            var failData = clone(data);
+            var failData = util.clone(data);
             failData.resource += 'fail';
             debug('getting work: %s', failData.resource);
             work.get(failData, user).end(function(err, res){
@@ -82,7 +75,7 @@ describe('Work', function(){
             work.put(data, user).end(done);
         });
         it('should return 404 when updating unexistent work', function(done){
-            var failData = clone(data);
+            var failData = util.clone(data);
             failData.resource += 'fail';
             debug('updating work: %s', failData.resource);
             work.put(failData, user).end(function(err, res){
@@ -90,7 +83,7 @@ describe('Work', function(){
             });
         });
         it('should reject invalid attributes', function(done){
-            var failData = clone(data);
+            var failData = util.clone(data);
             failData.visibility = 'invalid';
             debug('faildata resource', failData.resource);
             work.put(failData).end(function(err, res){
@@ -104,7 +97,7 @@ describe('Work', function(){
             });
         });
         it('should not edit work from another user', function(done){
-            var failData = clone(data);
+            var failData = util.clone(data);
             debug('updating work: %s', failData.resource);
             work.put(data, otherUser).end(function(err, res){
                 expect(err.toString()).to.contain('expected 403');
@@ -121,22 +114,19 @@ describe('Work', function(){
         var debug = dbgfn('test:work:delete');
         it('should return success code', function(done){
             debug('deleting work: %s', data.resource);
-            work.remove(data.resource, user).end(done);
+            work.delete(data.resource, user).end(done);
         });
         it('should return 404 when deleting unexistent work', function(done){
-            resource = data.resource + 'fail';
+            var resource = data.resource + 'fail';
             debug('deleting work: %s', resource);
-            work.remove(resource, user).end(function(err, res){
-                debug('Request status: %s', err);
+            work.delete(resource, user).end(function(err, res){
                 expect(err.toString()).to.contain('expected 404');
                 done();
             });
         });
         it('should not delete work from another user', function(done){
-            resource = data.resource + 'fail';
-            debug('deleting work: %s', resource);
-            work.remove(resource, otherUser).end(function(err, res){
-                debug('Request status: %s', err);
+            debug('deleting work: %s', data.resource);
+            work.delete(data.resource, otherUser).end(function(err, res){
                 expect(err).to.not.be(null);
                 done();
             });
