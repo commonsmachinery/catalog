@@ -19,5 +19,4 @@ exec /usr/local/bin/celery worker \
     --uid=daemon \
     --gid=daemon \
     --loglevel=info \
-    --workdir="/backend" \
-    --autoreload 
+    --workdir="/backend"

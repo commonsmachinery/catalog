@@ -20,7 +20,8 @@ RUN apt-get install -y \
     swig \
     redland-utils \
     librdf0-dev \
-    librdf-storage-postgresql
+    librdf-storage-postgresql \
+    librdf-storage-sqlite
 
 # We must build the Redland python bindings ourselves since we've patched them
 
