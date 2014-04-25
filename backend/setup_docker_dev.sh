@@ -42,5 +42,6 @@ docker run -d \
     --link=cat-mongodb:mongodb \
     --link=cat-rabbitmq:rabbitmq \
     --link=cat-redis:redis \
+    --link=cat-postgres:postgres \
     local/backend-dev
 

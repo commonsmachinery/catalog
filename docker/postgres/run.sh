@@ -22,4 +22,4 @@ if [ ! -f /data/postgres/db/PG_VERSION ]; then
 fi
 
 # actually run postgres as non-daemon
-/bin/su postgres -c "/usr/lib/postgresql/9.3/bin/postgres -c config_file=/etc/postgresql/9.3/main/postgresql.conf"
+exec /bin/su postgres -c "/usr/lib/postgresql/9.3/bin/postgres -c config_file=/etc/postgresql/9.3/main/postgresql.conf"
