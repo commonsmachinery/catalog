@@ -51,8 +51,8 @@ class Defaults(object):
         'BACKEND_STORE_DB_HOST': 'localhost',
         'BACKEND_STORE_DB_PORT': '5432',
         'BACKEND_STORE_DB_NAME': 'catalog',
-        'BACKEND_STORE_DB_USER': 'postgres',
-        'BACKEND_STORE_DB_PASSWORD': '',
+        'BACKEND_STORE_DB_USER': 'docker',
+        'BACKEND_STORE_DB_PASSWORD': 'docker',
     }
 
 def _load_config():

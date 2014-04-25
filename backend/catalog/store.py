@@ -290,7 +290,7 @@ Post.json_schema = schema2json(Post.schema)
 
 class MainStore(object):
     @staticmethod
-    def get_store_options(name, config):
+    def get_store_options(name):
         storage_type = config.CATALOG_BACKEND_STORE_TYPE
 
         if storage_type in ('postgresql', 'mysql'):
@@ -307,7 +307,7 @@ class MainStore(object):
             options = "contexts='yes'"
 
         elif storage_type == 'sqlite':
-            options = None
+            options = ""
 
         else:
             raise RuntimeError('invalid storage type: {0}'.format(storage_type))
@@ -315,11 +315,11 @@ class MainStore(object):
         return storage_type, options
 
     def __init__(self, name, config):
-        storage_type, options = self.get_store_options(name, config)
+        storage_type, options = self.get_store_options(name)
 
         # workaround: sqlite doesn't support 'dir' so prepend directory to the name
         if storage_type == 'sqlite':
-            name = os.path.join(config.CATALOG_DATA_DIR, name)
+            name = os.path.abspath(os.path.join(config.CATALOG_DATA_DIR, name))
 
         self._store = RDF.Storage(storage_name=storage_type, name=name, options_string=options)
         self._model = RDF.Model(self._store)
