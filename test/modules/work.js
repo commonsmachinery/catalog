@@ -1,33 +1,29 @@
 
 'use strict';
 
-var request = require('supertest');
+var request = require('supertest')('');
 var expect = require('expect.js');
 var util = require('./util');
 
-var path;
 var exports = module.exports;
 
-exports.setPath = function setPath(val){
-    path = val;
-};
 
 exports.post = function post(data, user){
-    return request.post(path)
+    return request.post(data.resource)
     .send(data)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
-        var pattern = new RegExp('(\\/works\\/\\d+)');
+        var pattern = new RegExp('\\/works\\/\\d+');
         data.resource = redirectURL;
         expect(redirectURL).to.match(pattern);
     });
 }
 
 exports.get = function get(data, user){
-    return request.get(data.resource.replace(baseURL,''))
+    return request.get(data.resource)
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
@@ -40,7 +36,7 @@ exports.get = function get(data, user){
 }
 
 exports.put = function put(data, user){
-    return request.put(data.resource.replace(baseURL,''))
+    return request.put(data.resource)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
     .send(data)
@@ -58,14 +54,13 @@ exports.put = function put(data, user){
     });
 }
 
-exports.remove = function remove(data, user){
-    var path = data.replace(baseURL,'');
-    return request.delete(path)
+exports.delete = function remove(uri, user){
+    return request.delete(uri)
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(204);
-        exports.get(data).end(function(err, res){
-            expect(err).to.be(404);
+        exports.get(uri).end(function(err, res){
+            expect(err).to.contain(404);
         });
     });
 }

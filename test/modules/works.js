@@ -1,19 +1,15 @@
 
 'use strict';
 
-var request = require('supertest');
+var request = require('supertest')('');
 var expect = require('expect.js');
 var util = require('./util');
 
-var path;
 var exports = module.exports;
 
-exports.setPath = function setPath(val){
-    path = val;
-};
 
-exports.get = function get(filter, user){
-    return request.get(path + data)
+exports.get = function get(path, filter, user){
+    return request.get(path + filter)
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){

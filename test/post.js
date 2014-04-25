@@ -10,7 +10,6 @@ var util = require('./modules/util');
 var baseURL = config.base_url + '/works';
 var work = require('./modules/work');
 var post = require('./modules/post');
-work.setPath(baseURL);
 
 /* data we are going to use along the tests */
 var workData = {
@@ -26,6 +25,7 @@ describe('Post', function(){
 
     it('should create a work', function(done){
         var debug = dbgfn('test:creating-work');
+        postData.resource = baseURL;
         work.post(workData, user).end(function(err, res){
             expect(err).to.be(null);
             post.setPath(workData.resource + '/posts');

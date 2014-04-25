@@ -10,8 +10,6 @@ var util = require('./modules/util');
 var baseURL = config.base_url + '/works';
 var work = require('./modules/work');
 var works = require('./modules/works');
-work.setPath(baseURL);
-works.setPath(baseURL);
 
 /* data we are going to use along the tests */
 var data = [
@@ -54,6 +52,7 @@ describe('Works', function(){
         var created = 0;
         var len = data.length;
         function create(){
+            data.resource = baseURL;
             work.post(data, user).end(function(err, res){
                 expect(err).to.be(null);
                 created++;
@@ -69,14 +68,14 @@ describe('Works', function(){
     });
 
     it('should get all owned and public works', function(done){
-        works.get(data, user).end(done);
+        works.get(baseURL, '', user).end(done);
     });
     it('should return only public works', function(done){
-        works.get({}, otherUser).end(done);
+        works.get(baseURL, '', otherUser).end(done);
     });
     var filter = '?status=inprogress'
     it('should filter by: ' + filter, function(done){
-        works.get(filter, user).end(done);
+        works.get(baseURL, filter, user).end(done);
     });
 
 });

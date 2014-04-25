@@ -11,7 +11,6 @@ var util = require('./modules/util');
 
 var baseURL = config.base_url + '/works';
 var work = require('./modules/work');
-work.setPath(baseURL);
 
 /* data we are going to use along the tests */
 var data = {
@@ -27,6 +26,7 @@ describe('Work', function(){
         var debug = dbgfn('test:work:post');
         it('should return the work URI', function(done){
             debug('input data %j', data);
+            data.resource = baseURL;
             work.post(data, user).end(done);
         });
         it('should reject invalid attributes', function(done){

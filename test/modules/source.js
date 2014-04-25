@@ -1,26 +1,21 @@
 
 'use strict';
 
-var request = require('supertest');
+var request = require('supertest')('');
 var expect = require('expect.js');
 var util = require('./util');
 
-var path;
 var exports = module.exports;
 
-exports.setPath = function setPath(val){
-    path = val;
-};
-
 exports.post = function post(data, user){
-    return request.post(path)
+    return request.post(data.resource)
     .send(data)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
-        var pattern = new RegExp(path + '(\\/sources\\/\\d+)');
+        var pattern = new RegExp(data.resource + '(\\/sources\\/\\d+)');
         data.resource = redirectURL;
         expect(redirectURL).to.match(pattern);
     });

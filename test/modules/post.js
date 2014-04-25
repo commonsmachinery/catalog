@@ -5,12 +5,7 @@ var request = require('supertest');
 var expect = require('expect.js');
 var util = require('./util');
 
-var path;
 var exports = module.exports;
-
-exports.setPath = function setPath(val){
-    path = val;
-};
 
 exports.post = function post(data, user){
     return request.post(path)
