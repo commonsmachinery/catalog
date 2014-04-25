@@ -7,10 +7,6 @@
 
 FROM dockerfile/ubuntu
 
-# Docker work around for upstart: [https://github.com/dotcloud/docker/issues/1024]
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -s /bin/true /sbin/initctl
-
 # Grab the latest rabbitmq - it's noarch, so we don't have to worry about the exact dist
 RUN echo "deb http://www.rabbitmq.com/debian/ testing main" >> /etc/apt/sources.list
 RUN apt-get install -y wget
