@@ -4,12 +4,13 @@
 var request = require('supertest')('');
 var expect = require('expect.js');
 var util = require('./util');
+var querystring = require('querystring');
 
 var exports = module.exports;
 
 
-exports.get = function get(path, filter, user){
-    return request.get(path + filter)
+exports.get = function get(path, filter, user, uid){
+    return request.get(path + '?' + filter)
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
@@ -20,8 +21,8 @@ exports.get = function get(path, filter, user){
         var work;
         for(var i=0; i<len; i++){
             work = works[i];
-            if(work.creator != user){
-                expect(work.visibility).to.not.be('private');
+            if(work.visibility == 'private'){
+                expect(work.creator).to.be(uid);
             }
             if(filter){
                 for(var j in filter){

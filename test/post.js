@@ -7,7 +7,7 @@ var config = require('../frontend/config.json').test;
 var expect = require('expect.js');
 var util = require('./modules/util');
 
-var baseURL = config.base_url + '/works';
+var worksURL = config.base_url + '/works';
 var work = require('./modules/work');
 var post = require('./modules/post');
 
@@ -24,11 +24,12 @@ var otherUser = 'otherUser';
 describe('Post', function(){
 
     it('should create a work', function(done){
-        var debug = dbgfn('test:creating-work');
-        postData.resource = baseURL;
+        var debug = dbgfn('test:creating-a-work');
+        workData.resource = worksURL;
         work.post(workData, user).end(function(err, res){
             expect(err).to.be(null);
-            post.setPath(workData.resource + '/posts');
+            postData.resource = workData.resource + '/posts';
+            done();
         });
     });
 

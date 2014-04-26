@@ -15,7 +15,7 @@ exports.post = function post(data, user){
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
-        var pattern = new RegExp(data.resource + '(\\/sources\\/\\d+)');
+        var pattern = new RegExp('\\/sources\\/\\d+');
         data.resource = redirectURL;
         expect(redirectURL).to.match(pattern);
     });
@@ -30,8 +30,8 @@ exports.get = function get(data, user){
         var source = res.body;
         expect(source.resource).to.be(data.resource);
         data.updated = source.updated;
-        expect(new Date(source.created)).to.not.be('Invalid Date');
-        expect(new Date(source.creator)).to.be(user);
+        data.addedBy = res.body.addedBy;
+        expect(new Date(source.added)).to.not.be('Invalid Date');
     });
 }
 
@@ -43,24 +43,25 @@ exports.put = function put(data, user){
     .expect(function(res){
         expect(res.status).to.be(200);
         var source = res.body;
-        var created = new Date(source.created);
+        var added = new Date(source.added);
         var updated = new Date(source.updated);
         data.updated = source.updated;
         expect(source.resource).to.be(data.resource);
-        expect(created).to.not.be('Invalid Date');
+        expect(added).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
-        expect(updated).to.be.greaterThan(created);
-        expect(updatedBy).to.be(user);
+        expect(updated).to.be.greaterThan(added);
+        expect(updatedBy).to.be(data.addedBy);
     });
 }
 
-exports.remove = function remove(data, user){
-    return request.delete(data.resource)
+exports.remove = function remove(uri, user){
+    return request.delete(uri)
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(204);
-        exports.get(data.resource).end(function(err, res){
-            expect(err).to.be(404);
+        exports.get(uri).end(function(err, res){
+            /* ToDo: check specific error code */
+            expect(err).to.not.be(null);
         });
     });
 }

@@ -15,7 +15,7 @@ var work = require('./modules/work');
 /* data we are going to use along the tests */
 var data = {
     visibility: 'private',
-    status: 'inprogress'
+    state: 'draft'
 }; 
 var user = 'user';
 var otherUser = 'otherUser';
@@ -29,12 +29,12 @@ describe('Work', function(){
             data.resource = baseURL;
             work.post(data, user).end(done);
         });
-        it('should reject invalid attributes', function(done){
+        it('should reject invalid attribute values', function(done){
             var failData = util.clone(data);
             failData.visibility = 'invalid';
             debug('input data %j', failData);
             work.post(failData, user) .end(function(err, res){
-                debug('Request status: %s', err);
+                /* ToDo: check for explicit error code */
                 expect(err).to.not.be(null);
                 done();
             });
@@ -96,9 +96,22 @@ describe('Work', function(){
                 });
             });
         });
-        it('should not edit work from another user', function(done){
+        it('should reject invalid attribute values', function(done){
             var failData = util.clone(data);
-            debug('updating work: %s', failData.resource);
+            failData.invalid = 'invalid';
+            debug('faildata resource', failData.resource);
+            work.put(failData).end(function(err, res){
+                /* ToDo: evaluate against an appropiate error code */
+                expect(err.toString()).to.not.be(null);
+                work.get(failData, user).end(function(err, res){
+                    expect(err).to.be(null);
+                    expect(res.body.updated).to.be(data.updated);
+                    done();
+                });
+            });
+        });
+        it('should not edit work from another user', function(done){
+            debug('updating work: %s', data.resource);
             work.put(data, otherUser).end(function(err, res){
                 expect(err.toString()).to.contain('expected 403');
                 work.get(data, user).end(function(err, res){
@@ -114,19 +127,20 @@ describe('Work', function(){
         var debug = dbgfn('test:work:delete');
         it('should return success code', function(done){
             debug('deleting work: %s', data.resource);
-            work.delete(data.resource, user).end(done);
+            work.remove(data.resource, user).end(done);
         });
         it('should return 404 when deleting unexistent work', function(done){
             var resource = data.resource + 'fail';
             debug('deleting work: %s', resource);
-            work.delete(resource, user).end(function(err, res){
+            work.remove(resource, user).end(function(err, res){
                 expect(err.toString()).to.contain('expected 404');
                 done();
             });
         });
         it('should not delete work from another user', function(done){
             debug('deleting work: %s', data.resource);
-            work.delete(data.resource, otherUser).end(function(err, res){
+            work.remove(data.resource, otherUser).end(function(err, res){
+                /* ToDo: check for explicit error code */
                 expect(err).to.not.be(null);
                 done();
             });
