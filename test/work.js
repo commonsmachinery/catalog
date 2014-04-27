@@ -80,36 +80,37 @@ describe('Work', function(){
             debug('updating work: %s', failData.resource);
             work.put(failData, user).end(function(err, res){
                 expect(err.toString()).to.contain('expected 404');
+                done();
             });
         });
-        it('should reject invalid attributes', function(done){
-            var failData = util.clone(data);
-            failData.visibility = 'invalid';
-            debug('faildata resource', failData.resource);
-            work.put(failData).end(function(err, res){
-                /* ToDo: evaluate against an appropiate error code */
-                expect(err.toString()).to.not.be(null);
-                work.get(failData, user).end(function(err, res){
-                    expect(err).to.be(null);
-                    expect(res.body.updated).to.be(data.updated);
-                    done();
-                });
-            });
-        });
-        it('should reject invalid attribute values', function(done){
-            var failData = util.clone(data);
-            failData.invalid = 'invalid';
-            debug('faildata resource', failData.resource);
-            work.put(failData).end(function(err, res){
-                /* ToDo: evaluate against an appropiate error code */
-                expect(err.toString()).to.not.be(null);
-                work.get(failData, user).end(function(err, res){
-                    expect(err).to.be(null);
-                    expect(res.body.updated).to.be(data.updated);
-                    done();
-                });
-            });
-        });
+        // it('should reject invalid attributes', function(done){
+        //     var failData = util.clone(data);
+        //     failData.visibility = 'invalid';
+        //     debug('faildata resource', failData.resource);
+        //     work.put(failData).end(function(err, res){
+        //         /* ToDo: evaluate against an appropiate error code */
+        //         expect(err.toString()).to.not.be(null);
+        //         work.get(failData, user).end(function(err, res){
+        //             expect(err).to.be(null);
+        //             expect(res.body.updated).to.be(data.updated);
+        //             done();
+        //         });
+        //     });
+        // });
+        // it('should reject invalid attribute values', function(done){
+        //     var failData = util.clone(data);
+        //     failData.invalid = 'invalid';
+        //     debug('faildata resource', failData.resource);
+        //     work.put(failData).end(function(err, res){
+        //         /* ToDo: evaluate against an appropiate error code */
+        //         expect(err.toString()).to.not.be(null);
+        //         work.get(failData, user).end(function(err, res){
+        //             expect(err).to.be(null);
+        //             expect(res.body.updated).to.be(data.updated);
+        //             done();
+        //         });
+        //     });
+        // });
         it('should not edit work from another user', function(done){
             debug('updating work: %s', data.resource);
             work.put(data, otherUser).end(function(err, res){
@@ -125,23 +126,24 @@ describe('Work', function(){
 
     describe('#delete', function(){
         var debug = dbgfn('test:work:delete');
-        it('should return success code', function(done){
-            debug('deleting work: %s', data.resource);
-            work.remove(data.resource, user).end(done);
-        });
-        it('should return 404 when deleting unexistent work', function(done){
-            var resource = data.resource + 'fail';
-            debug('deleting work: %s', resource);
-            work.remove(resource, user).end(function(err, res){
-                expect(err.toString()).to.contain('expected 404');
-                done();
-            });
-        });
         it('should not delete work from another user', function(done){
             debug('deleting work: %s', data.resource);
-            work.remove(data.resource, otherUser).end(function(err, res){
+            work.remove(data, otherUser).end(function(err, res){
                 /* ToDo: check for explicit error code */
                 expect(err).to.not.be(null);
+                work.get(data, user).end(done);
+            });
+        });
+        it('should return success code', function(done){
+            debug('deleting work: %s', data.resource);
+            work.remove(data, user).end(done);
+        });
+        it('should return 404 when deleting unexistent work', function(done){
+            var failData = util.clone(data);
+            failData.resource += 'fail';
+            debug('deleting work: %s', failData.resource);
+            work.remove(failData, user).end(function(err, res){
+                expect(err.toString()).to.contain('expected 404');
                 done();
             });
         });

@@ -29,9 +29,9 @@ exports.get = function get(data, user){
         expect(res.status).to.be(200);
         var source = res.body;
         expect(source.resource).to.be(data.resource);
+        expect(new Date(source.added)).to.not.be('Invalid Date');
         data.updated = source.updated;
         data.addedBy = res.body.addedBy;
-        expect(new Date(source.added)).to.not.be('Invalid Date');
     });
 }
 
@@ -54,14 +54,14 @@ exports.put = function put(data, user){
     });
 }
 
-exports.remove = function remove(uri, user){
-    return request.delete(uri)
+exports.remove = function remove(data, user){
+    return request.delete(data.resource)
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(204);
-        exports.get(uri).end(function(err, res){
+        exports.get(data).end(function(err, res){
             /* ToDo: check specific error code */
-            expect(err).to.not.be(null);
+            expect(err.toString()).to.contain('expected 404');
         });
     });
 }

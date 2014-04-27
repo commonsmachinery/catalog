@@ -52,15 +52,16 @@ exports.put = function put(data, user){
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(created);
         expect(work.updatedBy).to.match(pattern);
+        data.updated = updated;
     });
 }
 
-exports.remove = function remove(uri, user){
-    return request.delete(uri)
+exports.remove = function remove(data, user){
+    return request.delete(data.resource)
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(204);
-        exports.get(uri).end(function(err, res){
+        exports.get(data).end(function(err, res){
             /* ToDo: check specific error code */
             expect(err).to.not.be(null);
         });
