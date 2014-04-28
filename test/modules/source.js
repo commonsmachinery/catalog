@@ -8,7 +8,7 @@ var util = require('./util');
 var exports = module.exports;
 
 exports.post = function post(data, user){
-    return request.post(data.resource)
+    return request.post(data.url)
     .send(data)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
@@ -16,13 +16,13 @@ exports.post = function post(data, user){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
         var pattern = new RegExp('\\/sources\\/\\d+');
-        data.resource = redirectURL;
         expect(redirectURL).to.match(pattern);
+        data.id = redirectURL.match(pattern)[1];
     });
 }
 
 exports.get = function get(data, user){
-    return request.get(data.resource)
+    return request.get(data.url + '/' + data.id)
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
@@ -36,7 +36,7 @@ exports.get = function get(data, user){
 }
 
 exports.put = function put(data, user){
-    return request.put(data.resource)
+    return request.put(data.url + '/' + data.id)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
     .send(data)
@@ -55,7 +55,7 @@ exports.put = function put(data, user){
 }
 
 exports.remove = function remove(data, user){
-    return request.delete(data.resource)
+    return request.delete(data.url + '/' + data.id)
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(204);

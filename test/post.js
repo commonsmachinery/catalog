@@ -26,17 +26,14 @@ describe('Post', function(){
     it('should create a work', function(done){
         var debug = dbgfn('test:creating-a-work');
         workData.resource = worksURL;
-        work.post(workData, user).end(function(err, res){
-            expect(err).to.be(null);
-            postData.url = workData.resource + '/posts';
-            done();
-        });
+        work.post(workData, user).end(done);
     });
 
     describe('#post', function(){
         var debug = dbgfn('test:workPosts:post');
         it('should return post URI', function(done){
-           post.post(postData, user).end(done);
+            postData.url = workData.resource + '/posts';
+            post.post(postData, user).end(done);
         });
     });
 
