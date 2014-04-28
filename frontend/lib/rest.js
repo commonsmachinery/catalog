@@ -566,7 +566,7 @@ putWork = function putWork(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
     queryData.work_data = _.pick(
-        req.body, 'metadataGraph', 'state', 'visiblity');
+        req.body, 'metadataGraph', 'state', 'visibility');
     if (queryData.work_data.metadataGraph) {
         updateMetadata(queryData.work_data.metadataGraph, queryData.work_uri);
     }
