@@ -19,7 +19,7 @@ exports.post = function post(data, user){
         expect(redirectURL).to.match(pattern);
         data.id = redirectURL.match(pattern)[1];
     });
-}
+};
 
 exports.get = function get(data, user){
     return request.get(data.url + '/' + data.id)
@@ -33,7 +33,7 @@ exports.get = function get(data, user){
         data.updated = post.updated;
         data.postedBy = post.postedBy;
     });
-}
+};
 
 exports.put = function put(data, user){
     return request.put(data.url + '/' + data.id)
@@ -49,11 +49,11 @@ exports.put = function put(data, user){
         expect(created).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(created);
-        expect(updatedBy).to.be(user);
+        expect(post.updatedBy).to.be(user);
         expect(post.resource).to.be(data.resource);
         data.updated = post.updated;
     });
-}
+};
 
 exports.remove = function remove(data, user){
     return request.delete(data.url + '/' + data.id)
@@ -64,4 +64,4 @@ exports.remove = function remove(data, user){
             expect(err.toString()).to.contain(404);
         });
     });
-}
+};

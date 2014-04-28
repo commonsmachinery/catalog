@@ -8,8 +8,8 @@ var exports = module.exports;
 exports.clone = function clone(obj){
     var extend = require('util')._extend;
     return extend({}, obj);
-}
+};
 
 exports.auth = function auth(user){
     return 'Basic ' + new Buffer(user + ':').toString('base64');
-}
+};

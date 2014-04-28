@@ -19,7 +19,7 @@ exports.post = function post(data, user){
         expect(redirectURL).to.match(pattern);
         data.id = redirectURL.match(pattern)[1];
     });
-}
+};
 
 exports.get = function get(data, user){
     return request.get(data.url + '/' + data.id)
@@ -33,7 +33,7 @@ exports.get = function get(data, user){
         data.updated = source.updated;
         data.addedBy = res.body.addedBy;
     });
-}
+};
 
 exports.put = function put(data, user){
     return request.put(data.url + '/' + data.id)
@@ -53,7 +53,7 @@ exports.put = function put(data, user){
         expect(source.updatedBy).to.be(data.addedBy);
         expect(source.resource).to.be(data.resource);
     });
-}
+};
 
 exports.remove = function remove(data, user){
     return request.delete(data.url + '/' + data.id)
@@ -65,4 +65,4 @@ exports.remove = function remove(data, user){
             expect(err.toString()).to.contain('expected 404');
         });
     });
-}
+};

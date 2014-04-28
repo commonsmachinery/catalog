@@ -20,7 +20,7 @@ exports.post = function post(data, user){
         expect(redirectURL).to.match(pattern);
         data.resource = redirectURL;
     });
-}
+};
 
 exports.get = function get(data, user){
     return request.get(data.resource)
@@ -34,7 +34,7 @@ exports.get = function get(data, user){
         data.creator = res.body.creator;
         expect(new Date(work.created)).to.not.be('Invalid Date');
     });
-}
+};
 
 exports.put = function put(data, user){
     return request.put(data.resource)
@@ -55,7 +55,7 @@ exports.put = function put(data, user){
         expect(work.state).to.be(data.state);
         data.updated = updated;
     });
-}
+};
 
 exports.remove = function remove(data, user){
     return request.delete(data.resource)
@@ -67,4 +67,4 @@ exports.remove = function remove(data, user){
             expect(err).to.not.be(null);
         });
     });
-}
+};

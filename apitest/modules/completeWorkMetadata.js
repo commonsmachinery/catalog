@@ -17,4 +17,4 @@ exports.get = function get(data, user){
         var metadata = res.body;
         expect(metadata).to.be.an('object');
     });
-}
+};

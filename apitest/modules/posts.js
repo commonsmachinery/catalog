@@ -19,4 +19,4 @@ exports.get = function get(path, user){
         expect(sources).to.be.an('array');
         expect(sources.length).to.be.greaterThan('0');
     });
-}
+};

@@ -17,4 +17,4 @@ exports.get = function get(data, user){
         var cem = res.body;
         expect(cem).to.be.an('object');
     });
-}
+};
