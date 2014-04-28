@@ -1,25 +1,31 @@
 
-JSLINT = ./frontend/node_modules/.bin/jslint
-MOCHA = ./frontend/node_modules/.bin/mocha
+# Lint all code that should be linted
+lint: lint-apitest lint-frontend
 
-# lint-dirs = . lib lib/* public/app public/app/*
-lint-dirs = ./frontend frontend/lib fontend/lib/* frontend/public/app frontend/public/app/*
+lint-apitest:
+	$(MAKE) -C apitest lint
 
-ifdef test
-	TEST='./test/$(test).js'
-else
-	TEST='./test/*.js'
-endif
+lint-frontend:
+	$(MAKE) -C frontend lint
 
-ifdef debug
-	DEBUG = DEBUG="test:*"
-endif
+.PHONY: lint lint-apitest lint-frontend
 
 
-lint:
-	$(JSLINT) --node -- $(lint-dirs:%=%/*.js)
+# Run all unit tests
+test: test-frontend test-backend
 
-test:
-	DEBUG=test:* NODE_ENV=test $(MOCHA) --reporter spec $(TEST)
+test-frontend:
+	$(MAKE) -C frontend test
 
-.PHONY: test
+test-backend:
+	$(MAKE) -C backend test
+
+.PHONY: test-frontend test-backend
+
+
+# Run the API tests
+apitest:
+	$(MAKE) -C apitest run
+
+.PHONY: apitest
+

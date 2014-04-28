@@ -29,7 +29,7 @@
     "express-persona": "~0.1.1"
   },
   "devDependencies": {
-    "jslint": "0.3.x",
+    "jshint": "*",
     "nodemon": "1.x.x",
     "volo": "0.3.x"
   },

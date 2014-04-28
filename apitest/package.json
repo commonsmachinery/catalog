@@ -14,5 +14,8 @@
     "mocha": "1.x.x",
     "supertest": "0.x.x"
   },
+  "devDependencies": {
+    "jshint": "*"
+  },
   "license": "AGPLv3"
 }
