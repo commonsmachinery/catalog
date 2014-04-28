@@ -69,10 +69,13 @@ describe('Work', function(){
     describe('#put', function(done){
         var debug = dbgfn('test:work:put');
         it('should return the updated work', function(done){
+            this.timeout(3000);
             debug('updating work: %s. Setting visibility = public', data.resource);
             data.visibility = 'public';
             data.status = 'published';
-            work.put(data, user).end(done);
+            setTimeout(function(){
+                work.put(data, user).end(done);
+            }, 1000);
         });
         it('should return 404 when updating unexistent work', function(done){
             var failData = util.clone(data);

@@ -50,7 +50,7 @@ exports.put = function put(data, user){
         expect(added).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(added);
-        expect(updatedBy).to.be(data.addedBy);
+        expect(source.updatedBy).to.be(data.addedBy);
         expect(source.resource).to.be(data.resource);
     });
 }

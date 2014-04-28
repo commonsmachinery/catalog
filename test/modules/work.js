@@ -46,12 +46,11 @@ exports.put = function put(data, user){
         var work = res.body;
         var created = new Date(work.created);
         var updated = new Date(work.updated);
-        var pattern = new RegExp('\\/users\\/' + data.creator);
         expect(work.resource).to.be(data.resource);
         expect(created).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(created);
-        expect(work.updatedBy).to.match(pattern);
+        expect(work.updatedBy).to.be(data.creator);
         expect(work.visibility).to.be(data.visibility);
         expect(work.state).to.be(data.state);
         data.updated = updated;
