@@ -43,7 +43,8 @@ forwarded to users in production mode.
 
 from __future__ import absolute_import
 
-import json, time
+import json
+from datetime import datetime
 
 from celery import subtask
 from catalog.celery import app, RedisLock, StoreTask, LockedError
@@ -68,6 +69,19 @@ _log = logging.getLogger('catalog')
 
 def error(e):
     return {'error': {'type': e.__class__.__name__, 'message': str(e)}}
+
+def get_timestamp():
+    """Get the current time as an ISO-8601 UTC datetime without any
+    microseconds.
+    """
+
+    # Output full format with Z to indicate UTC (doesn't seem to be
+    # supported by datetime by itself)
+    dt = datetime.utcnow()
+    dt = dt.replace(microsecond=0)
+    return dt.isoformat('T') + 'Z'
+
+
 #
 # main store update tasks
 #
@@ -99,7 +113,7 @@ def create_work(self, user_uri, work_uri, work_data):
     try:
         with RedisLock(self.lock_db, work_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 work_data = store.create_work(timestamp, user_uri, work_uri, work_data)
 
                 log_data = json.dumps(work_data)
@@ -137,7 +151,7 @@ def update_work(self, user_uri, work_uri, work_data):
     try:
         with RedisLock(self.lock_db, work_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 work_data = store.update_work(timestamp, user_uri, work_uri, work_data)
 
                 log_data = json.dumps(work_data)
@@ -168,7 +182,7 @@ def delete_work(self, user_uri, work_uri):
     try:
         with RedisLock(self.lock_db, work_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 store.delete_work(user_uri, work_uri)
 
                 log_event.apply_async(args=('delete_work', timestamp, user_uri, work_uri, None, None))
@@ -206,7 +220,7 @@ def create_work_source(self, user_uri, work_uri, source_uri, source_data):
     try:
         with RedisLock(self.lock_db, work_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 source_data = store.create_work_source(timestamp, user_uri, work_uri, source_uri, source_data)
 
                 log_data = json.dumps(source_data)
@@ -243,7 +257,7 @@ def create_stock_source(self, user_uri, source_uri, source_data):
     try:
         with RedisLock(self.lock_db, user_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 source_data = store.create_stock_source(timestamp, user_uri, source_uri, source_data)
 
                 log_data = json.dumps(source_data)
@@ -281,7 +295,7 @@ def update_source(self, user_uri, source_uri, source_data):
     try:
         with RedisLock(self.lock_db, source_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 source_data = store.update_source(timestamp, user_uri, source_uri, source_data)
 
                 log_data = json.dumps(source_data)
@@ -312,7 +326,7 @@ def delete_source(self, user_uri, source_uri):
     try:
         with RedisLock(self.lock_db, source_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 store.delete_source(user_uri, source_uri)
 
                 log_event.apply_async(args=('delete_source', timestamp, user_uri, None, source_uri, None))
@@ -350,7 +364,7 @@ def create_post(self, user_uri, work_uri, post_uri, post_data):
     try:
         with RedisLock(self.lock_db, work_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 post_data = store.create_post(timestamp, user_uri, work_uri, post_uri, post_data)
 
                 log_data = json.dumps(post_data)
@@ -388,7 +402,7 @@ def update_post(self, user_uri, post_uri, post_data):
     try:
         with RedisLock(self.lock_db, post_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 post_data = store.update_post(timestamp, user_uri, post_uri, post_data)
 
                 log_data = json.dumps(post_data)
@@ -420,7 +434,7 @@ def delete_post(self, user_uri, post_uri):
     try:
         with RedisLock(self.lock_db, post_uri):
             with self.main_store as store:
-                timestamp = int(time.time())
+                timestamp = get_timestamp()
                 store.delete_post(user_uri, post_uri)
 
                 log_event.apply_async(args=('delete_post', timestamp, user_uri, None, post_uri, None))

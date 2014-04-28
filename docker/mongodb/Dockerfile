@@ -4,10 +4,6 @@
 
 FROM dockerfile/ubuntu
 
-# Docker work around for upstart: [https://github.com/dotcloud/docker/issues/1024]
-RUN dpkg-divert --local --rename --add /sbin/initctl
-RUN ln -s /bin/true /sbin/initctl
-
 # Install MongoDB.
 RUN apt-key adv --keyserver hkp://keyserver.ubuntu.com:80 --recv 7F0CEB10
 RUN echo 'deb http://downloads-distro.mongodb.org/repo/ubuntu-upstart dist 10gen' | tee /etc/apt/sources.list.d/mongodb.list

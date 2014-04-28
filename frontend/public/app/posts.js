@@ -10,7 +10,7 @@ define(function(require){
 		var $dialog = $($('#formTemplate').html())
 			.attr('id','formDialog');
 		$('#content').append($dialog);
-		var form = new PostView(model, '#formDialog');
+		var form = new PostView(model, '#formDialog'); // jshint ignore:line
 		$('#formDialog > .save').on('click', function(ev){
 			model.urlRoot = window.location.pathname;
 			model.sync('create', model);

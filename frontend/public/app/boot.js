@@ -1,6 +1,4 @@
-/*global requirejs, document*/
-
-'use strict'; 
+/*global requirejs, require*/
 
 requirejs.config({
 	baseUrl : '/app',
@@ -20,10 +18,34 @@ requirejs.config({
 });
 
 require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){	
-	/* add backbone plugins */
+    'use strict';
+
+    /* add backbone plugins */
 	require(['lib/Backbone.ModelBinder']);
 
 	function _init(){
+		login.init();
+
+		// TODO: this doesn't handle network timeouts, only various
+		// gateway timeouts.  This all probably should go into a
+		// wrapper class instead that handles common errors, but it
+		// must be reviewed how that interacts with Backbone.
+
+		function retry(xhr, status /*, error */){
+			/* jshint validthis:true */
+			if(this.tryCount < this.maxTries){
+				console.error('%s: %s... retrying', xhr, status);
+				this.tryCount++;
+				var self = this;
+				setTimeout(function(){
+					$.ajax(self);
+				}, 3000);
+			}
+			else{
+				console.error("couldn't process request!");
+				//ToDo: show some message dialog to the user
+			}
+		}
 
 		/* If network timeout or internal server error, retry */
 		$.ajaxSetup({
@@ -38,24 +60,6 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 				598: retry
 			}
 		});
-		login.init();
-		return;
-	}
-
-	function retry(xhr, status, error){
-		if(this.tryCount < this.maxTries){
-			console.error('%s: %s... retrying', xhr, status);
-			this.tryCount++;
-			var self = this;
-			setTimeout(function(){
-				$.ajax(self);
-			}, 3000);
-		}
-		else{
-			console.error("couldn't process request!");
-			//ToDo: show some message dialog to the user
-		}
-		return;
 	}
 
 	var Router = Backbone.Router.extend({
@@ -91,7 +95,7 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 			require(['workPermalink']);
 		}
 	});
-	var app = new Router();
+    var app = new Router(); // jshint ignore:line
 	Backbone.history.start({pushState:true});
 
 	if(document.readyState === 'complete'){

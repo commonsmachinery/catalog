@@ -18,6 +18,7 @@ var BackendError = require('./backend').BackendError;
 var uris = require('./uris');
 var requireUser = require('./sessions').requireUser;
 
+/* Module global vars */
 var backend;
 var env;
 var cluster;
@@ -31,7 +32,7 @@ var errorMap = {
 
 var createWorkSubject = "about:resource";
 
-/* API functions */
+/* Internal functions defined later */
 var deletePost,
     deleteSource,
     deleteWork,
@@ -57,17 +58,17 @@ var deletePost,
     putSource,
     putWork;
 
-function init(app, localBackend, localCluster) {
+exports.init = function init(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
     cluster = localCluster;
 
     // TODO: add request ID checking
     // TODO: add request sanity checking
-}
-exports.init = init;
+};
 
-function routes(app) {
+
+exports.routes = function routes(app) {
     /* works */
     app.delete('/works/:workID', requireUser, deleteWork);
     app.get('/works', getWorks);
@@ -108,14 +109,14 @@ function routes(app) {
 
     /* sparql */
     app.get('/sparql', getSPARQL);
-}
-exports.routes = routes;
+};
+
 
 
 /* Add error handlers to a call promise to ensure proper HTTP
  * responses are sent.
  */
-function handleErrors(callPromise, res) {
+var handleErrors = function handleErrors(callPromise, res) {
     callPromise.
         error(function(error) {
             res.send(errorMap[error.type] || 500, error);
@@ -129,11 +130,11 @@ function handleErrors(callPromise, res) {
             res.send(500, env.NODE_ENV === 'production' ? 'Internal error\n' : e.stack);
         }).
         done();
-}
+};
 
 /* Helper method to return a result object correctly formatted.
  */
-function formatResult(res, view) {
+var formatResult = function formatResult(res, view) {
     return function(data) {
         // TODO: owner should really be returned from the backend
         var owner = false;
@@ -150,22 +151,22 @@ function formatResult(res, view) {
             }
         });
     };
-}
+};
 
 /* Basic data needed for all task calls.
  */
-function commonData (req) { 
+var commonData = function commonData (req) {
     var uid = req.session && req.session.uid;
 
     return {
         user_uri: uid ? uris.buildUserURI(uid) : null,
     };
-}
+};
 
 /* Translate about:resource in the RDF/JSON metadata
  *  into the real resource URI for POST and PUT
  */
-function updateMetadata(obj, uri) {
+var updateMetadata = function updateMetadata(obj, uri) {
     if (obj.hasOwnProperty(createWorkSubject)) {
         if (obj.hasOwnProperty(uri)) {
             obj[uri] = _.extend(obj[uri], obj[createWorkSubject]);
@@ -174,11 +175,11 @@ function updateMetadata(obj, uri) {
         }
         delete obj[createWorkSubject];
     }
-}
+};
 
 /* API functions */
 
-function deleteWork(req, res) {
+deleteWork = function deleteWork(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
 
@@ -190,9 +191,9 @@ function deleteWork(req, res) {
             }),
         res
     );
-}
+};
 
-function getPosts (req, res) {
+getPosts = function getPosts (req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
 
@@ -200,9 +201,9 @@ function getPosts (req, res) {
         backend.call('get_posts', queryData).
             then(formatResult(res, 'posts')),
         res);
-}
+};
 
-function getPost (req, res) {
+getPost = function getPost (req, res) {
     var queryData = commonData(req);
     queryData.post_uri = uris.workPostURIFromReq(req);
 
@@ -210,10 +211,10 @@ function getPost (req, res) {
         backend.call('get_post', queryData).
             then(formatResult(res, 'workPost')),
         res);
-}
+};
 
 
-function postPost(req, res) {
+postPost = function postPost(req, res) {
     var postURI;
 
     var queryData = commonData(req);
@@ -243,9 +244,9 @@ function postPost(req, res) {
                 }
             ),
         res);
-}
+};
 
-function putPost(req, res) {
+putPost = function putPost(req, res) {
     var queryData = commonData(req);
     queryData.post_uri = uris.workPostURIFromReq(req);
 
@@ -262,9 +263,9 @@ function putPost(req, res) {
                 res.send(data);
             }),
         res);
-}
+};
 
-function deletePost (req, res) {
+deletePost = function deletePost (req, res) {
     var queryData = commonData(req);
     queryData.post_uri = uris.workPostURIFromReq(req);
 
@@ -275,34 +276,34 @@ function deletePost (req, res) {
                 // TODO: this could be 202 Accepted if we add undo capability
             }),
         res);
-}
+};
 
-function getPostMetadata (req, res) {
+getPostMetadata = function getPostMetadata (req, res) {
     var queryData = commonData(req);
 
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
     queryData.subgraph = 'metadata';
 
     handleErrors(
         backend.call('get_post', queryData).
             then(formatResult(res, 'postMetadata')),
         res);
-}
+};
 
-function getPostCEM (req, res) {
+getPostCEM = function getPostCEM (req, res) {
     var queryData = commonData(req);
 
-    queryData.post_uri = workPostURIFromReq(req);
+    queryData.post_uri = uris.workPostURIFromReq(req);
     queryData.subgraph = 'cachedExternalMetadata';
 
     handleErrors(
         backend.call('get_post', queryData).
             then(formatResult(res, 'postCEM')),
         res);
-}
+};
 
 
-function getSource (req, res) {
+getSource = function getSource (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
         queryData.source_uri = uris.workSourceURIFromReq(req);
@@ -315,9 +316,9 @@ function getSource (req, res) {
         backend.call('get_source', queryData).
             then(formatResult(res, 'source')),
         res);
-}
+};
 
-function postWorkSource(req, res) {
+postWorkSource = function postWorkSource(req, res) {
     var sourceURI;
 
     var queryData = commonData(req);
@@ -349,9 +350,9 @@ function postWorkSource(req, res) {
                 }
             ),
         res);
-}
+};
 
-function postStockSource(req, res) {
+postStockSource = function postStockSource(req, res) {
     var sourceURI;
     var queryData = commonData(req);
 
@@ -379,9 +380,9 @@ function postStockSource(req, res) {
                 }
             ),
         res);
-}
+};
 
-function putSource(req, res) {
+putSource = function putSource(req, res) {
     var queryData = commonData(req);
 
     if (req.params.workID) {
@@ -404,9 +405,9 @@ function putSource(req, res) {
                 res.send(data);
             }),
         res);
-}
+};
 
-function deleteSource (req, res) {
+deleteSource = function deleteSource (req, res) {
     var queryData = commonData(req);
 
     if (req.params.workID) {
@@ -418,14 +419,14 @@ function deleteSource (req, res) {
 
     handleErrors(
         backend.call('delete_source', queryData).
-            then(function (data) {
+            then(function () {
                 res.send(204, 'successfully deleted source');
                 // TODO: this could be 202 Accepted if we add undo capability
             }),
         res);
-}
+};
 
-function getSourceMetadata (req, res) {
+getSourceMetadata = function getSourceMetadata (req, res) {
     var queryData = commonData(req);
 
     if (req.params.workID) {
@@ -441,9 +442,9 @@ function getSourceMetadata (req, res) {
         backend.call('get_source', queryData).
             then(formatResult(res, 'sourceMetadata')),
         res);
-}
+};
 
-function getSourceCEM (req, res) {
+getSourceCEM = function getSourceCEM (req, res) {
     var queryData = commonData(req);
     if (req.params.workID) {
         queryData.source_uri = uris.workSourceURIFromReq(req);
@@ -458,9 +459,9 @@ function getSourceCEM (req, res) {
         backend.call('get_source', queryData).
             then(formatResult(res, 'sourceCEM')),
         res);
-}
+};
 
-function getWorkSources (req, res) {
+getWorkSources = function getWorkSources (req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
 
@@ -468,19 +469,19 @@ function getWorkSources (req, res) {
         backend.call('get_work_sources', queryData).
             then(formatResult(res, 'sources')),
         res);
-}
+};
 
-function getStockSources (req, res) {
+getStockSources = function getStockSources (req, res) {
     var queryData = commonData(req);
 
     handleErrors(
         backend.call('get_stock_sources', queryData).
             then(formatResult(res, 'sources')),
         res);
-}
+};
 
 
-function getWork(req, res) {
+getWork = function getWork(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
 
@@ -488,10 +489,10 @@ function getWork(req, res) {
         backend.call('get_work', queryData).
             then(formatResult(res, 'workPermalink')),
         res);
-}
+};
 
 
-function getWorks(req, res) {
+getWorks = function getWorks(req, res) {
     var queryData = commonData(req);
 
     queryData.offset = req.query.offset || 0;
@@ -502,10 +503,10 @@ function getWorks(req, res) {
         backend.call('query_works_simple', queryData).
             then(formatResult(res, 'works')),
         res);
-}
+};
 
 
-function getWorkMetadata(req, res) {
+getWorkMetadata = function getWorkMetadata(req, res) {
     var queryData = commonData(req);
 
     queryData.work_uri = uris.workURIFromReq(req);
@@ -515,10 +516,10 @@ function getWorkMetadata(req, res) {
         backend.call('get_work', queryData).
             then(formatResult(res, 'workMetadata')),
         res);
-}
+};
 
 
-function getCompleteWorkMetadata(req, res) {
+getCompleteWorkMetadata = function getCompleteWorkMetadata(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
     queryData.format = 'json';
@@ -527,10 +528,10 @@ function getCompleteWorkMetadata(req, res) {
         backend.call('get_complete_metadata', queryData).
             then(formatResult(res, 'completeMetadata')),
         res);
-}
+};
 
 
-function postWork(req, res) {
+postWork = function postWork(req, res) {
     var workURI;
 
     var queryData = commonData(req);
@@ -552,16 +553,16 @@ function postWork(req, res) {
                     return backend.call('create_work', queryData);
                 }
             ).then(
-                function respond(data) {
+                function(data) {
                     debug('successfully added work, redirecting to %s', workURI);
                     res.redirect(workURI);
                 }
             ),
         res);
-}
+};
 
 
-function putWork(req, res) {
+putWork = function putWork(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
     queryData.work_data = _.pick(
@@ -577,10 +578,10 @@ function putWork(req, res) {
                 res.send(data);
             }),
         res);
-}
+};
 
 
-function getSPARQL(req, res) {
+getSPARQL = function getSPARQL(req, res) {
     var results_format;
 
     if (req.get('Accept') === "application/json") {
@@ -600,5 +601,5 @@ function getSPARQL(req, res) {
                 res.send(data);
             }),
         res);
-}
+};
 

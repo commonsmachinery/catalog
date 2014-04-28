@@ -13,32 +13,31 @@
 
 var debug = require('debug')('frontend:admin');
 
+/* Module globals */
 var User;
 
-var adminUsersPage
-  , changeUserLock
-  ;
+/* Functions */
+var adminUsersPage,
+	changeUserLock;
 
-function init(app) {
+exports.init = function init(app) {
     // TODO: add admin session validation here later
     // app.use('/admin', checkAdminSession);
 
     // We can load the User model now that mongodb is connected
     User = require('./model/user');
-}
-exports.init = init;
+};
 
 
-function routes(app) {
+exports.routes = function routes(app) {
     // TODO: this should be a subpage later, but for now we only care
     // about tweaking users
     app.get('/admin', adminUsersPage);
     app.post('/admin/changeUserLock', changeUserLock);
-}
-exports.routes = routes;
+};
 
 
-function adminUsersPage(req, res) {
+adminUsersPage = function adminUsersPage(req, res) {
     var q = req.query;
 
     User.find({}, 'uid emails locked', {
@@ -57,11 +56,11 @@ function adminUsersPage(req, res) {
             res.send(500, process.env.NODE_ENV === 'production' ? '' : err.stack);
         }
     );
-}
+};
 
 /* Actions */
 
-function changeUserLock(req, res) {
+changeUserLock = function changeUserLock(req, res) {
     var uid = req.body.uid;
     var lock = req.body.lock === 'true';
 
@@ -77,4 +76,4 @@ function changeUserLock(req, res) {
                 res.send(500, process.env.NODE_ENV === 'production' ? '' : err.stack);
             }
         );
-}
+};

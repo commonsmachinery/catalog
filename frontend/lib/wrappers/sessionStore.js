@@ -5,8 +5,6 @@ var sessionStore = require('sessionstore');
 var Promise = require('bluebird');
 var url = require('url');
 
-var promiseFilter;
-
 module.exports = function() {
     function promise (resolve, reject) {
         var u = url.parse(process.env.CATALOG_MONGODB_URL);
