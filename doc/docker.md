@@ -41,6 +41,7 @@ We also have some infrastructure images:
     sudo docker build -t commonsmachinery/rabbitmq docker/rabbitmq
     sudo docker build -t commonsmachinery/mongodb docker/mongodb
     sudo docker build -t commonsmachinery/redis docker/redis
+    sudo docker build -t commonsmachinery/postgres docker/postgres
 
 
 Data image and container
@@ -72,7 +73,6 @@ It can be backed up like this:
 
 Multiple data containers can be set up to handle different tests.
 Remember to use the other container name in all the commands below.
-
 
 Development usage
 -----------------
@@ -144,6 +144,10 @@ For some reason celery lists the loaded tasks in a way that they only
 appear when the image is shut down, but "celery@xyz ready" should
 indicate that it is running ok.
 
+PostgreSQL (or SQLite) storage should be initialized manually by running backend/init_db.sh.
+To run it in docker use the command:
+
+    sudo docker run -ti --rm -v "$PWD:/backend:rw" --volumes-from=DATA --env="init_db_mode=docker" --link=cat-postgres:postgres --entrypoint="/backend/init_db.sh" local/backend-dev
 
 Production usage
 ----------------
