@@ -63,9 +63,12 @@ describe('Post', function(){
     describe('#put', function(){
         var debug = dbgfn('test:workPosts:put');
         it('should return the updated post', function(done){
+            this.timeout(4000);
             debug('updating post: %s', postData.url + '/' + postData.id);
             postData.resource = 'http://deviantart.com';
-            post.put(postData, user);
+            setTimeout(function(){
+                post.put(postData, user);
+            }, 1000);
             done();
         });
         it('should return 404 when updating unexistent post', function(done){

@@ -21,14 +21,16 @@ exports.get = function get(path, filter, user, uid){
         var work;
         for(var i=0; i<len; i++){
             work = works[i];
-            if(work.visibility == 'private'){
+            if(work.visibility === 'private'){
                 expect(work.creator).to.be(uid);
             }
             if(filter){
                 for(var j in filter){
-                    expect(work[j]).to.be(filter[j])
+					if (filter.hasOwnProperty(j)) {
+						expect(work[j]).to.be(filter[j]);
+					}
                 }
             }
         }
     });
-}
+};

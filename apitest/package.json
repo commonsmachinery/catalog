@@ -3,18 +3,19 @@
   "version": "0.0.1",
   "homepage": "https://github.com/commonsmachinery/catalog",
   "author": "Commons Machinery <dev@commonsmachinery.se>",
-  "description": "Web/REST frontend to the catalog.",
+  "description": "Web/REST frontend to the catalog (test scripts).",
   "repository": {
     "type": "git",
     "url": "https://github.com/commonsmachinery/catalog.git"
   },
-  "bin": "server.js",
-  "main": "./server",
   "dependencies": {
     "debug": "0.7.x",
     "expect.js": "0.3.x",
     "mocha": "1.x.x",
     "supertest": "0.x.x"
+  },
+  "devDependencies": {
+    "jshint": "*"
   },
   "license": "AGPLv3"
 }

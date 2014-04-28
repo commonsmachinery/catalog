@@ -49,12 +49,21 @@ fi
 
 
 echo
-echo "*** Installing/updating Node dependencies"
+echo "*** Installing/updating frontend Node dependencies"
 echo
 
 (
     cd frontend
     npm install
     ./volo_add.sh
+)
+
+echo
+echo "*** Installing/updating apitest Node dependencies"
+echo
+
+(
+    cd apitest
+    npm install
 )
 

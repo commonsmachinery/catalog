@@ -9,7 +9,7 @@ var exports = module.exports;
 
 
 exports.get = function get(data, user){
-    return request.get(data.url + '/' + data.id + '/metadata')
+    return request.get(data.resource + '/metadata')
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
@@ -17,4 +17,4 @@ exports.get = function get(data, user){
         var metadata = res.body;
         expect(metadata).to.be.an('object');
     });
-}
+};

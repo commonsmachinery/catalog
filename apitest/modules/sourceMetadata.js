@@ -9,12 +9,12 @@ var exports = module.exports;
 
 
 exports.get = function get(data, user){
-    return request.get(data.url + '/' + data.id + '/cachedExternalMetadata')
+    return request.get(data.url + '/' + data.id + '/metadata')
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(200);
-        var cem = res.body;
-        expect(cem).to.be.an('object');
+        var metadata = res.body;
+        expect(metadata).to.be.an('object');
     });
-}
+};

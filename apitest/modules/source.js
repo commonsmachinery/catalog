@@ -7,65 +7,62 @@ var util = require('./util');
 
 var exports = module.exports;
 
-
 exports.post = function post(data, user){
-    return request.post(data.resource)
+    return request.post(data.url)
+    .send(data)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
-    .send(data)
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
-        var pattern = new RegExp('\\/works\\/\\d+');
+        var pattern = new RegExp('\\/sources\\/(\\d+)');
         expect(redirectURL).to.match(pattern);
-        data.resource = redirectURL;
+        data.id = redirectURL.match(pattern)[1];
     });
-}
+};
 
 exports.get = function get(data, user){
-    return request.get(data.resource)
+    return request.get(data.url + '/' + data.id)
     .set('Accept', 'application/json')
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(200);
-        var work = res.body;
-        expect(work.resource).to.be(data.resource);
-        data.updated = work.updated;
-        data.creator = res.body.creator;
-        expect(new Date(work.created)).to.not.be('Invalid Date');
+        var source = res.body;
+        expect(source.resource).to.be(data.resource);
+        expect(new Date(source.added)).to.not.be('Invalid Date');
+        data.updated = source.updated;
+        data.addedBy = res.body.addedBy;
     });
-}
+};
 
 exports.put = function put(data, user){
-    return request.put(data.resource)
+    return request.put(data.url + '/' + data.id)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
     .send(data)
     .expect(function(res){
         expect(res.status).to.be(200);
-        var work = res.body;
-        var created = new Date(work.created);
-        var updated = new Date(work.updated);
-        var pattern = new RegExp('\\/users\\/' + data.creator);
-        expect(work.resource).to.be(data.resource);
-        expect(created).to.not.be('Invalid Date');
+        var source = res.body;
+        var added = new Date(source.added);
+        var updated = new Date(source.updated);
+        data.updated = source.updated;
+        expect(source.resource).to.be(data.resource);
+        expect(added).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
-        expect(updated).to.be.greaterThan(created);
-        expect(work.updatedBy).to.match(pattern);
-        expect(work.visibility).to.be(data.visibility);
-        expect(work.state).to.be(data.state);
-        data.updated = updated;
+        expect(updated).to.be.greaterThan(added);
+        expect(source.updatedBy).to.be(data.addedBy);
+        expect(source.resource).to.be(data.resource);
     });
-}
+};
 
 exports.remove = function remove(data, user){
-    return request.delete(data.resource)
+    return request.delete(data.url + '/' + data.id)
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(204);
         exports.get(data).end(function(err, res){
             /* ToDo: check specific error code */
-            expect(err).to.not.be(null);
+            expect(err.toString()).to.contain('expected 404');
         });
     });
-}
+};

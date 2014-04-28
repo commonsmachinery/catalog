@@ -9,17 +9,17 @@ var exports = module.exports;
 
 exports.post = function post(data, user){
     return request.post(data.url)
-    .send(data)
     .set('Content-type', 'application/json')
     .set('Authorization', util.auth(user))
+    .send(data)
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
-        var pattern = new RegExp('\\/sources\\/(\\d+)');
+        var pattern = new RegExp('\\/works\\/\\d+\\/posts\\/(\\d+)');
         expect(redirectURL).to.match(pattern);
         data.id = redirectURL.match(pattern)[1];
     });
-}
+};
 
 exports.get = function get(data, user){
     return request.get(data.url + '/' + data.id)
@@ -27,13 +27,13 @@ exports.get = function get(data, user){
     .set('Authorization', util.auth(user))
     .expect(function(res){
         expect(res.status).to.be(200);
-        var source = res.body;
-        expect(source.resource).to.be(data.resource);
-        expect(new Date(source.added)).to.not.be('Invalid Date');
-        data.updated = source.updated;
-        data.addedBy = res.body.addedBy;
+        var post = res.body;
+        expect(post.id).to.eql(data.id);
+        expect(new Date(post.posted)).to.not.be('Invalid Date');
+        data.updated = post.updated;
+        data.postedBy = post.postedBy;
     });
-}
+};
 
 exports.put = function put(data, user){
     return request.put(data.url + '/' + data.id)
@@ -42,18 +42,18 @@ exports.put = function put(data, user){
     .send(data)
     .expect(function(res){
         expect(res.status).to.be(200);
-        var source = res.body;
-        var added = new Date(source.added);
-        var updated = new Date(source.updated);
-        data.updated = source.updated;
-        expect(source.resource).to.be(data.resource);
-        expect(added).to.not.be('Invalid Date');
+        var post = res.body;
+        var created = new Date(post.created);
+        var updated = new Date(post.updated);
+        expect(post.resource).to.be(data.resource);
+        expect(created).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
-        expect(updated).to.be.greaterThan(added);
-        expect(updatedBy).to.be(data.addedBy);
-        expect(source.resource).to.be(data.resource);
+        expect(updated).to.be.greaterThan(created);
+        expect(post.updatedBy).to.be(user);
+        expect(post.resource).to.be(data.resource);
+        data.updated = post.updated;
     });
-}
+};
 
 exports.remove = function remove(data, user){
     return request.delete(data.url + '/' + data.id)
@@ -61,8 +61,7 @@ exports.remove = function remove(data, user){
     .expect(function(res){
         expect(res.status).to.be(204);
         exports.get(data).end(function(err, res){
-            /* ToDo: check specific error code */
-            expect(err.toString()).to.contain('expected 404');
+            expect(err.toString()).to.contain(404);
         });
     });
-}
+};

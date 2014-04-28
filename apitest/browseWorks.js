@@ -72,7 +72,7 @@ describe('Works', function(){
     /* Since creator is not the same as uid, we need to get the user assigned by the server to compare */
     it('should get user id', function(done){
         work.get(data[0], user).end(done);
-    })
+    });
 
     it('should get all owned and public works', function(done){
         works.get(baseURL, '', user, data[0].creator).end(done);
