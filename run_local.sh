@@ -17,7 +17,7 @@ function stop_components()
 
 function start_components()
 {
-    celery -A catalog.tasks worker --loglevel=info --autoreload &
+    celery worker -A catalog --loglevel=info --workdir=./data &
     PID_CELERY="$!"
 
     redis-server redis_local.conf &
