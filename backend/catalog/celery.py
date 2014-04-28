@@ -143,8 +143,8 @@ class RedisLock(object):
             self._locked = False
 
 
-thread_local.main_store = MainStore("works", config)
-thread_local.public_store = PublicStore("public", config)
+thread_local.main_store = MainStore("works")
+thread_local.public_store = PublicStore("public")
 thread_local.lock_db = redis.Redis(config.CATALOG_REDIS_URL)
 if config.CATALOG_EVENT_LOG_TYPE == 'sqlite':
     thread_local.log = SqliteLog(config.CATALOG_DATA_DIR)

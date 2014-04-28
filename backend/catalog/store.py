@@ -314,7 +314,7 @@ class MainStore(object):
 
         return storage_type, options
 
-    def __init__(self, name, config):
+    def __init__(self, name):
         storage_type, options = self.get_store_options(name)
 
         # workaround: sqlite doesn't support 'dir' so prepend directory to the name
