@@ -32,7 +32,7 @@ describe('Complete work metadata', function(){
         source.post(sourceData, user).end(done);
     });
 
-    it('should get source metadata', function(done){
+    it('should get work and source metadata', function(done){
         var debug = dbgfn('test:getting-metadata');
         metadata.get(workData, user).end(function(err, res){
             expect(err).to.be(null);

@@ -31,10 +31,7 @@
   "devDependencies": {
     "jslint": "0.3.x",
     "nodemon": "1.x.x",
-    "volo": "0.3.x",
-    "expect.js": "0.3.x",
-    "mocha": "1.x.x",
-    "supertest": "0.x.x"
+    "volo": "0.3.x"
   },
   "license": "AGPLv3",
   "amd": {},

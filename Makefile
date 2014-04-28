@@ -20,6 +20,6 @@ lint:
 	$(JSLINT) --node -- $(lint-dirs:%=%/*.js)
 
 test:
-	NODE_PATH=./frontend/node_modules DEBUG=test:* NODE_ENV=test $(MOCHA) --reporter spec $(TEST)
+	DEBUG=test:* NODE_ENV=test $(MOCHA) --reporter spec $(TEST)
 
 .PHONY: test
