@@ -46,7 +46,7 @@ describe('Source', function(){
         it('should return 404 when getting unexistent source', function(done){
             var failData = util.clone(sourceData);
             failData.url += 'fail';
-            debug('getting source: %s', failData.url '/' + failData.id);
+            debug('getting source: %s', failData.url + '/' + failData.id);
             source.get(failData, user).end(function(err, res){
                 expect(err.toString()).to.contain('expected 404');
                 done();
@@ -65,12 +65,13 @@ describe('Source', function(){
         var debug = dbgfn('test:workSource:put');
         it('should return the updated source', function(done){
             debug('updating source: %s', sourceData.id);
+            sourceData.resource += '/example.jpg';
             source.put(sourceData, user).end(done);
         });
         it('should return 404 when updating unexistent source', function(done){
             var failData = util.clone(sourceData);
             failData.url += 'fail';
-            debug('updating source: %s', failData.url + '/' + faildata.id);
+            debug('updating source: %s', failData.url + '/' + failData.id);
             source.put(failData, user).end(function(err, res){
                 expect(err.toString()).to.contain('expected 404');
                 done();

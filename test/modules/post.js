@@ -42,15 +42,16 @@ exports.put = function put(data, user){
     .send(data)
     .expect(function(res){
         expect(res.status).to.be(200);
-        var source = res.body;
-        var created = new Date(source.created);
-        var updated = new Date(source.updated);
-        data.updated = source.updated;
-        expect(source.resource).to.be(data.resource);
+        var post = res.body;
+        var created = new Date(post.created);
+        var updated = new Date(post.updated);
+        expect(post.resource).to.be(data.resource);
         expect(created).to.not.be('Invalid Date');
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(created);
         expect(updatedBy).to.be(user);
+        expect(post.resource).to.be(data.resource);
+        data.updated = post.updated;
     });
 }
 

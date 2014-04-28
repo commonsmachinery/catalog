@@ -52,6 +52,8 @@ exports.put = function put(data, user){
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(created);
         expect(work.updatedBy).to.match(pattern);
+        expect(work.visibility).to.be(data.visibility);
+        expect(work.state).to.be(data.state);
         data.updated = updated;
     });
 }

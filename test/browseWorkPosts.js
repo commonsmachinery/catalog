@@ -1,7 +1,5 @@
 'use strict';
 
-/* Test rest work browsing features */
-
 var dbgfn = require('debug');
 var config = require('../frontend/config.json').test;
 var expect = require('expect.js');

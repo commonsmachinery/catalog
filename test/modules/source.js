@@ -15,7 +15,7 @@ exports.post = function post(data, user){
     .expect(function(res){
         expect(res.status).to.be(302);
         var redirectURL = res.header.location;
-        var pattern = new RegExp('\\/sources\\/\\d+');
+        var pattern = new RegExp('\\/sources\\/(\\d+)');
         expect(redirectURL).to.match(pattern);
         data.id = redirectURL.match(pattern)[1];
     });
@@ -51,6 +51,7 @@ exports.put = function put(data, user){
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(added);
         expect(updatedBy).to.be(data.addedBy);
+        expect(source.resource).to.be(data.resource);
     });
 }
 
