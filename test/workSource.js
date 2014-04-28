@@ -64,9 +64,12 @@ describe('Source', function(){
     describe('#put', function(){
         var debug = dbgfn('test:workSource:put');
         it('should return the updated source', function(done){
+            this.timeout(4000);
             debug('updating source: %s', sourceData.id);
             sourceData.resource += '/example.jpg';
-            source.put(sourceData, user).end(done);
+            setTimeout(function(){
+                source.put(sourceData, user).end(done);
+            }, 1000);
         });
         it('should return 404 when updating unexistent source', function(done){
             var failData = util.clone(sourceData);
