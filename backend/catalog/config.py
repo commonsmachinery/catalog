@@ -8,16 +8,12 @@
 #
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir.
 
-import os, ast
+import os
+import sys
 
 DEFAULT_FILENAME = 'catalog.conf'
 _config_filename = os.getenv('CATALOG_BACKEND_CONFIG_FILE', DEFAULT_FILENAME)
 
-def parse_option_value(value):
-    try:
-        return ast.literal_eval(value)
-    except (SyntaxError, ValueError) as e:
-        return str(value)
 
 class Options:
     pass
@@ -44,7 +40,7 @@ class Defaults(object):
         # Name of event log DB (when using MongoDB)
         'EVENT_LOG_DB': 'events',
 
-        # backend store type: postgres, memory or sqlite
+        # backend store type: postgresql, memory or sqlite
         'BACKEND_STORE_TYPE': 'sqlite',
 
         # postgres store options
@@ -55,25 +51,30 @@ class Defaults(object):
         'BACKEND_STORE_DB_PASSWORD': 'docker',
     }
 
+
 def _load_config():
     file_config = {}
     try:
-        config_file = open(_config_filename)
-        for s in config_file.readlines():
-            s = s.strip()
-            if s == '' or s.startswith("#"):
-                continue
+        # Loading config as a python file is convenient, but possibly
+        # unsafe.  However, the user running this is also likely to
+        # have control of the config file contents, or be fine with
+        # whatever the root has provided for them.
 
-            if s.find("=") < 1 or s.find("=") == len(s) - 1:
-                raise RuntimeError("Invalid name string: {0}".format(s))
+        execfile(_config_filename, file_config)
+        sys.stderr.write('using configuration from {0}\n'.format(_config_filename))
 
-            name, value = map(lambda w: w.strip(), s.split("=", 1))
-            file_config[name] = parse_option_value(value)
+    except SyntaxError, e:
+        sys.exit('error reading config file {0}: {1}'
+                 .format(_config_filename, e))
     except IOError:
-        pass
+        if _config_filename == DEFAULT_FILENAME:
+            sys.stderr.write('no configuration file, using env and defaults\n')
+        else:
+            # if the user points out a file and we can't read it,
+            # that's very bad and we can't progess safely.
+            sys.exit('config file {0} (indicated by $CATALOG_BACKEND_CONFIG_FILE) cannot be read: {1}'.format(_config_filename, error))
 
     for section in [s for s in Defaults.__dict__.keys() if not s.startswith('__')]:
-        #setattr(config, section.lower(), Config())
         for name, default_value in getattr(Defaults, section).items():
             name = section + "_" + name
 
