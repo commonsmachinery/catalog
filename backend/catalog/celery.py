@@ -18,25 +18,25 @@ from catalog.store import MainStore, PublicStore
 
 import redis
 import os, time
+import sys
 import errno
 import threading
 
-import logging.config
+# Ensure there is some basic logging handlers at startup.  Celery will
+# overwrite this later, though.
+import logging
+logging.basicConfig(
+    level=logging.DEBUG,
+    stream=sys.__stderr__)
+
+# Grab the config from files and env
 from catalog.config import config
 
-import logging
-_log = logging.getLogger("catalog")
+from catalog import get_task_logger
+_log = get_task_logger(__name__)
 
 thread_local = threading.local()
 
-LOG_SETTINGS_FILENAME = "logging.ini"
-
-if os.path.exists(LOG_SETTINGS_FILENAME):
-    logging.config.fileConfig(LOG_SETTINGS_FILENAME)
-else:
-    _log.setLevel(logging.DEBUG)
-    _log.addHandler(logging.StreamHandler())
-    _log.warning('no %s, using default logging configuration', LOG_SETTINGS_FILENAME)
 
 app = Celery('catalog', include=['catalog.tasks'], broker=config.CATALOG_BROKER_URL)
 

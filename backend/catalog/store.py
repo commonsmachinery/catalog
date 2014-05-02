@@ -15,8 +15,8 @@ import os
 from urlparse import urlsplit, urlunsplit
 from catalog.config import config
 
-import logging
-_log = logging.getLogger("catalog")
+from catalog import get_task_logger
+_log = get_task_logger(__name__)
 
 class CatalogError(Exception): pass
 
