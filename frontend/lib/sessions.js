@@ -297,6 +297,8 @@ setLocals = function setLocals(req, res, next) {
             user: req.session.uid,
             loginEmail: req.session.email,
             loginType: req.session.loginType,
+            url: req.url
+
         });
     }
     next();

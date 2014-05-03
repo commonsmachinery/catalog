@@ -1,3 +1,212 @@
+/*
+*  Catalog web/style
+*  Copyright 2014 Commons Machinery http://commonsmachinery.se/
+*  Authors:
+*      Elsa Balderrama <elsa@commonsmachinery.se>
+*  Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+*/
 
-.bootstrapData
-	display none
+
+@require 'unsemantic-custom'
+@require 'theme'
+
+
+/* ==== Set colors ==== */
+
+if light(link-color)
+    link-ha-color = tint(link-color, contrast)
+    link-v-color = shade(link-color, detail)
+    link-v-color = link-v-color + gamut
+else
+    link-ha-color = shade(link-color, contrast)
+    link-v-color = tint(link-color, detail)
+    link-v-color = link-v-color + gamut
+
+if !nav-color
+    if nav-tone == 'dark'
+        nav-color = shade(background, contrast)
+    else
+        nav-color = tint(background, contrast)
+
+if nav-tone == 'dark'
+    nav-button-color = shade(nav-color, detail)
+else
+    nav-button-color = tint(nav-color, detail)
+
+if !secondary-font-color
+    secondary-font-color = content-color + gamut/2
+if !nav-hover
+    nav-hover = nav-button-color + gamut/5
+if lightness(nav-hover) >= lightness(nav-color)
+    nav-click = tint(nav-hover, contrast * 0.5)
+    s-link-ha-color = shade(secondary-font-color, contrast * 1.5%)
+else
+    nav-click = tint(nav-hover, contrast * 0.5)
+    s-link-ha-color = tint(secondary-font-color, contrast * 1.5%)
+
+
+/* ==== Style ==== */
+
+a
+    color link-color
+    font-size font-scale
+    text-decoration none
+    &:hover, &:focus
+        color link-ha-color
+        
+    &:visited
+        color link-v-color
+
+body
+    background background
+    font main-font
+    font-size font-scale
+    margin 0
+    padding 0
+
+div, nav, header, img
+    -moz-box-sizing border-box
+    -webkit-box-sizing border-box
+    display inline-block
+    max-height 100%
+    max-width 100%
+    margin 0
+    padding 0
+    position relative
+    
+header
+    background header-color
+    height header-height
+    margin-bottom 1em
+    text-align center
+    width 100%
+    > #logo
+        background logo center/contain no-repeat
+        height 100%
+        a
+            display block
+            height 80%
+            margin 0 auto
+            margin-top 5%
+            width 70%
+    ul, li
+        display inline-block
+    nav
+        background-color nav-color
+        border-radius 0  0 (round-factor * 0.3em) (round-factor * 0.3em)
+        height nav-height
+        margin 0 1em
+        text-align left
+        vertical-align top
+        width 100%
+        a, a:link, a:visited
+            color secondary-font-color
+            transition all 0.2s
+        a:hover, a:focus, a:active
+            color s-link-ha-color
+        > ul#pages
+            border-radius 0  0  0 (round-factor * 0.3em)
+            height nav-height
+            margin 0
+            overflow hidden
+            padding 0
+            > li
+                background-color nav-button-color
+                border-right solid 1px nav-color || background
+                height 100%
+                line-height nav-height
+                padding 0 0.5em
+                transition all 0.2s
+                &:hover 
+                    background-color nav-hover
+                &:active
+                    background-color nav-click
+                > a
+                    display inline-block
+                    height 1.5em
+                    line-height 1.5em
+                    vertical-align middle
+        > ul#user 
+            clear none
+            float right
+            height nav-height
+            margin 0.2em 1em
+            text-align right
+            > li
+                font main-font
+                font-size 80%
+                line-height nav-height
+                vertical-align top
+                &.persona:before
+                    background url('/media/persona-glyph.png') 0 0 / contain no-repeat
+                    content ""
+                    float left
+                    height nav-height
+                    margin-right 0.5em
+                    position relative
+                    width nav-height
+            > li:not(:last-child):after
+                content " | "
+
+
+footer
+    display inline-block
+    margin 1.5em 0 0 0
+    padding 0.5em
+    text-align center
+    width 100%
+
+.entries
+    padding 0.5em
+    h2
+        display inline-block
+        margin 0
+    .info
+        display block
+        font-size 0.7em
+    .seeMeta
+        font-size 0.9em
+        margin 0.5em
+
+.work
+    padding 1em
+    h2
+        display inline-block
+        font-size 2em
+        margin 0.5em
+    .info
+        display block
+        font-size 0.9em
+    .seeMeta
+        font-size 1em
+        margin 1em
+
+#bootstrapData
+    display none
+
+#breadCrumbs
+    margin 1em
+    width 90%
+    ul, li
+        display inline-block   
+    > ul
+        width 100%
+        > li:before
+                content " > "
+
+#content
+    display block
+    float none
+    margin auto
+    text-align left
+
+#wrapper
+    display block
+    width 90%
+
+@media screen and (max-width: 55em)
+    #wrapper
+        width 100%
+    header
+        nav
+            margin 0

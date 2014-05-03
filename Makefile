@@ -8,7 +8,10 @@ lint-apitest:
 lint-frontend:
 	$(MAKE) -C frontend lint
 
-.PHONY: lint lint-apitest lint-frontend
+style:
+	$(MAKE) -C frontend style
+
+.PHONY: lint lint-apitest lint-frontend style
 
 
 # Run all unit tests

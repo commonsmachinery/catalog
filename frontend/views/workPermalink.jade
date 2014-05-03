@@ -13,23 +13,28 @@
 
 mixin workView(data)
 	- data = data || {}
+	- var creator = data.creator.match(/users\/([^\/]+)/)[1]
 	div.work
-		h2: a(href="#{data.resource || ''}") #{data.id || ''}
+		h2: a(href="#{data.resource}") #{data.id}
 		span(name="visibility")
 		span(name="state")
-		| by 
-		span(name="creator") #{data.creator || ''} 
-		| on 
-		span(name="created") #{data.created || ''}
-		br
-		| last updated by 
-		span(name="updatedBy") #{data.updatedBy || ' --- '} 
-		| on 
-		span(name="updated") #{data.updated || ' --- '}
 		a(href="#{data.metadata || ''}" name="metadata") (see metadata...)
+		span.info
+			| by 
+			a(href="#{data.creator}") #{creator} 
+			| on 
+			span(name="created") #{data.created}
+			br
+			| last updated by 
+			if data.updated
+				- var updatedBy = data.updatedBy.match(/users\/([^\/]+)/)[1]
+				a(href="#{data.updatedBy}") #{updatedBy} 
+				| on 
+				span(name="updated") #{data.updated}
 		| Posted on: 
 		for post in (data.posts || {})
 			a(href="#{post}") #{post}
+		br
 		| Sources: 
 		for source in (data.sources || {})
 			a(href="#{source}") #{source}
