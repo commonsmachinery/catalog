@@ -10,7 +10,7 @@
 
 'use strict';
 
-process.env['MUTE_PARSE_ENV'] = 1;
+process.env.MUTE_PARSE_ENV = 1;
 var parseEnv = require('parse-env');
 
 var tpl = require('../config.template.js');
@@ -18,8 +18,8 @@ var tpl = require('../config.template.js');
 var conf;
 
 try {
-    default_filename = '../config/development.js';
-    config_filename = process.env.CATALOG_FRONTEND_CONFIG_FILE || default_filename;
+    var default_filename = '../config/development.js';
+    var config_filename = process.env.CATALOG_FRONTEND_CONFIG_FILE || default_filename;
     conf = require(config_filename);
 }
 catch(e) {}

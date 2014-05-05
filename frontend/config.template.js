@@ -14,4 +14,4 @@ module.exports = {
         usersDB: 'users-dev',
         usersAutoIndex: true
     }
-}
+};

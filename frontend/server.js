@@ -12,7 +12,7 @@
 
 'use strict';
 
-var debug = require('debug')('frontend:server');
+var debug = require('debug')('frontend:server'); // jshint ignore:line
 
 var cons = require('consolidate');
 var express = require('express');
