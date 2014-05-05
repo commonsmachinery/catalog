@@ -1,11 +1,11 @@
 'use strict';
 
 var dbgfn = require('debug');
-var config = require('../frontend/config.json').test;
+var config = require('../frontend/lib/config.js');
 var expect = require('expect.js');
 var util = require('./modules/util');
 
-var worksURL = config.base_url + '/works';
+var worksURL = config.catalog.baseURL + '/works';
 var work = require('./modules/work');
 var source = require('./modules/source');
 
@@ -133,4 +133,4 @@ describe('Source', function(){
     });
 
 });
-    
+

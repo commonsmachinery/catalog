@@ -1,18 +1,13 @@
 'use strict';
 
 var dbgfn = require('debug');
-var config = require('../frontend/config.json').test;
+var config = require('../frontend/lib/config.js');
 var expect = require('expect.js');
 var util = require('./modules/util');
 
-var worksURL = config.base_url + '/works';
-var work = require('./modules/work');
 var request = require('supertest')('');
-var expect = require('expect.js');
-var querystring = require('querystring');
-var config = require('../frontend/config.json').test;
 
-var baseURL = config.base_url + '/sparql';
+var baseURL = config.catalog.baseURL + '/sparql';
 var user = 'user';
 var otherUser = 'otherUser';
 
@@ -29,4 +24,4 @@ describe('SPARQL', function(){
         }).end(done);
     });
 });
-    
+
