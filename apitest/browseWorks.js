@@ -3,11 +3,11 @@
 /* Test rest work browsing features */
 
 var dbgfn = require('debug');
-var config = require('../frontend/config.json').test;
+var config = require('../frontend/lib/config.js');
 var expect = require('expect.js');
 var util = require('./modules/util');
 
-var baseURL = config.base_url + '/works';
+var baseURL = config.catalog.baseURL + '/works';
 var work = require('./modules/work');
 var works = require('./modules/works');
 
@@ -86,4 +86,4 @@ describe('Works', function(){
     });
 
 });
-    
+

@@ -44,7 +44,3 @@ else
     tar --strip-components=2 --directory=$BACKEND_DIR/bin -xzvf $MONGODB_BDIST_TGZ $MONGODB_BDIST_DIR/bin/mongod
     cd "$BASE_DIR"
 fi
-
-echo "Initializing local database..."
-./init_sqlite.sh
-

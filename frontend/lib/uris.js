@@ -9,10 +9,10 @@
 */
 
 'use strict';
-
+var config = require('./config');
 
 function buildURI() {
-    return process.env.CATALOG_BASE_URL + '/' + Array.prototype.join.call(arguments, '/');
+    return config.catalog.baseURL + '/' + Array.prototype.join.call(arguments, '/');
 }
 exports.buildURI = buildURI;
 

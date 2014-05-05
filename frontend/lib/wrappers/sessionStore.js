@@ -4,10 +4,11 @@ var debug = require('debug')('frontend:sessionStore');
 var sessionStore = require('sessionstore');
 var Promise = require('bluebird');
 var url = require('url');
+var config = require('../config');
 
 module.exports = function() {
     function promise (resolve, reject) {
-        var u = url.parse(process.env.CATALOG_MONGODB_URL);
+        var u = url.parse(config.catalog.mongodbURL);
         var username, password, f;
 
         if (u.auth) {
@@ -18,7 +19,7 @@ module.exports = function() {
 
         sessionStore.createSessionStore({
             type: 'mongodb',
-            dbName: process.env.CATALOG_USERS_DB,
+            dbName: config.catalog.usersDB,
             host: u.hostname || 'localhost',
             port: u.port || 27017,
             username: username,

@@ -14,7 +14,6 @@ RUN rm -rf /tmp/backend
 
 # Files for running
 ADD docker_run.sh /backend/docker_run.sh
-ADD settings.py /backend/settings.py
 ADD logging.ini /backend/logging.ini
 
 ENTRYPOINT ["/backend/docker_run.sh"]

@@ -8,13 +8,14 @@
 #
 # Distributed under an AGPLv3 license, please see LICENSE in the top dir
 
+import os
+
+os.environ['CATALOG_BACKEND_STORE_TYPE'] = 'memory'
+
 import RDF
-import pytest, os
+import pytest
 import catalog.store
 from catalog.store import MainStore, PublicStore
-
-class TestConfig:
-    BACKEND_STORE_TYPE = 'memory'
 
 def serialize_model(store):
     output = store._model.to_string(name='ntriples').split('\n')
@@ -23,11 +24,11 @@ def serialize_model(store):
 
 @pytest.fixture
 def store():
-    return MainStore('memory', TestConfig)
+    return MainStore('main')
 
 @pytest.fixture
 def public_store():
-    return PublicStore('memory', TestConfig)
+    return PublicStore('public')
 
 work1_uri = 'http://src/works/1'
 work1_data = {
@@ -416,3 +417,5 @@ def test_modify_permissions(store):
     work = store.create_work(timestamp=0, user_uri='http://src/users/test', work_uri=work1_uri, work_data=work1_data)
     with pytest.raises(catalog.store.EntryAccessError):
         store.update_work(timestamp=2, user_uri='http://src/users/test2', work_uri=work1_uri, work_data=work_update_data)
+
+test_create_work_data(store())

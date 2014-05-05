@@ -5,11 +5,11 @@
 /* Test rest calls for an individual work and other failed cases */
 
 var dbgfn = require('debug');
-var config = require('../frontend/config.json').test;
+var config = require('../frontend/lib/config.js');
 var expect = require('expect.js');
 var util = require('./modules/util');
 
-var baseURL = config.base_url + '/works';
+var baseURL = config.catalog.baseURL + '/works';
 var work = require('./modules/work');
 
 /* data we are going to use along the tests */
