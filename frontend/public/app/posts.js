@@ -1,11 +1,17 @@
-/*global define, window, $*/
+/* Catalog web application - browsing list of works
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
-define(function(require){
-	'use strict'; 
+define(['jquery', 'views/postView', 'views/collectionView',
+		'models/postModel', 'collections/postCollection'],
+	   function($, PostView, CollectionView, Post, PostCollection)
+{
+	'use strict';
 
-	var PostView, collection;
+	var collection;
 	function promptForm (ev) {
-		var Post = require('models/postModel');
 		var model = new Post();
 		var $dialog = $($('#formTemplate').html())
 			.attr('id','formDialog');
@@ -21,29 +27,23 @@ define(function(require){
 		return;
 	}
 
-	var $ = require('jquery');
+	return function posts (router) {
+		/* make initial models */
+		var $bootstrapData = $('.bootstrapData');
+		var postData = JSON.parse($bootstrapData.text()).data;
+		$bootstrapData.remove();
 
-	PostView = require('./views/postView');
-	var CollectionView = require('views/collectionView');
-	var PostCollection = require('collections/postCollection');
+		/* bind views */
+		collection = new PostCollection(postData);
+		var collectionView = new CollectionView({
+			el: '#posts',
+			template: '#postTemplate',
+			childTag: '.post',
+			childView: PostView,
+			collection: collection
+		});
+		collectionView.render();
 
-	/* make initial models */
-	var $bootstrapData = $('.bootstrapData');
-	var postData = JSON.parse($bootstrapData.text()).data;
-	$bootstrapData.remove();
-
-	/* bind views */
-	collection = new PostCollection(postData);
-	var collectionView = new CollectionView({
-		el: '#posts',
-		template: '#postTemplate',
-		childTag: '.post',
-		childView: PostView,
-		collection: collection
-	});
-	collectionView.render();
-
-	$('#posts > .add').on('click', promptForm);
-
-	return;
+		$('#posts > .add').on('click', promptForm);
+	};
 });

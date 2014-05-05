@@ -1,17 +1,20 @@
-/*global define*/
+/* Catalog web application - browsing list of works
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
-define(function(require){
+define(['jquery', 'models/workModel', 'views/workView'],
+	   function($, Work, WorkView)
+{
 	'use strict'; 
 
-	var $ = require('jquery');
-	var Work = require('models/workModel');
-	var WorkView = require('views/workView');
-
-	var $bootstrapData = $('.bootstrapData');
-	var workData = JSON.parse($bootstrapData.text());
-	$bootstrapData.remove();
-	var work = new Work(workData);
-	var workView = new WorkView(work, '#work');
-	workView.render();
-	return;
+	return function workPermalink (router) {
+		var $bootstrapData = $('.bootstrapData');
+		var workData = JSON.parse($bootstrapData.text());
+		$bootstrapData.remove();
+		var work = new Work(workData);
+		var workView = new WorkView(work, '#work');
+		workView.render();
+	};
 });

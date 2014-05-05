@@ -1,3 +1,9 @@
+/* Catalog web application - main script
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
+
 /*global requirejs, require*/
 
 requirejs.config({
@@ -17,14 +23,14 @@ requirejs.config({
 	}
 });
 
-require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){	
+require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
     'use strict';
 
     /* add backbone plugins */
 	require(['lib/Backbone.ModelBinder']);
 
 	function _init(){
-		login.init();
+		session.init();
 
 		// TODO: this doesn't handle network timeouts, only various
 		// gateway timeouts.  This all probably should go into a
@@ -62,7 +68,19 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 		});
 	}
 
-	var Router = Backbone.Router.extend({
+	/* To allow navigation that changes a URL without loading a new
+	 * page, we impose the convention on all page main scripts to
+	 * return a function that sets up the new view (since just doing
+	 * require(['foo']) will be a noop the second time it is called in
+	 * a page).
+	 *
+	 * These scripts get the router, so they can listen to route
+	 * events to destroy their views, add new routes or request
+	 * navigation.
+	 */
+
+	var router;
+	var AppRouter = Backbone.Router.extend({
 		routes: {
 			"": 'home',
 			"admin(/)": 'admin',
@@ -74,28 +92,29 @@ require(['jquery', 'lib/backbone', 'login'], function($, Backbone, login){
 			"login(/)": 'login'
 		},
 		admin: function(){
-			require(['admin']);
+			require(['admin'], function(view) { view(router); });
 		},
 		home: function() {
-			require(['home']);
+			require(['home'], function(view) { view(router); });
 		},
 		login: function(){
-			require(['login']);
+			// require(['login'], function(view) { view(router); });
 		},
 		posts: function(id){
-			require(['posts']);
+			require(['posts'], function(view) { view(router); });
 		},
 		sources: function(id){
-			require(['sources']);
+			require(['sources'], function(view) { view(router, id); });
 		},
 		works: function(filters) {
-			require(['browseWorks']);
+			require(['browseWorks'], function(view) { view(router, filters); });
 		},
 		work: function (id) {
-			require(['workPermalink']);
+			require(['workPermalink'], function(view) { view(router, id); });
 		}
 	});
-    var app = new Router(); // jshint ignore:line
+
+    router = new AppRouter();
 	Backbone.history.start({pushState:true});
 
 	if(document.readyState === 'complete'){
