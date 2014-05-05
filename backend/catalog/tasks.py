@@ -63,8 +63,8 @@ from catalog.celery import on_delete_post
 from catalog.log import LogNotAvailable
 from catalog.store import CatalogError, EntryNotFoundError
 
-import logging
-_log = logging.getLogger('catalog')
+from catalog import get_task_logger
+_log = get_task_logger(__name__)
 
 
 def error(e):

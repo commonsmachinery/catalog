@@ -26,6 +26,12 @@ Docker
 
 There are docker images to help run the catalog.  For details, see `doc/docker.html`.
 
+Configuration
+-------------
+
+See `doc/config.md` for documentation. Default settings currently work
+for local/development setups.
+
 Deploying locally
 =================
 
@@ -33,9 +39,11 @@ Run the following command to setup virtualenv under build/backend with all the r
 
     sh ./bootstrap.sh
 
-Local store (sqlite) will be initialized from bootstrap.sh, and can be re-created later by running
+Local store (sqlite) can be initialized by running:
 
-    ./init-sqlite.sh
+    backend/init_db.sh
+
+The script will create an empty SQLite database in ./data.
 
 Running
 -------

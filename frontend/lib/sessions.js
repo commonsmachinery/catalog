@@ -20,6 +20,7 @@ var persona = require('express-persona');
 
 var cluster = require('./cluster');
 var uris = require('./uris');
+var config = require('./config');
 
 /* Module globals */
 var env;
@@ -50,7 +51,7 @@ exports.init = function init(app, sessionstore) {
     /* Session middlewares */
     sessions = sessionstore;
     app.use(express.session({
-        secret: env.CATALOG_SECRET,
+        secret: config.catalog.secret,
         store: sessionstore
     }));
 
@@ -308,7 +309,7 @@ setLocals = function setLocals(req, res, next) {
  * base URL
  */
 personaAudience = function personaAudience() {
-    var u = url.parse(env.CATALOG_BASE_URL);
+    var u = url.parse(config.catalog.baseURL);
     var port = u.port;
     var audience;
 
@@ -331,7 +332,7 @@ personaAudience = function personaAudience() {
 loginScreen = function loginScreen (req, res) {
     res.setHeader('X-UA-Compatible', 'IE=Edge'); //requirement for persona
     var referer = req.headers.referer;
-    var landing = !referer || referer.search(env.CATALOG_BASE_URL) < 0;
+    var landing = !referer || referer.search(config.catalog.baseURL) < 0;
 
     if (!req.session.uid){
         res.render('login',{

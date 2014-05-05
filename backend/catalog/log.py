@@ -14,8 +14,8 @@ import sqlite3
 import pymongo
 from pymongo import MongoClient
 
-import logging
-_log = logging.getLogger("catalog")
+from catalog import get_task_logger
+_log = get_task_logger(__name__)
 
 class LogNotAvailable(Exception): pass
 

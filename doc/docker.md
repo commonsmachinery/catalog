@@ -41,6 +41,7 @@ We also have some infrastructure images:
     sudo docker build -t commonsmachinery/rabbitmq docker/rabbitmq
     sudo docker build -t commonsmachinery/mongodb docker/mongodb
     sudo docker build -t commonsmachinery/redis docker/redis
+    sudo docker build -t commonsmachinery/postgres docker/postgres
 
 
 Data image and container
@@ -73,7 +74,6 @@ It can be backed up like this:
 Multiple data containers can be set up to handle different tests.
 Remember to use the other container name in all the commands below.
 
-
 Development usage
 -----------------
 
@@ -82,6 +82,7 @@ Start the infrastructure containers:
     sudo docker run --name=cat-mongodb -d -p 127.0.0.1:27017:27017 -p 127.0.0.1:28017:28017 --volumes-from=DATA commonsmachinery/mongodb
     sudo docker run --name=cat-redis -d -p 127.0.0.1:6379:6379 --volumes-from=DATA commonsmachinery/redis
     sudo docker run --name=cat-rabbitmq -d -p 127.0.0.1:5672:5672 -p 127.0.0.1:15672:15672 --volumes-from=DATA commonsmachinery/rabbitmq
+    sudo docker run --name=cat-postgres -d -p 127.0.0.1:5432:5432 --volumes-from=DATA commonsmachinery/postgres
 
 In development you might want to run the frontend and backend in the
 host environment, so `-p` here forwards the container ports.  The
@@ -143,6 +144,10 @@ For some reason celery lists the loaded tasks in a way that they only
 appear when the image is shut down, but "celery@xyz ready" should
 indicate that it is running ok.
 
+PostgreSQL (or SQLite) storage should be initialized manually by running backend/init_db.sh.
+To run it in docker use the command:
+
+    sudo docker run -ti --rm -v "$PWD:/backend:rw" --volumes-from=DATA --env="init_db_mode=docker" --link=cat-postgres:postgres --entrypoint="/backend/init_db.sh" local/backend-dev
 
 Production usage
 ----------------

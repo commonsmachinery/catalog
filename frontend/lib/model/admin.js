@@ -12,6 +12,7 @@
 
 var crypto = require('crypto');
 var db = require('../wrappers/mongo');
+var config = require('../config');
 
 var schema = new db.Schema(
     {
@@ -42,7 +43,7 @@ var schema = new db.Schema(
 
     // Options
     {
-        autoIndex: process.env.CATALOG_USERS_AUTOINDEX
+        autoIndex: config.catalog.usersAutoIndex
     }
 );
 
