@@ -70,6 +70,12 @@ To run the frontend manually:
 Using
 =====
 
+Note: to make the css styles, if you haven't run ```make```, then you need to run
+```
+cd frontend
+make style
+```
+
 User accounts
 -------------
 
