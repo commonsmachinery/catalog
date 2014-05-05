@@ -20,14 +20,18 @@ ifeq ($(EMACS),t)
 REPORTER=--reporter=../.jshint-emacs.js
 endif
 
+all: lint
+
+test:
+# this would've run unit tests for the api tests, if there had been any.
+# To run the apitests do "make run"
+
+clean:
 
 run:
-	NODE_ENV=test $(DEBUG) $(MOCHA) --reporter spec $(TEST)
-
-.PHONY: run
-
+	NODE_ENV=development $(DEBUG) $(MOCHA) --reporter spec $(TEST)
 
 lint:
 	$(JSHINT) $(REPORTER) $(test-js)
 
-.PHONY: lint
+.PHONY: all clean run lint
