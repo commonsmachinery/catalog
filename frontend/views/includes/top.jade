@@ -9,6 +9,8 @@
 
     Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
+- var isHome = url == '/' ? 'homeHeader' : ''
+
 doctype html
 meta(charset="utf-8") 
 
@@ -18,13 +20,13 @@ meta(name="viewport", content="width=device-width initial-scale=1 minimum-scale=
 
 html(lang="en")
     head
-        title Catalog
+        title elog.io - 
         link(rel="stylesheet", href="/css/style.css")
         script(src="https://login.persona.org/include.js")
         script(src="/lib/require.js", data-main="/app/boot")
         
     body(data-login-user=user || '', data-login-email=loginEmail || '', data-login-type=loginType || '')
-        header(class="grid-container grid-100")
+        header(class="grid-container grid-100", id="#{isHome}")
             div#logo(class="grid-30 tablet-grid-40 mobile-grid-100"): a(href="/")
             div(class="grid-50 tablet-grid-60 mobile-grid-100"): nav
                 ul#pages

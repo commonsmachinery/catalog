@@ -80,22 +80,23 @@ h1
 h2
     font-family h2-font || main-font
     color h2-font-color || content-color
-    
+
 header
-    background header-color
-    height header-height
-    margin-bottom 1em
-    text-align center
-    width 100%
-    > #logo
-        background logo center/contain no-repeat
-        height 100%
-        a
-            display block
-            height 80%
-            margin 0 auto
-            margin-top 5%
-            width 70%
+   background-color app-header-color
+   height app-header-height
+   margin-bottom 1em
+   text-align center
+   vertical-align middle
+   width 100%
+   > #logo
+       background logo center/contain no-repeat
+       height 80%
+       margin 5px 0
+       a
+           display block
+           height 100%
+           margin 0 auto
+           width 40%
     ul, li
         display inline-block
     nav
@@ -192,7 +193,7 @@ footer
     display none
 
 #breadCrumbs
-    margin 1em
+    margin 0
     width 90%
     ul, li
         display inline-block   
@@ -206,6 +207,22 @@ footer
     float none
     margin auto
     text-align left
+
+#homeHeader
+    background home-header-bg
+    height home-header-height
+    margin-bottom 1em
+    text-align center
+    width 100%
+    > #logo
+        background logo center/contain no-repeat
+        height 100%
+        a
+            display block
+            height 80%
+            margin 0 auto
+            margin-top 5%
+            width 70%
 
 #wrapper
     display block
