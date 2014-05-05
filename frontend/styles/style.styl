@@ -59,12 +59,12 @@ a
 
 body
     background background
-    font main-font
+    font-family main-font
     font-size font-scale
     margin 0
     padding 0
 
-div, nav, header, img
+div, nav, header, img, footer
     -moz-box-sizing border-box
     -webkit-box-sizing border-box
     display inline-block
@@ -73,6 +73,13 @@ div, nav, header, img
     margin 0
     padding 0
     position relative
+
+h1
+    font-family h1-font || main-font
+    color h1-font-color || content-color
+h2
+    font-family h2-font || main-font
+    color h2-font-color || content-color
     
 header
     background header-color
@@ -112,7 +119,7 @@ header
             padding 0
             > li
                 background-color nav-button-color
-                border-right solid 1px nav-color || background
+                border-right solid 1px nav-color
                 height 100%
                 line-height nav-height
                 padding 0 0.5em
