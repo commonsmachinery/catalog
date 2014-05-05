@@ -63,16 +63,16 @@ def _load_config():
         execfile(_config_filename, file_config)
         sys.stderr.write('using configuration from {0}\n'.format(_config_filename))
 
-    except SyntaxError, e:
+    except SyntaxError as e:
         sys.exit('error reading config file {0}: {1}'
                  .format(_config_filename, e))
-    except IOError:
+    except IOError as e:
         if _config_filename == DEFAULT_FILENAME:
             sys.stderr.write('no configuration file, using env and defaults\n')
         else:
             # if the user points out a file and we can't read it,
             # that's very bad and we can't progess safely.
-            sys.exit('config file {0} (indicated by $CATALOG_BACKEND_CONFIG_FILE) cannot be read: {1}'.format(_config_filename, error))
+            sys.exit('config file {0} (indicated by $CATALOG_BACKEND_CONFIG_FILE) cannot be read: {1}'.format(_config_filename, e))
 
     for section in [s for s in Defaults.__dict__.keys() if not s.startswith('__')]:
         for name, default_value in getattr(Defaults, section).items():

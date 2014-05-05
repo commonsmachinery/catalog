@@ -10,7 +10,6 @@
 
 import os
 
-os.environ['CATALOG_BACKEND_CONFIG_FILE'] = ''
 os.environ['CATALOG_BACKEND_STORE_TYPE'] = 'memory'
 
 import RDF
