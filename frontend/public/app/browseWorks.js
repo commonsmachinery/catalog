@@ -67,7 +67,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
 		onBatchUpdate: function onBatchUpdate(changes) {
 			if (this.$('.batchSelectItem').prop('checked')) {
-				this.model.save(changes);
+				this.model.save(changes, { wait: true });
 			}
 		},
 	});
