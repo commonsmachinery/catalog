@@ -27,6 +27,7 @@ var cluster = require('./lib/cluster');
 var sessions = require('./lib/sessions');
 var rest = require('./lib/rest');
 var admin = require('./lib/admin');
+var webapp = require('./lib/webapp');
 
 var err = require('./err.json');
 var config = require('./lib/config');
@@ -95,16 +96,12 @@ function main() {
             sessions.init(app, sessionstore);
             rest.init(app, backend, cluster);
             admin.init(app);
+            webapp.init(app);
 
             sessions.routes(app);
             rest.routes(app);
             admin.routes(app);
-
-            // TODO: the non-REST stuff should be served properly, but
-            // for now just provide a home link
-            app.get('/', function(req, res) {
-                res.render('home');
-            });
+            webapp.routes(app);
 
             app.listen(config.catalog.port);
             console.log('listening on port %s', config.catalog.port);
