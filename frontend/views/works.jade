@@ -1,41 +1,58 @@
+//- Catalog web - page for list of works
 //- 
-	Catalog web/view
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-	Copyright 2014 Commons Machinery http://commonsmachinery.se/
+- var works = data;
 
-	Authors:
-		Elsa Balderrama <elsa@commonsmachinery.se>
-
-	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
-
-- var works = data
-- data = {"data":works};
-- var stringData = JSON.stringify(data);
-
-mixin workView(data)
-	- data = data || {}
-	div.work
-		h2: a(href="#{data.resource || ''}") #{data.id || ''}
-		span(name="visibility")
-		span(name="state")
-		| by 
-		span(name="creator") #{data.creator || ' --- '} 
-		| on 
-		span(name="created") #{data.creator || ' --- '}
-		br
-		| last updated by 
-		span(name="updatedBy") #{data.updatedBy || ' --- '} 
-		| on 
-		span(name="updated") #{data.updated || ' --- '}
-		a(href="#{data.metadata || ''}" name="metadata") (see metadata...)
+mixin workListItemView(work, idPrefix)
+    li.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
+        div
+            input.batchSelectItem(type='checkbox')
+            a(data-bind="resource", href=work.resource || '#')
+                span(data-bind="id") #{work.id || ''}
+            = ' ('
+            span(data-bind="visibility") #{work.visibility || '' }
+            = ', '
+            span(data-bind="state") #{work.state || '' }
+            = ') by '
+            span(data-bind="creator") #{work.creator || '-'}
+            = ' on '
+            span(data-bind="created") #{work.created || '-'}
+        div
+            = 'Last updated by '
+            span(data-bind="updatedBy") #{work.updatedBy || '-'}
+            = ' on '
+            span(data-bind="updated") #{work.updated || '-'}
 
 include includes/top
-	for work in works
-		+workView(work)
-include includes/bottom
+    if works
+        div#actions
+            label(for="new-visibility") New visibility:
+            select(id="new-visibility")
+                option(value="")
+                option(value="private") Private
+                option(value="group") Group
+                option(value="public") Public
+            label(for="new-state") New state:
+            select(id="new-state")
+                option(value="")
+                option(value="draft") Draft
+                option(value="published") Published
+            button(id="batch-update") Batch update
 
-script#workTemplate(type="text/template")
-	+workView()
+        ul#works
+            for work in works
+                +workListItemView(work, 'works')
+    else
+        b There are no visible works.
 
-div.bootstrapData #{stringData}
+    include includes/bottom
+
+    script#workListItemTemplate(type="text/template")
+        +workListItemView({}, null)
+
+    script.bootstrapData(type='application/json')
+        != bootstrapData({ "data": works || [] })
+
 

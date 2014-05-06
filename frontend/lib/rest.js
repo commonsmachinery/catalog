@@ -132,6 +132,19 @@ var handleErrors = function handleErrors(callPromise, res) {
         done();
 };
 
+
+/* Format boostrap data into a string that can be safely put into a script block
+ *
+ * Explanation here:
+ * http://www.w3.org/TR/html5/scripting-1.html#restrictions-for-contents-of-script-elements
+ */
+var bootstrapData = function bootstrapData(data) {
+    return JSON.stringify(data)
+        .replace('<!--', '<\\!--')
+        .replace('<script', '<\\script')
+        .replace('</script', '<\\/script');
+};
+
 /* Helper method to return a result object correctly formatted.
  */
 var formatResult = function formatResult(res, view) {
@@ -143,7 +156,10 @@ var formatResult = function formatResult(res, view) {
             'text/html': function(){
                 res.render(view, {
                     data: data,
-                    owner: owner
+                    owner: owner,
+
+                    // Is there a prettier way to pass methods into render?
+                    bootstrapData: bootstrapData,
                 });
             },
             'application/json': function(){

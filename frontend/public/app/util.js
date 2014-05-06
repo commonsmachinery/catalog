@@ -1,9 +1,16 @@
-/*global define*/
+/* Catalog web application - utility methods
 
-define(function(require){
+   Copyright 2014 Commons Machinery http://commonsmachinery.se/
+
+   Authors:
+        Peter Liljenberg <peter@commonsmachinery.se>
+
+   Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+*/
+
+
+define(['jquery'], function($) {
 	'use strict'; 
-
-	var $ = require('jquery');
 
 	function enableInput (index, elem) {
 		$(elem).attr('disabled', false);
@@ -32,7 +39,7 @@ define(function(require){
 		return;
 	}
 
-	function editMode (ev, view) {
+	function editMode(ev, view) {
 		$(ev.target).val('save');
 		$(view.el).find('.editable').each(enableInput);
 		$(ev.target).one('click', function(){
@@ -41,7 +48,30 @@ define(function(require){
 		return;
 	}
 
+	var bootstrapData = function bootstrapData(selector) {
+		if (!selector) {
+			selector = '.bootstrapData';
+		}
+
+		var rawData = $(selector).html();
+
+		if (!rawData) {
+			console.error('no bootstrap data in selector %s', selector);
+			return null;
+		}
+
+		try {
+			var data = JSON.parse(rawData);
+			return data.data || null;
+		}
+		catch (e) {
+			console.error('failed to parse bootstrap data in selector %s: %s', selector, e);
+			return null;
+		}
+	};
+
 	return {
-		editMode: editMode
+		editMode: editMode,
+		bootstrapData: bootstrapData,
 	};
 });
