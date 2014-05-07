@@ -1,32 +1,35 @@
-/*global define*/
+/* Catalog web application - view for showing/editing a work
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
-define(function(require){
-    'use strict'; 
+define(['jquery', 'underscore', 'lib/backbone', 'util', 'views/editMixin'],
+       function($, _, Backbone, util, EditMixin)
+{
+    'use strict';
 
-    var $ = require('jquery');
-    var Backbone = require('lib/backbone');
-    var util = require('util');
-
-    var View = Backbone.View.extend({
-        binder: new Backbone.ModelBinder(),
-        initialize: function(model, el){
-
-            this.el = el;
-            this.model = model;
-            var self = this;
-            this.render();
-
-            /* switch to edit mode */
-            $('.edit').one('click', function(ev){
-                util.editMode(ev, self);
-            });
-            return;
+    var WorkView = Backbone.View.extend(_.extend(EditMixin, {
+        initialize: function() {
+            this._binder = new Backbone.ModelBinder();
         },
-        render: function(){
-            this.binder.bind(this.model, this.el);
-            return this;
-        }
-    });
 
-    return View;
+        render: function() {
+            var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'data-bind');
+
+            bindings.metadataGraph.converter = function(direction, value) {
+                if (direction === Backbone.ModelBinder.Constants.ModelToView) {
+                    return JSON.stringify(value, null, 2);
+                }
+                else {
+                    return JSON.parse(value);
+                }
+            };
+
+            this._binder.bind(this.model, this.el, bindings);
+            return this;
+        },
+    }));
+
+    return WorkView;
 });
