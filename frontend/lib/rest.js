@@ -70,42 +70,51 @@ exports.init = function init(app, localBackend, localCluster) {
 
 exports.routes = function routes(app) {
     /* works */
-    app.delete('/works/:workID', requireUser, deleteWork);
-    app.get('/works', getWorks);
-    app.get('/works/:workID', getWork);
+    app.route('/works/:workID') 
+        .get(getWork)
+        .put(requireUser, putWork)
+        // .patch(patchWork);
+        .delete(requireUser, deleteWork);
+    app.route('/works')
+        .get(getWorks)
+        .post(requireUser, postWork);
     app.get('/works/:workID/completeMetadata', getCompleteWorkMetadata);
     app.get('/works/:workID/metadata', getWorkMetadata);
-    // app.patch('/works/:workID', patchWork);
-    app.post('/works', requireUser, postWork);
-    app.put('/works/:workID', requireUser, putWork);
 
     /* sources */
-    app.delete('/users/:userID/sources/:sourceID', requireUser, deleteSource);
-    app.get('/users/:userID/sources', requireUser, getStockSources);
-    app.get('/users/:userID/sources/:sourceID', requireUser, getSource);
+    app.route('/users/:userID/sources/:sourceID')
+        .get(requireUser, getSource)
+        .put(requireUser, putSource)
+        // .patch(patchSource)
+        .delete(requireUser, deleteSource);
+    app.route('/users/:userID/sources')
+        .get(requireUser, getStockSources)
+        .post(requireUser, postStockSource);
     app.get('/users/:userID/sources/:sourceID/cachedExternalMetadata', requireUser, getSourceCEM);
     app.get('/users/:userID/sources/:sourceID/metadata', requireUser, getSourceMetadata);
-    // app.patch('/users/:userID/sources/:sourceID', patchSource);
-    app.post('/users/:userID/sources', requireUser, postStockSource);
-    app.put('/users/:userID/sources/:sourceID', requireUser, putSource);
-
-    app.delete('/works/:workID/sources/:sourceID', requireUser, deleteSource);
-    app.get('/works/:workID/sources', getWorkSources);
-    app.get('/works/:workID/sources/:sourceID', getSource);
+   
+    app.route('/works/:workID/sources/:sourceID')
+        .get(getSource)
+        .put(requireUser, putSource)
+        // .patch(patchSource)
+        .delete(requireUser, deleteSource);
+    app.route('/works/:workID/sources')
+        .get(getWorkSources)
+        .post(requireUser, postWorkSource);
     app.get('/works/:workID/sources/:sourceID/cachedExternalMetadata', getSourceCEM);
     app.get('/works/:workID/sources/:sourceID/metadata', getSourceMetadata);
-    // app.patch('/works/:workID/sources/:sourceID', patchSource);
-    app.post('/works/:workID/sources', requireUser, postWorkSource);
-    app.put('/works/:workID/sources/:sourceID', requireUser, putSource);
 
     /* posts */
-    app.delete('/works/:workID/posts/:postID', requireUser, deletePost);
-    app.get('/works/:workID/posts', getPosts);
-    app.get('/works/:workID/posts/:postID', getPost);
+
+    app.route('/works/:workID/posts/:postID')
+        .get(getPost)
+        .put(requireUser, putPost)
+        .delete(requireUser, deletePost);
+    app.route('/works/:workID/posts')
+        .get(getPosts)
+        .post(requireUser, postPost);
     app.get('/works/:workID/posts/:postID/cachedExternalMetadata', getPostCEM);
     app.get('/works/:workID/posts/:postID/metadata', getPostMetadata);
-    app.post('/works/:workID/posts', requireUser, postPost);
-    app.put('/works/:workID/posts/:postID', requireUser, putPost);
 
     /* sparql */
     app.get('/sparql', getSPARQL);
