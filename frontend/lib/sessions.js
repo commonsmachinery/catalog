@@ -15,7 +15,7 @@ var debug = require('debug')('frontend:sessions');
 
 var url = require('url');
 var Promise = require('bluebird');
-var express = require('express');
+var expressSession = require('express-session');
 var persona = require('express-persona');
 
 var cluster = require('./cluster');
@@ -50,7 +50,7 @@ exports.init = function init(app, sessionstore) {
 
     /* Session middlewares */
     sessions = sessionstore;
-    app.use(express.session({
+    app.use(expressSession({
         secret: config.catalog.secret,
         store: sessionstore
     }));
@@ -294,13 +294,11 @@ checkUserSession = function checkUserSession(req, res, next) {
 
 setLocals = function setLocals(req, res, next) {
     if (req.session) {
-        res.locals({
-            user: req.session.uid,
-            loginEmail: req.session.email,
-            loginType: req.session.loginType,
-            url: req.url
-
-        });
+        var locals = res.locals;
+        locals.user =  req.session.uid;
+        locals.loginEmail = req.session.email;
+        locals.loginType = req.session.loginType;
+        locals.url = req.url;
     }
     next();
 };

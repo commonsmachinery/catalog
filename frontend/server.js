@@ -14,10 +14,15 @@
 
 var debug = require('debug')('frontend:server'); // jshint ignore:line
 
+var bodyParser = require('body-parser');
+var cookieParser = require('cookie-parser');
 var cons = require('consolidate');
 var express = require('express');
-var stylus = require('stylus');
+var errorhandler = require('errorhandler');
+var morgan = require('morgan');
 var Promise = require('bluebird');
+var serveStatic = require('serve-static');
+var stylus = require('stylus');
 
 var sessionStore = require('./lib/wrappers/sessionStore');
 var backend = require('./lib/backend');
@@ -51,17 +56,17 @@ function main() {
 
     // Middlewares
 
-    app.configure('development', function(){
-        app.use(express.errorHandler());
+    if (process.env.NODE_ENV === 'development'){
+        app.use(errorhandler());
         app.locals.pretty = true;
-    });
+    }
 
-    app.use(express.static(__dirname + config.catalog.static));
+    app.use(serveStatic(__dirname + config.catalog.static));
 
-    app.use(express.logger());
-    app.use(express.json());
-    app.use(express.bodyParser());
-    app.use(express.cookieParser());
+    app.use(morgan());
+    app.use(bodyParser.json());
+    app.use(bodyParser());
+    app.use(cookieParser());
 
     // Templating
     app.engine('.jade', cons.jade);
