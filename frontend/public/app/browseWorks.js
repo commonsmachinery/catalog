@@ -50,9 +50,15 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 		initialize: function() {
 			this._modelBinder = new Backbone.ModelBinder();
 			this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
+            this._perms = this.model.get('permissions') || {};
 		},
 
 		render: function() {
+			if (this._perms.edit) {
+				// Disabled by default in the template
+				this.$('.batchSelectItem').prop('disabled', false);
+			}
+
 			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'data-bind');
 
 			bindings.resource.elAttribute = 'href';
@@ -66,7 +72,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 		},
 
 		onBatchUpdate: function onBatchUpdate(changes) {
-			if (this.$('.batchSelectItem').prop('checked')) {
+			if (this._perms.edit && this.$('.batchSelectItem').prop('checked')) {
 				this.model.save(changes, { wait: true });
 			}
 		},

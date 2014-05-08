@@ -5,12 +5,12 @@
 
 - var work = data
 
-mixin workView(work)
+mixin editWorkView(work)
     div#work
         fieldset.editable(disabled=true)
             div
                 h3
-                    | Work
+                    = 'Work: '
                     span(data-bind="id") #{work.id || ''}
             div
                 | Permalink:
@@ -18,30 +18,30 @@ mixin workView(work)
                     span(data-bind="resource") #{work.resource || ''}
             div
                 = 'Created by '
-                span(data-bind="creator") #{work.creator || '-'}
+                span(data-bind="creator") #{work.creator || ''}
                 = ' on '
-                span(data-bind="created") #{work.created || '-'}
+                span(data-bind="created") #{work.created || ''}
             div
                 = 'Last updated by '
-                span(data-bind="updatedBy") #{work.updatedBy || '-'}
+                span(data-bind="updatedBy") #{work.updatedBy || ''}
                 = ' on '
-                span(data-bind="updated") #{work.updated || '-'}
+                span(data-bind="updated") #{work.updated || ''}
             div
                 label(for="visibility") Visibility:
                 select(data-bind="visibility", id="visibility")
-                    option(value="private") Private
-                    option(value="group") Group
-                    option(value="public") Public
+                    option(value="private", selected=(work.visibility === 'private')) Private
+                    option(value="group", selected=(work.visibility === 'group')) Group
+                    option(value="public", selected=(work.visibility === 'public')) Public
 
                 label(for="state") State:
                 select(data-bind="state", id="state")
-                    option(value="draft") Draft
-                    option(value="published") Published
+                    option(value="draft", selected=(work.state === 'draft')) Draft
+                    option(value="published", selected=(work.state === 'published')) Published
             div
                 h4
                     a(data-bind="metadata", href=work.metadata || '#')
                         | Metadata:
-            textarea.editable(data-bind="metadataGraph")
+            textarea(data-bind="metadataGraph")
                 = JSON.stringify(work.metadataGraph || '', null, 4)
         fieldset
             button(data-action="edit") Edit
@@ -49,13 +49,54 @@ mixin workView(work)
             button.hidden(data-action="cancel", disabled=true) Cancel
 
 
+mixin readWorkView(work)
+    div#work
+        div
+            div
+                h3
+                    = 'Work: '
+                    span(data-bind="id") #{work.id || ''}
+            div
+                | Permalink:
+                a(data-bind="resource", href=work.resource || '#')
+                    span(data-bind="resource") #{work.resource || ''}
+            div
+                = 'Created by '
+                span(data-bind="creator") #{work.creator || ''}
+                = ' on '
+                span(data-bind="created") #{work.created || ''}
+            div
+                = 'Last updated by '
+                span(data-bind="updatedBy") #{work.updatedBy || ''}
+                = ' on '
+                span(data-bind="updated") #{work.updated || ''}
+            div
+                label(for="visibility") Visibility:
+                span(data-bind="visibility", id="visibility") #{work.visibility || ''}
+
+                label(for="state") State:
+                span(data-bind="state", id="state") #{work.state || ''}
+            div
+                h4
+                    a(data-bind="metadata", href=work.metadata || '#')
+                        | Metadata:
+            pre(data-bind="metadataGraph")
+                = JSON.stringify(work.metadataGraph || '', null, 4)
+
+
 include includes/top
-    +workView(work)
+    if work.permissions.edit
+        +editWorkView(work)
+    else
+        +readWorkView(work)
 
     include includes/bottom
 
-    script#workTemplate(type="text/template")
-        +workView({}, null)
+    script#editWorkTemplate(type="text/template")
+        +editWorkView({})
+
+    script#readWorkTemplate(type="text/template")
+        +readWorkView({})
 
     script.bootstrapData(type='application/json')
         != bootstrapData({ "data": work })

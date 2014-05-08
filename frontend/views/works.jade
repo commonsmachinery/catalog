@@ -8,7 +8,7 @@
 mixin workListItemView(work, idPrefix)
     li.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
         div
-            input.batchSelectItem(type='checkbox')
+            input.batchSelectItem(type='checkbox', disabled=true)
             a(data-bind="resource", href=work.resource || '#')
                 span(data-bind="id") #{work.id || ''}
             = ' ('
@@ -16,14 +16,14 @@ mixin workListItemView(work, idPrefix)
             = ', '
             span(data-bind="state") #{work.state || '' }
             = ') by '
-            span(data-bind="creator") #{work.creator || '-'}
+            span(data-bind="creator") #{work.creator || ''}
             = ' on '
-            span(data-bind="created") #{work.created || '-'}
+            span(data-bind="created") #{work.created || ''}
         div
             = 'Last updated by '
-            span(data-bind="updatedBy") #{work.updatedBy || '-'}
+            span(data-bind="updatedBy") #{work.updatedBy || ''}
             = ' on '
-            span(data-bind="updated") #{work.updated || '-'}
+            span(data-bind="updated") #{work.updated || ''}
 
 include includes/top
     if works

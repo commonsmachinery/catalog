@@ -149,14 +149,10 @@ var bootstrapData = function bootstrapData(data) {
  */
 var formatResult = function formatResult(res, view) {
     return function(data) {
-        // TODO: owner should really be returned from the backend
-        var owner = false;
-
         res.format({
             'text/html': function(){
                 res.render(view, {
                     data: data,
-                    owner: owner,
 
                     // Is there a prettier way to pass methods into render?
                     bootstrapData: bootstrapData,
