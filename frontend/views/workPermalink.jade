@@ -43,10 +43,12 @@ mixin editWorkView(work)
                         | Metadata:
             textarea(data-bind="metadataGraph")
                 = JSON.stringify(work.metadataGraph || '', null, 4)
-        fieldset
+        fieldset.actions
             button(data-action="edit") Edit
             button.hidden(data-action="save", disabled=true) Save
             button.hidden(data-action="cancel", disabled=true) Cancel
+            //- Let view show it if permission allows it
+            button.hidden(data-action="delete") Delete
 
 
 mixin readWorkView(work)

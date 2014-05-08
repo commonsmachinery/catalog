@@ -32,6 +32,8 @@ define(['jquery', 'underscore', 'util'],
                 .prop('disabled', true)
                 .text('Save');
 
+            this.$('[data-action="cancel"]').prop('disabled', false)
+
             this.listenToOnce(this.model, 'change', this.onEditModelChange);
 
             // Hide edit and show save/cancel
@@ -48,7 +50,7 @@ define(['jquery', 'underscore', 'util'],
             this.$('.editable').prop('disabled', true);
 
             // Indicate that we're working
-            this.$('[data-action="save"], [data-action="cancel"]').prop('disabled', true);
+            this.$('.actions').prop('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
 
             this.model.save(null, {
@@ -59,6 +61,9 @@ define(['jquery', 'underscore', 'util'],
                     // Go back to Edit button
                     self.$('[data-action="save"], [data-action="cancel"]').hide();
                     self.$('[data-action="edit"]').show();
+
+                    // Re-enable buttons
+                    self.$('.actions').prop('disabled', false);
 
                     self._editStartAttrs = null;
                 },
@@ -72,7 +77,7 @@ define(['jquery', 'underscore', 'util'],
                                   response.responseText);
 
                     // Re-enable buttons
-                    self.$('[data-action="save"], [data-action="cancel"]').prop('disabled', false);
+                    self.$('.actions').prop('disabled', false);
                     self.$('[data-action="save"]').text('Retry saving');
                 },
             });
