@@ -30,6 +30,12 @@ exports.get = function get(data, user){
         var post = res.body;
         expect(post.id).to.eql(data.id);
         expect(new Date(post.posted)).to.not.be('Invalid Date');
+
+        // Check permissions
+        if (user) {
+            expect(post.permissions.read).to.be.ok();
+        }
+
         data.updated = post.updated;
         data.postedBy = post.postedBy;
     });
@@ -51,6 +57,13 @@ exports.put = function put(data, user){
         expect(updated).to.be.greaterThan(created);
         expect(post.updatedBy).to.be(user);
         expect(post.resource).to.be(data.resource);
+
+        // Permissions should allow us to further manipulate this
+        // object
+        expect(post.permissions.read).to.be.ok();
+        expect(post.permissions.edit).to.be.ok();
+        expect(post.permissions.delete).to.be.ok();
+
         data.updated = post.updated;
     });
 };

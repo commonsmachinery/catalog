@@ -32,6 +32,11 @@ exports.get = function get(data, user){
         expect(new Date(source.added)).to.not.be('Invalid Date');
         data.updated = source.updated;
         data.addedBy = res.body.addedBy;
+
+        // Check permissions
+        if (user) {
+            expect(source.permissions.read).to.be.ok();
+        }
     });
 };
 
@@ -52,6 +57,12 @@ exports.put = function put(data, user){
         expect(updated).to.be.greaterThan(added);
         expect(source.updatedBy).to.be(data.addedBy);
         expect(source.resource).to.be(data.resource);
+
+        // Permissions should allow us to further manipulate this
+        // object
+        expect(source.permissions.read).to.be.ok();
+        expect(source.permissions.edit).to.be.ok();
+        expect(source.permissions.delete).to.be.ok();
     });
 };
 
