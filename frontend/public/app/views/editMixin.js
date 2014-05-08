@@ -32,7 +32,7 @@ define(['jquery', 'underscore', 'util'],
                 .prop('disabled', true)
                 .text('Save');
 
-            this.$('[data-action="cancel"]').prop('disabled', false)
+            this.$('[data-action="cancel"]').prop('disabled', false);
 
             this.listenToOnce(this.model, 'change', this.onEditModelChange);
 
