@@ -20,7 +20,7 @@ from catalog.store import MainStore, PublicStore
 def serialize_model(store):
     output = store._model.to_string(name='ntriples').split('\n')
     output.sort()
-    return '\n'.join(output)
+    return '\n'.join(output).strip()
 
 @pytest.fixture
 def store():
@@ -114,7 +114,7 @@ post_update_data = {
 
 def load_testdata(filename):
     data = open('tests/testdata/' + filename).read()
-    return data
+    return data.strip()
 
 def test_create_work_model(store):
     work = store.create_work(timestamp=0, user_uri='http://src/users/test', work_uri=work1_uri, work_data=work1_data)
@@ -133,7 +133,7 @@ def test_create_work_data(store):
         'state': 'draft',
         'id': 2,
         'metadata': 'http://src/works/2/metadata',
-        'type': 'Work'
+        'type': catalog.store.Work.rdf_type,
     }
     assert work == expected
 
@@ -165,7 +165,7 @@ def test_update_work_data(store):
         'updatedBy': 'http://src/users/test',
         'id': 1,
         'metadata': u'http://src/works/1/metadata',
-        'type': 'Work',
+        'type': catalog.store.Work.rdf_type,
     }
     assert work == expected
 
@@ -181,7 +181,7 @@ def test_get_work(store):
         'state': u'draft',
         'id': 1,
         'metadata': u'http://src/works/1/metadata',
-        'type': 'Work',
+        'type': catalog.store.Work.rdf_type,
     }
     assert work == expected
 
@@ -202,7 +202,7 @@ def test_create_work_source_data(store):
         'cachedExternalMetadataGraph': {'http://src/works/1/sources/1': {'http://purl.org/dc/terms/creator': [{'type': 'literal', 'value': 'Cached Author'}]}},
         'cachedExternalMetadata': 'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1, 'metadata': 'http://src/works/1/sources/1/metadata',
-        'type': 'Source',
+        'type': catalog.store.Source.rdf_type,
     }
     assert source == expected
 
@@ -236,7 +236,7 @@ def test_update_source_data(store):
         'cachedExternalMetadata': u'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': u'http://src/works/1/sources/1/metadata',
-        'type': u'Source',
+        'type': catalog.store.Source.rdf_type,
     }
     assert source == expected
 
@@ -253,7 +253,7 @@ def test_get_source(store):
         'cachedExternalMetadata': u'http://src/works/1/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': u'http://src/works/1/sources/1/metadata',
-        'type': u'Source',
+        'type': catalog.store.Source.rdf_type,
     }
     assert source == expected
 
@@ -273,7 +273,7 @@ def test_create_stock_source_data(store):
         'cachedExternalMetadata': 'http://src/users/test/sources/1/cachedExternalMetadata',
         'id': 1,
         'metadata': 'http://src/users/test/sources/1/metadata',
-        'type': 'Source',
+        'type': catalog.store.Source.rdf_type,
     }
     assert source == expected
 
@@ -307,7 +307,7 @@ def test_create_post_data(store):
         'metadata': 'http://src/works/1/post/1/metadata',
         'id': 1,
         'posted': 5,
-        'type': 'Post',
+        'type': catalog.store.Post.rdf_type,
     }
     assert post == expected
 
@@ -341,7 +341,7 @@ def test_update_post_data(store):
         'metadata': u'http://src/works/1/post/1/metadata',
         'id': 1,
         'posted': u'5',
-        'type': u'Post',
+        'type': catalog.store.Post.rdf_type,
     }
     assert post == expected
 
@@ -358,7 +358,7 @@ def test_get_post(store):
         'metadata': u'http://src/works/1/post/1/metadata',
         'id': 1,
         'posted': u'5',
-        'type': u'Post',
+        'type': catalog.store.Post.rdf_type,
     }
     assert post == expected
 
@@ -373,7 +373,7 @@ def test_get_complete_metadata(store):
     work = store.create_work(timestamp=1, user_uri='http://src/users/test', work_uri=work2_uri, work_data=work2_data)
     store.create_work_source(timestamp=3, user_uri='http://src/users/test', work_uri=work1_uri, source_uri=source1_uri, source_data=source1_data)
     complete = store.get_complete_metadata(user_uri='http://src/users/test', work_uri=work1_uri, format='ntriples')
-    result = "\n".join(sorted(complete.split("\n")))
+    result = "\n".join(sorted(complete.split("\n"))).strip()
     expected = load_testdata("complete_metadata.nt")
     assert result == expected
 

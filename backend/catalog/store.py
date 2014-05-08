@@ -45,8 +45,10 @@ def schema2json(s):
     return json_schema
 
 class Entry(object):
+    rdf_type = NS_REM3 + 'Entry'
+
     schema = {
-        'type':         ('string',   NS_RDF      + 'type'        ),
+        'type':         ('resource', NS_RDF      + 'type'        ),
         'updated':      ('string',   NS_CATALOG  + 'updated'     ),
         'updatedBy':    ('resource', NS_CATALOG  + 'updatedBy'   ),
     }
@@ -54,7 +56,7 @@ class Entry(object):
     def __init__(self, uri, dict):
         self._uri = str(uri)
         self._dict = dict
-        self._dict['type'] = self.__class__.__name__
+        self._dict['type'] = self.__class__.rdf_type
 
     def __getitem__(self, name):
         if self._dict.has_key(name):
@@ -250,6 +252,8 @@ Entry.json_schema = schema2json(Entry.schema)
 
 
 class Work(Entry):
+    rdf_type = NS_CATALOG + 'Work'
+
     schema = dict(Entry.schema, **{
         'id':           ('number',    NS_CATALOG  + 'id'          ),
         'resource':     ('resource',  NS_REM3     + 'resource'    ),
@@ -265,6 +269,8 @@ class Work(Entry):
 Work.json_schema = schema2json(Work.schema)
 
 class Source(Entry):
+    rdf_type = NS_CATALOG + 'Source'
+
     schema = dict(Entry.schema, **{
         'id':           ('number',   NS_CATALOG  + 'id'          ),
         'metadata':     ('graph',    NS_REM3     + 'metadata'    ),
@@ -277,6 +283,8 @@ class Source(Entry):
 Source.json_schema = schema2json(Source.schema)
 
 class Post(Entry):
+    rdf_type = NS_CATALOG + 'Post'
+
     schema = dict(Entry.schema, **{
         'id':           ('number',    NS_CATALOG  + 'id'            ),
         'resource':     ('resource',  NS_REM3     + 'resource'      ),
@@ -339,7 +347,7 @@ class MainStore(object):
         for statement, context in self._model.find_statements_context(query_statement):
             entry_type = self._model.get_targets(statement.subject, RDF.Uri(NS_RDF + 'type')).current()
             # we don't have User entries yet, so type is None occassionally
-            if entry_type is not None and entry_type.literal[0] == 'Work':
+            if entry_type is not None and entry_type.uri == RDF.Uri(Work.rdf_type):
                 return Work.from_model(self._model, str(statement.subject))
 
         return None
