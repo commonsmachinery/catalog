@@ -6,23 +6,24 @@
 - var works = data;
 
 mixin workListItemView(work, idPrefix)
-    li.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
-        div
-            input.batchSelectItem(type='checkbox', disabled=true)
-            a(data-bind="resource", href=work.resource || '#')
-                span(data-bind="id") #{work.id || ''}
-            = ' ('
-            span(data-bind="visibility") #{work.visibility || '' }
-            = ', '
-            span(data-bind="state") #{work.state || '' }
-            = ') by '
-            span(data-bind="creator") #{work.creator || ''}
-            = ' on '
-            span(data-bind="created") #{work.created || ''}
-        div
-            = 'Last updated by '
-            span(data-bind="updatedBy") #{work.updatedBy || ''}
-            = ' on '
+    div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
+        div.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
+            div
+                input.batchSelectItem(type='checkbox', disabled=true)
+                h2: a(data-bind="resource", href=work.resource || '#')
+                    span(data-bind="id") #{work.id || ''}
+                = ' ('
+                span(data-bind="visibility") #{work.visibility || '' }
+                = ', '
+                span(data-bind="state") #{work.state || '' }
+                = ') by '
+                span(data-bind="creator") #{work.creator || ''}
+                = ' on '
+                span(data-bind="created") #{work.created || ''}
+            div
+                = 'Last updated by '
+                span(data-bind="updatedBy") #{work.updatedBy || ''}
+                = ' on '
             span(data-bind="updated") #{work.updated || ''}
 
 include includes/top
@@ -54,5 +55,3 @@ include includes/top
 
     script.bootstrapData(type='application/json')
         != bootstrapData({ "data": works || [] })
-
-
