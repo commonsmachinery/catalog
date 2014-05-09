@@ -44,8 +44,7 @@ html(lang="en")
                                     li: a(href="/test/logout")
                                         | Logout
                         else
-                            li: a(href="/login")
-                            | Login
+                            li: a(href="/login") Login
                 nav#breadCrumbs: ul
                     - var path = url;
                     - path = path.replace(/(^\/|\/$)/g, '').split('/');

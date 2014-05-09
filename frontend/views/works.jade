@@ -11,7 +11,8 @@ mixin workListItemView(work, idPrefix)
     div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
         div.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
             div
-                input.batchSelectItem(type='checkbox', disabled=true)
+                if user
+                    input.batchSelectItem(type='checkbox', disabled=true)
                 h2: a(data-bind-href="resource", href=work.resource || '#')
                     span(data-bind="id") #{work.id || ''}
                 = ' ('
@@ -32,20 +33,21 @@ mixin workListItemView(work, idPrefix)
 
 include includes/top
     if works
-        div#actions
-            label(for="new-visibility") New visibility:
-            select(id="new-visibility")
-                option(value="")
-                option(value="private") Private
-                option(value="group") Group
-                option(value="public") Public
-            label(for="new-state") New state:
-            select(id="new-state")
-                option(value="")
-                option(value="draft") Draft
-                option(value="published") Published
-            button(id="batch-update") Batch update
-            button(id="add-work") +Add work
+        if user
+            div#actions
+                button(id="add-work") +Add work
+                button(id="batch-update") Batch update:
+                label(for="new-visibility") Visibility
+                select(id="new-visibility")
+                    option(value="")
+                    option(value="private") Private
+                    option(value="group") Group
+                    option(value="public") Public
+                label(for="new-state") State
+                select(id="new-state")
+                    option(value="")
+                    option(value="draft") Draft
+                    option(value="published") Published
 
         ul#works
             for work in works
