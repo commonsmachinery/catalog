@@ -924,7 +924,7 @@ class PublicStore(MainStore):
     # In public store only read access is allowed, but on the other
     # hand all objects can be accessed
     def _can_access(self, access, entry):
-        return access == 'read'
+        return True
 
     def query_sparql(self, query_string=None, results_format="json"):
         if results_format not in ('json', 'n3', 'xml'):
