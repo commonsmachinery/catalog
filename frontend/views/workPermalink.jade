@@ -29,11 +29,11 @@ mixin editWorkView(work)
                 = ' on '
                 span(data-bind="updated") #{work.updated || ''}
             div
-                label(for="visibility") Visibility:
-                select(data-bind="visibility", id="visibility")
-                    option(value="private", selected=(work.visibility === 'private')) Private
-                    option(value="group", selected=(work.visibility === 'group')) Group
-                    option(value="public", selected=(work.visibility === 'public')) Public
+                label(for="visible") Visible:
+                select(data-bind="visible", id="visible")
+                    option(value="private", selected=(work.visible === 'private')) Private
+                    option(value="group", selected=(work.visible === 'group')) Group
+                    option(value="public", selected=(work.visible === 'public')) Public
 
                 label(for="state") State:
                 select(data-bind="state", id="state")
@@ -75,8 +75,8 @@ mixin readWorkView(work)
                 = ' on '
                 span(data-bind="updated") #{work.updated || ''}
             div
-                label(for="visibility") Visibility:
-                span(data-bind="visibility", id="visibility") #{work.visibility || ''}
+                label(for="visible") Visible:
+                span(data-bind="visible", id="visible") #{work.visible || ''}
 
                 label(for="state") State:
                 span(data-bind="state", id="state") #{work.state || ''}

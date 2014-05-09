@@ -18,7 +18,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
     var CreateWorkView = Backbone.View.extend(_.extend(CreateMixin, {
         initialize: function() {
             this.model = new Work({
-                visibility: 'private',
+                visible: 'private',
                 state: 'draft',
                 metadataGraph: {}
             });

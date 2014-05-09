@@ -14,13 +14,13 @@ var works = require('./modules/works');
 /* data we are going to use along the tests */
 var data = [
     {
-        visibility: 'private',
+        visible: 'private',
         state: 'published'
     }, {
-        visibility: 'public',
+        visible: 'public',
         state: 'draft'
     }, {
-        visibility: 'public',
+        visible: 'public',
         state: 'published'
     }
 ]; 

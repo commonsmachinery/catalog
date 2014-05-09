@@ -11,7 +11,7 @@ var source = require('./modules/source');
 
 /* data we are going to use along the tests */
 var workData = {
-    visibility: 'private',
+    visible: 'private',
     state: 'published'
 }; 
 var sourceData = {

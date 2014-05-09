@@ -559,7 +559,7 @@ postWork = function postWork(req, res) {
     queryData.work_data = {
         metadataGraph: req.body.metadataGraph || {},
         state: req.body.state || 'draft',
-        visibility: req.body.visibility || 'private',
+        visible: req.body.visible || 'private',
     };
 
     handleErrors(
@@ -587,7 +587,7 @@ putWork = function putWork(req, res) {
     var queryData = commonData(req);
     queryData.work_uri = uris.workURIFromReq(req);
     queryData.work_data = _.pick(
-        req.body, 'metadataGraph', 'state', 'visibility');
+        req.body, 'metadataGraph', 'state', 'visible');
     if (queryData.work_data.metadataGraph) {
         updateMetadata(queryData.work_data.metadataGraph, queryData.work_uri);
     }

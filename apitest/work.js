@@ -14,7 +14,7 @@ var work = require('./modules/work');
 
 /* data we are going to use along the tests */
 var data = {
-    visibility: 'private',
+    visible: 'private',
     state: 'draft'
 }; 
 var user = 'user';
@@ -31,7 +31,7 @@ describe('Work', function(){
         });
         it('should reject invalid attribute values', function(done){
             var failData = util.clone(data);
-            failData.visibility = 'invalid';
+            failData.visible = 'invalid';
             debug('input data %j', failData);
             work.post(failData, user) .end(function(err, res){
                 /* ToDo: check for explicit error code */
@@ -70,8 +70,8 @@ describe('Work', function(){
         var debug = dbgfn('test:work:put');
         it('should return the updated work', function(done){
             this.timeout(4000);
-            debug('updating work: %s. Setting visibility = public', data.resource);
-            data.visibility = 'public';
+            debug('updating work: %s. Setting visible = public', data.resource);
+            data.visible = 'public';
             data.state = 'published';
             setTimeout(function(){
                 work.put(data, user).end(done);
@@ -88,7 +88,7 @@ describe('Work', function(){
         });
         // it('should reject invalid attributes', function(done){
         //     var failData = util.clone(data);
-        //     failData.visibility = 'invalid';
+        //     failData.visible = 'invalid';
         //     debug('faildata resource', failData.resource);
         //     work.put(failData).end(function(err, res){
         //         /* ToDo: evaluate against an appropiate error code */

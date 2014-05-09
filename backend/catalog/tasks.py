@@ -90,7 +90,7 @@ def get_timestamp():
 def create_work(self, user_uri, work_uri, work_data):
     """
     Create a work record in main store.
-    The work will be created in public store if it's visibility is public.
+    The work will be created in public store if it is visible for public.
     Automatically retries the task if the record is locked.
 
     Arguments:
@@ -99,7 +99,7 @@ def create_work(self, user_uri, work_uri, work_data):
         work_data -- data as dict, must conform to the Work schema.
         Keys looked for when storing the record:
             'id':           Numeric ID for work
-            'visibility':   Possible values: 'private', 'group', 'public'
+            'visible':      Possible values: 'private', 'group', 'public'
                             Default: 'private'
             'state':        Possible values: 'draft', 'published'
                             Default: 'draft'
@@ -130,7 +130,7 @@ def create_work(self, user_uri, work_uri, work_data):
 @app.task(base=StoreTask, bind=True)
 def update_work(self, user_uri, work_uri, work_data):
     """Update work record in main store.
-    The work will be updated in public store if it's visibility is public after updating.
+    The work will be updated in public store if it's visible is public after updating.
     Automatically retries the task if the record is locked.
 
     Arguments:
@@ -138,7 +138,7 @@ def update_work(self, user_uri, work_uri, work_data):
         work_uri -- work identifier
         work_data -- data as dict, must conform to the Work schema.
         Only listed properties will be updated:
-            'visibility':   Possible values: 'private', 'group', 'public'
+            'visible':   Possible values: 'private', 'group', 'public'
             'state':        Possible values: 'draft', 'published'
             'metadataGraph': Work metadata as RDF/JSON dict, default empty
     Returns:
@@ -813,15 +813,15 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
                     source_uri=None, source_data=None, post_uri=None, post_data=None, **kwargs):
     task = sender
     if sender == create_work:
-        visibility = work_data.get('visibility')
-        if visibility == 'public':
+        visible = work_data.get('visible')
+        if visible == 'public':
             public_create_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
 
     elif sender == update_work:
-        visibility = work_data.get('visibility')
-        # visibility values should be valid here, since this
+        visible = work_data.get('visible')
+        # visible values should be valid here, since this
         # is called after a successful main store update
-        if visibility == 'public':
+        if visible == 'public':
             try:
                 task.public_store.get_work(user_uri, work_uri)
                 public_update_work.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, work_data=work_data)
@@ -839,8 +839,8 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
 
     elif sender == create_work_source:
         work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
-        visibility = work_data.get('visibility')
-        if visibility == 'public':
+        visible = work_data.get('visible')
+        if visible == 'public':
             public_create_work_source.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, source_uri=source_uri, source_data=source_data)
 
     elif sender == create_stock_source:
@@ -849,8 +849,8 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
 
     elif sender == update_source:
         work_data = task.main_store.get_linked_work(source_uri).get_data()
-        visibility = work_data.get('visibility')
-        if visibility == 'public':
+        visible = work_data.get('visible')
+        if visible == 'public':
             public_update_source.delay(timestamp=timestamp, user_uri=user_uri, source_uri=source_uri, source_data=source_data)
 
     elif sender == delete_source:
@@ -858,14 +858,14 @@ def on_work_updated(sender=None, timestamp=None, user_uri=None, work_uri=None, w
 
     elif sender == create_post:
         work_data = task.main_store.get_work(user_uri=user_uri, work_uri=work_uri)
-        visibility = work_data.get('visibility')
-        if visibility == 'public':
+        visible = work_data.get('visible')
+        if visible == 'public':
             public_create_post.delay(timestamp=timestamp, user_uri=user_uri, work_uri=work_uri, post_uri=post_uri, post_data=post_data)
 
     elif sender == update_post:
         work_data = task.main_store.get_linked_work(post_uri).get_data()
-        visibility = work_data.get('visibility')
-        if visibility == 'public':
+        visible = work_data.get('visible')
+        if visible == 'public':
             public_update_post.delay(timestamp=timestamp, user_uri=user_uri, post_uri=post_uri, post_data=post_data)
 
     elif sender == delete_post:

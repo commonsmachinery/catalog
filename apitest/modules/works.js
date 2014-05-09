@@ -21,7 +21,7 @@ exports.get = function get(path, filter, user, uid){
         var work;
         for(var i=0; i<len; i++){
             work = works[i];
-            if(work.visibility === 'private'){
+            if(work.visible === 'private'){
                 expect(work.creator).to.be(uid);
             }
             if(filter){

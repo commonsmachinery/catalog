@@ -28,7 +28,7 @@ class EntryNotFoundError(CatalogError):
     def __init__(self, context):
         super(EntryNotFoundError, self).__init__('Entry not found: {0}'.format(context))
 
-valid_work_visibility = [ 'private', 'group', 'public' ]
+valid_work_visible = [ 'private', 'group', 'public' ]
 valid_work_state = [ 'draft', 'published' ]
 
 NS_CATALOG = "http://catalog.commonsmachinery.se/ns#"
@@ -300,7 +300,7 @@ class Work(Entry):
         'metadata':     ('graph',     NS_REM3     + 'metadata'    ),
         'created':      ('string',    NS_CATALOG  + 'created'     ),
         'creator':      ('resource',  NS_CATALOG  + 'creator'     ),
-        'visibility':   ('string',    NS_CATALOG  + 'visibility'  ),
+        'visible':      ('string',    NS_CATALOG  + 'visible'     ),
         'state':        ('string',    NS_CATALOG  + 'state'       ),
         'post':         ('uri_list',  NS_CATALOG  + 'post'        ),
         'source':       ('uri_list',  NS_CATALOG  + 'source'      ),
@@ -314,7 +314,7 @@ class Work(Entry):
     permission_queries = {
         ('read', ): ('{ ?entry catalog:creator ?user } '
                      'UNION '
-                     '{ ?entry catalog:visibility "public" }'),
+                     '{ ?entry catalog:visible "public" }'),
         ('edit', 'delete'): '?entry catalog:creator ?user',
     }
 
@@ -340,7 +340,7 @@ class Source(Entry):
             # Stock sources (to go away...)
             '{ ?entry catalog:addedBy ?user . } '
             'UNION '
-            '{ ?work catalog:source ?entry . ?work catalog:visibility "public" }'
+            '{ ?work catalog:source ?entry . ?work catalog:visible "public" }'
         ),
 
         ('edit', 'delete'): (
@@ -369,7 +369,7 @@ class Post(Entry):
         ('read', ): (
             '{ ?work catalog:post ?entry . ?work catalog:creator ?user . } '
             'UNION '
-            '{ ?work catalog:post ?entry . ?work catalog:visibility "public" }'
+            '{ ?work catalog:post ?entry . ?work catalog:visible "public" }'
         ),
 
         ('edit', 'delete'): (
@@ -451,12 +451,12 @@ class MainStore(object):
         work_data = work_data.copy()
 
         work_data['created'] = timestamp
-        work_data.setdefault('visibility', 'private')
+        work_data.setdefault('visible', 'private')
         work_data.setdefault('state', 'draft')
         work_data.setdefault('metadataGraph', {})
 
-        if work_data['visibility'] not in valid_work_visibility:
-            raise ParamError('invalid visibility: {0}'.format(visibility))
+        if work_data['visible'] not in valid_work_visible:
+            raise ParamError('invalid visible: {0}'.format(visible))
         if work_data['state'] not in valid_work_state:
             raise ParamError('invalid state: {0}'.format(state))
 
@@ -465,7 +465,7 @@ class MainStore(object):
             'resource': work_uri,
             'created': work_data['created'],
             'creator': user_uri,
-            'visibility': work_data['visibility'],
+            'visible': work_data['visible'],
             'state': work_data['state'],
             'metadataGraph': work_data['metadataGraph'],
             'permissions': Work.owner_permissions,
@@ -482,10 +482,10 @@ class MainStore(object):
 
         new_data = work.get_data()
 
-        if 'visibility' in work_data:
-            if work_data['visibility'] not in valid_work_visibility:
-                raise ParamError('invalid visibility: {0}'.format(work_data['visibility']))
-            new_data['visibility'] = work_data['visibility']
+        if 'visible' in work_data:
+            if work_data['visible'] not in valid_work_visible:
+                raise ParamError('invalid visible: {0}'.format(work_data['visible']))
+            new_data['visible'] = work_data['visible']
 
         if 'state' in work_data:
             if work_data['state'] not in valid_work_state:
@@ -819,7 +819,7 @@ class MainStore(object):
                 BIND (<%s> AS ?user)
 
                 ?work catalog:creator ?creator .
-                ?work catalog:visibility ?visibility .
+                ?work catalog:visible ?visible .
                 ?work rem3:metadata ?workMetadata .
                 ?work catalog:source ?sourceRef .
                 ?sourceRef rem3:resource ?sourceWork .
@@ -831,8 +831,8 @@ class MainStore(object):
                 GRAPH ?g { ?s ?p ?o . }
 
                 FILTER((?g = ?workMetadata || ?g = ?sourceMetadata) &&
-                       ((?visibility = "public") ||
-                        (?visibility = "private") && (?creator = ?user)))
+                       ((?visible = "public") ||
+                        (?visible = "private") && (?creator = ?user)))
             }
         """
 
@@ -886,7 +886,7 @@ class MainStore(object):
 
             p, o = Work.schema['creator'][1], user_uri
             query_params_1.append('{ ?s <%s> <%s> }' % (p, o.replace('"', '\\"')))
-            p, o = Work.schema['visibility'][1], "private"
+            p, o = Work.schema['visible'][1], "private"
             query_params_1.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
 
             query_string = query_string + " . \n".join(query_params_1)
@@ -897,7 +897,7 @@ class MainStore(object):
         # query params, part 2 - public works by everyone
         query_params_2 = query_params_all[:]
 
-        p, o = Work.schema['visibility'][1], "public"
+        p, o = Work.schema['visible'][1], "public"
         query_params_2.append('{ ?s <%s> "%s" }' % (p, o.replace('"', '\\"')))
 
         query_string = query_string + " . \n".join(query_params_2)

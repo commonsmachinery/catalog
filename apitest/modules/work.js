@@ -70,7 +70,7 @@ exports.put = function put(data, user){
         expect(updated).to.not.be('Invalid Date');
         expect(updated).to.be.greaterThan(created);
         expect(work.updatedBy).to.be(data.creator);
-        expect(work.visibility).to.be(data.visibility);
+        expect(work.visible).to.be(data.visible);
         expect(work.state).to.be(data.state);
 
         // Permissions should allow us to further manipulate this

@@ -110,12 +110,12 @@ List works:
 
 Filter works:
 
-    curl -H http://localhost:8004/works?visibility=public
+    curl -H http://localhost:8004/works?visible=public
 
 Create a work (the subject in the metadata will be rewritten to the
 generated subject):
 
-    curl --user test: -v -X POST -d '{"visibility":"public", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "Example Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' http://localhost:8004/works
+    curl --user test: -v -X POST -d '{"visible":"public", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "Example Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' http://localhost:8004/works
 
 Get a work:
 

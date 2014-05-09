@@ -52,17 +52,17 @@ work2_data = {
 
 work_update_data = {
     'state': 'published',
-    'visibility': 'public',
+    'visible': 'public',
 }
 
 public_work_data = {
     'id': 1,
-    'visibility': 'public',
+    'visible': 'public',
 }
 
 private_work_data = {
     'id': 1,
-    'visibility': 'private',
+    'visible': 'private',
 }
 
 
@@ -139,7 +139,7 @@ def test_create_work_data(store):
         'resource': 'http://src/works/2',
         'creator': 'http://src/users/test',
         'created': 1,
-        'visibility': 'private',
+        'visible': 'private',
         'metadataGraph': {'http://src/works/2': {'http://purl.org/dc/terms/title': [{'type': 'literal', 'value': 'Second Work'}]}},
         'state': 'draft',
         'id': 2,
@@ -209,7 +209,7 @@ def test_update_work_data(store):
         'updated': 2, 'resource': u'http://src/works/1',
         'created': u'0',
         'creator': u'http://src/users/test',
-        'visibility': 'public',
+        'visible': 'public',
         'metadataGraph': {u'http://src/works/1': {u'http://purl.org/dc/terms/title': [{u'datatype': u'http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral', u'type': u'literal', u'value': u'First Work'}]}},
         'state': 'published',
         'updatedBy': 'http://src/users/test',
@@ -227,7 +227,7 @@ def test_get_work(store):
         'resource': u'http://src/works/1',
         'created': u'0',
         'creator': u'http://src/users/test',
-        'visibility': u'private',
+        'visible': u'private',
         'metadataGraph': {u'http://src/works/1': {u'http://purl.org/dc/terms/title': [{u'datatype': u'http://www.w3.org/1999/02/22-rdf-syntax-ns#XMLLiteral', u'type': u'literal', u'value': u'First Work'}]}},
         'state': u'draft',
         'id': 1,

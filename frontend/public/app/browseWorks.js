@@ -33,9 +33,9 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 			var changes = {};
 			var trigger = false;
 
-            var visibility = this.$('#new-visibility').val();
-			if (visibility) {
-				changes.visibility = visibility;
+            var visible = this.$('#new-visible').val();
+			if (visible) {
+				changes.visible = visible;
 				trigger = true;
 			}
 
