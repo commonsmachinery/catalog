@@ -1,0 +1,27 @@
+//- Catalog web - page displaying a work
+//- 
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+- var work = data
+
+div#newWork.dialog(class="prefix-35 grid-30 tablet-prefix-25 tablet-grid-50 mobile-grid-100")
+    form(action="/works", method="POST")
+        div
+            h3 Create a new work
+        div
+            label(for="visibility") Visibility:
+            select(data-bind="visibility", id="visibility")
+                option(value="private") Private
+                option(value="group") Group
+                option(value="public") Public
+
+            label(for="state") State:
+            select(data-bind="state", id="state")
+                option(value="draft") Draft
+                option(value="published") Published
+        | Metadata:
+        textarea(data-bind="metadataGraph")
+        button(data-action="create") Create
+        button(data-action="cancel") Cancel
+

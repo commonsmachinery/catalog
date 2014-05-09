@@ -22,6 +22,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 	var WorksActionView = Backbone.View.extend({
 		events: {
 			'click #batch-update': 'onBatchUpdate',
+			'click #new-work': 'onNewWork'
 		},
 
 		onBatchUpdate: function onBatchUpdate() {
@@ -44,6 +45,14 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				hub.trigger('batchUpdate', changes);
 			}
 		},
+		onNewWork: function onNewWork() {
+			$.get('/createWork', function(data){
+				$('body').append(data);
+				$('#newWork [data-action="cancel"]').on('click',function(){
+					$('#newWork').remove();
+				});
+			});
+		}
 	});
 
 	var WorkListItemView = Backbone.View.extend({

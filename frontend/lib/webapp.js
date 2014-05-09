@@ -19,4 +19,7 @@ exports.routes = function routes(app) {
     app.get('/', function(req, res) {
         res.render('home');
     });
+    app.get('/createWork', function(req, res) {
+        res.render('createWork');
+    });
 };
