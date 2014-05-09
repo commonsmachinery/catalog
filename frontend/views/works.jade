@@ -1,45 +1,88 @@
+//- Catalog web - page for list of works
 //- 
-	Catalog web/view
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-	Copyright 2014 Commons Machinery http://commonsmachinery.se/
+- var works = data;
 
-	Authors:
-		Elsa Balderrama <elsa@commonsmachinery.se>
+- function shortenUserURI(uri) { var pos = uri.search(/\/[^\/]+$/); return pos > 0 ? uri.slice(pos + 1) : uri; };
 
-	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
-
-- var works = data
-- data = {"data":works};
-- var stringData = JSON.stringify(data);
-
-mixin workView(data)
-	- var data = data || {}
-	- var creator = data.creator.match(/users\/([^\/]+)/)[1]
-	div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
-		h2: a(href="#{data.resource}") #{data.id}
-		span(name="visibility")
-		span(name="state")
-		a.seeMeta(href="#{data.metadata}" name="metadata") (see metadata...)
-		span.info
-			| by 
-			a(href="#{data.creator}") #{creator} 
-			| on 
-			span(name="created") #{data.created} 
-			if data.updated
-				- var updatedBy = data.updatedBy.match(/users\/([^\/]+)/)[1]
-				br
-				| last updated by 
-				a(href="#{data.updatedBy}") #{updatedBy} 
-				| on 
-				span(name="updated") #{data.updated}
+mixin workListItemView(work, idPrefix)
+    div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
+        div.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
+            div
+                if user
+                    input.batchSelectItem(type='checkbox', disabled=true)
+                h2: a(data-bind-href="resource", href=work.resource || '#')
+                    span(data-bind="id") #{work.id || ''}
+                = ' ('
+                span(data-bind="visibility") #{work.visibility || '' }
+                = ', '
+                span(data-bind="state") #{work.state || '' }
+                = ')'
+            div
+                = 'Created by '
+                span(data-bind="creator") #{shortenUserURI(work.creator || '')}
+                = ' on '
+                span(data-bind="created") #{work.created || ''}
+            div
+                = 'Last updated by '
+                span(data-bind="updatedBy") #{shortenUserURI(work.updatedBy || '')}
+                = ' on '
+            span(data-bind="updated") #{work.updated || ''}
 
 include includes/top
-	for work in works
-		+workView(work)
-include includes/bottom
+    if works
+        if user
+            div#actions
+                button(id="add-work") +Add work
+                button(id="batch-update") Batch update:
+                label(for="new-visibility") Visibility
+                select(id="new-visibility")
+                    option(value="")
+                    option(value="private") Private
+                    option(value="group") Group
+                    option(value="public") Public
+                label(for="new-state") State
+                select(id="new-state")
+                    option(value="")
+                    option(value="draft") Draft
+                    option(value="published") Published
 
-script#workTemplate(type="text/template")
-	+workView(works[0])
+        ul#works
+            for work in works
+                +workListItemView(work, 'works')
+    else
+        b There are no visible works.
 
-script#bootstrapData #{stringData}
+    include includes/bottom
+
+    script#workListItemTemplate(type="text/template")
+        +workListItemView({}, null)
+
+    script#addWorkTemplate(type='text/template')
+        div#addWork.dialog(class="prefix-35 grid-30 tablet-prefix-25 tablet-grid-50 mobile-grid-100")
+            div: h3 Add a work to the catalog
+            formset.editable
+                div
+                    label(for="visibility") Visibility:
+                    select(data-bind="visibility", id="visibility")
+                        option(value="private") Private
+                        option(value="group") Group
+                        option(value="public") Public
+
+                    label(for="state") State:
+                    select(data-bind="state", id="state")
+                        option(value="draft") Draft
+                        option(value="published") Published
+                div
+                    label(for="metadata") Metadata:
+                    br
+                    textarea(data-bind="metadataGraph", id="metadata")
+            formset.actions: div
+                button(data-action="create") Create
+                button(data-action="cancel") Cancel
+
+    script.bootstrapData(type='application/json')
+        != bootstrapData({ "data": works || [] })
 

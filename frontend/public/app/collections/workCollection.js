@@ -1,15 +1,19 @@
-/*global define*/
+/* Catalog web application - Backbone collection of works
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
-define(function(require){
+define(['lib/backbone', 'models/workModel'],
+	   function(Backbone, Work)
+{
 	'use strict';
-
-	var Backbone = require('lib/backbone');
-	var Work = require('models/work');
 
 	var WorkCollection = Backbone.Collection.extend({
 		model: Work,
-		initialize: function(comparator){
-			this.comparator = comparator || 'created';
+		url: '/works',
+
+		initialize: function() {
 		}
 	});
 	return WorkCollection;

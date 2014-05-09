@@ -45,16 +45,30 @@ def schema2json(s):
     return json_schema
 
 class Entry(object):
+    rdf_type = NS_REM3 + 'Entry'
+
     schema = {
-        'type':         ('string',   NS_RDF      + 'type'        ),
+        'type':         ('resource', NS_RDF      + 'type'        ),
         'updated':      ('string',   NS_CATALOG  + 'updated'     ),
         'updatedBy':    ('resource', NS_CATALOG  + 'updatedBy'   ),
     }
 
+    # Map (permission1, permission2) to a WHERE clause that will be
+    # wrapped in an ASK query.  The values ?entry and ?user will be
+    # bound to the corresponding URIs.
+    permission_queries = {}
+
+    base_permission_query = (
+        'PREFIX catalog: <http://catalog.commonsmachinery.se/ns#>\n'
+        'PREFIX rem3: <http://scam.sf.net/schema#>\n'
+        'PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n'
+        'ASK {{ VALUES (?entry ?user) {{ (<{entry}> <{user}>) }} {query} }}'
+    )
+
     def __init__(self, uri, dict):
         self._uri = str(uri)
         self._dict = dict
-        self._dict['type'] = self.__class__.__name__
+        self._dict['type'] = self.__class__.rdf_type
 
     def __getitem__(self, name):
         if self._dict.has_key(name):
@@ -111,7 +125,7 @@ class Entry(object):
         return metadata_graph
 
     @classmethod
-    def from_model(cls, model, uri):
+    def from_model(cls, model, uri, user_uri = None):
         """
         Construct an entry from the store.
         """
@@ -158,7 +172,10 @@ class Entry(object):
         if len(data) == 0:
             raise EntryNotFoundError(context)
 
-        return cls(uri, data)
+        entry = cls(uri, data)
+        entry.permissions_from_model(model, user_uri)
+
+        return entry
 
     def to_model(self, model):
         context = RDF.Node(RDF.Uri(self._uri))
@@ -246,10 +263,37 @@ class Entry(object):
                 subgraphs.append(self._dict[key])
 
         return subgraphs
+
+
+    def permissions_from_model(self, model, user_uri = None):
+        """Set the permissions property with a map of permissions
+        for the user accessing the entry.  If user_uri is None,
+        an empty map of permissions is set.
+        """
+
+        entry_perms = {}
+        if user_uri is not None:
+            for perms, query_string in self.permission_queries.iteritems():
+                assert type(perms) is type(())
+
+                query = RDF.Query(self.base_permission_query.format(
+                    query=query_string,
+                    entry=str(self.uri),
+                    user=str(user_uri)))
+
+                result = query.execute(model)
+                if result.get_boolean():
+                    for p in perms:
+                        entry_perms[p] = True
+
+        self._dict['permissions'] = entry_perms
+
 Entry.json_schema = schema2json(Entry.schema)
 
 
 class Work(Entry):
+    rdf_type = NS_CATALOG + 'Work'
+
     schema = dict(Entry.schema, **{
         'id':           ('number',    NS_CATALOG  + 'id'          ),
         'resource':     ('resource',  NS_REM3     + 'resource'    ),
@@ -262,9 +306,24 @@ class Work(Entry):
         'source':       ('uri_list',  NS_CATALOG  + 'source'      ),
     })
 
+    owner_permissions = { 'read': True,
+                          'edit': True,
+                          'delete': True,
+                      }
+
+    permission_queries = {
+        ('read', ): ('{ ?entry catalog:creator ?user } '
+                     'UNION '
+                     '{ ?entry catalog:visibility "public" }'),
+        ('edit', 'delete'): '?entry catalog:creator ?user',
+    }
+
+
 Work.json_schema = schema2json(Work.schema)
 
 class Source(Entry):
+    rdf_type = NS_CATALOG + 'Source'
+
     schema = dict(Entry.schema, **{
         'id':           ('number',   NS_CATALOG  + 'id'          ),
         'metadata':     ('graph',    NS_REM3     + 'metadata'    ),
@@ -274,9 +333,29 @@ class Source(Entry):
         'resource':     ('resource', NS_REM3     + 'resource'    ),
     })
 
+    permission_queries = {
+        ('read', ): (
+            '{ ?work catalog:source ?entry . ?work catalog:creator ?user . } '
+            'UNION '
+            # Stock sources (to go away...)
+            '{ ?entry catalog:addedBy ?user . } '
+            'UNION '
+            '{ ?work catalog:source ?entry . ?work catalog:visibility "public" }'
+        ),
+
+        ('edit', 'delete'): (
+            '{ ?work catalog:source ?entry . ?work catalog:creator ?user . } '
+            'UNION '
+            # Stock sources (to go away...)
+            '{ ?entry catalog:addedBy ?user . } '
+        ),
+    }
+
 Source.json_schema = schema2json(Source.schema)
 
 class Post(Entry):
+    rdf_type = NS_CATALOG + 'Post'
+
     schema = dict(Entry.schema, **{
         'id':           ('number',    NS_CATALOG  + 'id'            ),
         'resource':     ('resource',  NS_REM3     + 'resource'      ),
@@ -285,6 +364,18 @@ class Post(Entry):
         'posted':       ('string',    NS_CATALOG  + 'posted'        ),
         'postedBy':     ('resource',  NS_CATALOG  + 'postedBy'      ),
     })
+
+    permission_queries = {
+        ('read', ): (
+            '{ ?work catalog:post ?entry . ?work catalog:creator ?user . } '
+            'UNION '
+            '{ ?work catalog:post ?entry . ?work catalog:visibility "public" }'
+        ),
+
+        ('edit', 'delete'): (
+            '{ ?work catalog:post ?entry . ?work catalog:creator ?user . }'
+        ),
+    }
 
 Post.json_schema = schema2json(Post.schema)
 
@@ -339,44 +430,13 @@ class MainStore(object):
         for statement, context in self._model.find_statements_context(query_statement):
             entry_type = self._model.get_targets(statement.subject, RDF.Uri(NS_RDF + 'type')).current()
             # we don't have User entries yet, so type is None occassionally
-            if entry_type is not None and entry_type.literal[0] == 'Work':
+            if entry_type is not None and entry_type.uri == RDF.Uri(Work.rdf_type):
                 return Work.from_model(self._model, str(statement.subject))
 
         return None
 
-    def _can_read(self, user_uri, entry):
-        if isinstance(entry, Work):
-            return entry['creator'] == user_uri or entry['visibility'] == 'public'
-        elif isinstance(entry, Source):
-            work = self._get_linked_work(NS_CATALOG + "source", entry.uri)
-            if work:
-                # linked source
-                return work['creator'] == user_uri or work['visibility'] == 'public'
-            else:
-                # source without work
-                return entry['addedBy'] == user_uri
-        elif isinstance(entry, Post):
-            work = self._get_linked_work(NS_CATALOG + "post", entry.uri)
-            return work['creator'] == user_uri or work['visibility'] == 'public'
-        else:
-            raise TypeError("Invalid entry type: {0}".format(entry.__class__.__name__))
-
-    def _can_modify(self, user_uri, entry):
-        if isinstance(entry, Work):
-            return entry['creator'] == user_uri
-        elif isinstance(entry, Source):
-            work = self._get_linked_work(NS_CATALOG + "source", entry.uri)
-            if work:
-                # linked source
-                return work['creator'] == user_uri and entry['addedBy'] == user_uri
-            else:
-                # source without work
-                return entry['addedBy'] == user_uri
-        elif isinstance(entry, Post):
-            work = self._get_linked_work(NS_CATALOG + "post", entry.uri)
-            return work['creator'] == user_uri
-        else:
-            raise TypeError("Invalid entry type: {0}".format(entry.__class__.__name__))
+    def _can_access(self, access, entry):
+        return access in entry['permissions']
 
     def _entry_exists(self, entry_uri):
         query_statement = RDF.Statement(RDF.Uri(entry_uri), RDF.Uri(NS_CATALOG + "id"), None)
@@ -408,15 +468,16 @@ class MainStore(object):
             'visibility': work_data['visibility'],
             'state': work_data['state'],
             'metadataGraph': work_data['metadataGraph'],
+            'permissions': Work.owner_permissions,
         })
 
         work.to_model(self._model)
         return work.get_data()
 
     def update_work(self, timestamp, user_uri, work_uri, work_data):
-        work = Work.from_model(self._model, work_uri)
+        work = Work.from_model(self._model, work_uri, user_uri)
 
-        if not self._can_modify(user_uri, work):
+        if not self._can_access('edit', work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         new_data = work.get_data()
@@ -444,9 +505,9 @@ class MainStore(object):
         return new_work.get_data()
 
     def delete_work(self, user_uri, work_uri, linked_entries=False):
-        work = Work.from_model(self._model, work_uri)
+        work = Work.from_model(self._model, work_uri, user_uri)
 
-        if not self._can_modify(user_uri, work):
+        if not self._can_access('delete', work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         if linked_entries:
@@ -464,9 +525,9 @@ class MainStore(object):
         self._model.remove_statements_with_context(work_context)
 
     def get_work(self, user_uri, work_uri, subgraph=None):
-        work = Work.from_model(self._model, work_uri)
+        work = Work.from_model(self._model, work_uri, user_uri)
 
-        if not self._can_read(user_uri, work):
+        if not self._can_access('read', work):
             raise EntryAccessError("Can't access work {0}".format(work_uri))
 
         if not subgraph:
@@ -487,9 +548,9 @@ class MainStore(object):
         if self._entry_exists(source_uri):
             raise CatalogError("Entry {0} already exists".format(source_uri))
 
-        work = Work.from_model(self._model, work_uri)
+        work = Work.from_model(self._model, work_uri, user_uri)
 
-        if not self._can_modify(user_uri, work):
+        if not self._can_access('edit', work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         try:
@@ -507,6 +568,7 @@ class MainStore(object):
             'addedBy': user_uri,
             'added': timestamp,
             'resource': resource,
+            'permissions': Work.owner_permissions,
         })
 
         source.to_model(self._model)
@@ -539,6 +601,7 @@ class MainStore(object):
             'addedBy': user_uri,
             'added': timestamp,
             'resource': resource,
+            'permissions': Work.owner_permissions,
         })
 
         source.to_model(self._model)
@@ -554,9 +617,9 @@ class MainStore(object):
         return source.get_data()
 
     def update_source(self, timestamp, user_uri, source_uri, source_data):
-        source = Source.from_model(self._model, source_uri)
+        source = Source.from_model(self._model, source_uri, user_uri)
 
-        if not self._can_modify(user_uri, source):
+        if not self._can_access('edit', source):
             raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
 
         old_data = source.get_data()
@@ -574,9 +637,9 @@ class MainStore(object):
         return new_source.get_data()
 
     def delete_source(self, user_uri, source_uri, unlink=True):
-        source = Source.from_model(self._model, source_uri)
+        source = Source.from_model(self._model, source_uri, user_uri)
 
-        if not self._can_modify(user_uri, source):
+        if not self._can_access('delete', source):
             raise EntryAccessError("Source {0} can't be modified by {1}".format(source_uri, user_uri))
 
         # delete the link to work, if exists
@@ -595,9 +658,9 @@ class MainStore(object):
         self._model.remove_statements_with_context(RDF.Node(RDF.Uri(source_uri)))
 
     def get_source(self, user_uri, source_uri, subgraph=None):
-        source = Source.from_model(self._model, source_uri)
+        source = Source.from_model(self._model, source_uri, user_uri)
 
-        if not self._can_read(user_uri, source):
+        if not self._can_access('read', source):
             raise EntryAccessError("Can't access source {0}".format(source_uri))
 
         if not subgraph:
@@ -634,9 +697,9 @@ class MainStore(object):
         if self._entry_exists(post_uri):
             raise CatalogError("Entry {0} already exists".format(post_uri))
 
-        work = Work.from_model(self._model, work_uri)
+        work = Work.from_model(self._model, work_uri, user_uri)
 
-        if not self._can_modify(user_uri, work):
+        if not self._can_access('edit', work):
             raise EntryAccessError("Work {0} can't be modified by {1}".format(work_uri, user_uri))
 
         try:
@@ -654,6 +717,7 @@ class MainStore(object):
             'metadataGraph': metadataGraph,
             'cachedExternalMetadataGraph': cemGraph,
             'resource': resource,
+            'permissions': Work.owner_permissions,
         })
 
         post.to_model(self._model)
@@ -668,9 +732,9 @@ class MainStore(object):
         return post.get_data()
 
     def update_post(self, timestamp, user_uri, post_uri, post_data):
-        post = Post.from_model(self._model, post_uri)
+        post = Post.from_model(self._model, post_uri, user_uri)
 
-        if not self._can_modify(user_uri, post):
+        if not self._can_access('edit', post):
             raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user_uri))
 
         old_data = post.get_data()
@@ -688,9 +752,9 @@ class MainStore(object):
         return new_post.get_data()
 
     def delete_post(self, user_uri, post_uri, unlink=True):
-        post = Post.from_model(self._model, post_uri)
+        post = Post.from_model(self._model, post_uri, user_uri)
 
-        if not self._can_modify(user_uri, post):
+        if not self._can_access('delete', post):
             raise EntryAccessError("Post {0} can't be modified by {1}".format(post_uri, user_uri))
 
         # delete the link to work, if exists
@@ -709,9 +773,9 @@ class MainStore(object):
         self._model.remove_statements_with_context(RDF.Node(RDF.Uri(post_uri)))
 
     def get_post(self, user_uri, post_uri, subgraph=None):
-        post = Post.from_model(self._model, post_uri)
+        post = Post.from_model(self._model, post_uri, user_uri)
 
-        if not self._can_read(user_uri, post):
+        if not self._can_access('read', post):
             raise EntryAccessError("Can't access post {0}".format(post_uri))
 
         if not subgraph:
@@ -732,9 +796,9 @@ class MainStore(object):
         return posts
 
     def get_complete_metadata(self, user_uri, work_uri, format='json'):
-        work = Work.from_model(self._model, work_uri)
+        work = Work.from_model(self._model, work_uri, user_uri)
 
-        if not self._can_read(user_uri, work):
+        if not self._can_access('read', work):
             raise EntryAccessError("Can't access work {0}".format(work_uri))
 
         if format not in ('ntriples', 'rdfxml', 'json'):
@@ -857,10 +921,9 @@ class MainStore(object):
 
 
 class PublicStore(MainStore):
-    def _can_read(self, user_uri, entry):
-        return True
-
-    def _can_modify(self, user_uri, entry):
+    # In public store only read access is allowed, but on the other
+    # hand all objects can be accessed
+    def _can_access(self, access, entry):
         return True
 
     def query_sparql(self, query_string=None, results_format="json"):

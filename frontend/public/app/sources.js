@@ -1,11 +1,17 @@
-/*global define, window, $*/
+/* Catalog web application - browsing list of works
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
-define(function(require){
-	'use strict'; 
+define(['jquery', 'views/sourceView', 'views/collectionView',
+		'models/sourceModel', 'collections/sourceCollection'],
+	   function($, SourceView, CollectionView, Source, SourceCollection)
+{
+	'use strict';
 
-	var SourceView, collection;
+	var collection;
 	function promptForm (ev) {
-		var Source = require('models/sourceModel');
 		var model = new Source();
 		var $dialog = $($('#formTemplate').html())
 			.attr('id','formDialog');
@@ -21,28 +27,23 @@ define(function(require){
 		return;
 	}
 
-	var $ = require('jquery');
-	SourceView = require('views/sourceView');
-	var CollectionView = require('views/collectionView');
-	var SourceCollection = require('collections/sourceCollection');
+	return function sources (router) {
+		/* make initial models */
+		var $bootstrapData = $('.bootstrapData');
+		var sourceData = JSON.parse($bootstrapData.text()).data;
+		$bootstrapData.remove();
 
-	/* make initial models */
-	var $bootstrapData = $('.bootstrapData');
-	var sourceData = JSON.parse($bootstrapData.text()).data;
-	$bootstrapData.remove();
+		/* bind views */
+		collection = new SourceCollection(sourceData);
+		var collectionView = new CollectionView({
+			el: '#sources',
+			template: '#sourceTemplate',
+			childTag: '.source',
+			childView: SourceView,
+			collection: collection
+		});
+		collectionView.render();
 
-	/* bind views */
-	collection = new SourceCollection(sourceData);
-	var collectionView = new CollectionView({
-		el: '#sources',
-		template: '#sourceTemplate',
-		childTag: '.source',
-		childView: SourceView,
-		collection: collection
-	});
-	collectionView.render();
-
-	$('#sources > .add').on('click', promptForm);
-
-	return;
+		$('#sources > .add').on('click', promptForm);
+	};
 });

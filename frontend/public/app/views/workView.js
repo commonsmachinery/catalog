@@ -1,32 +1,42 @@
-/*global define*/
+/* Catalog web application - view for showing/editing a work
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
-define(function(require){
-    'use strict'; 
+define(['jquery', 'underscore', 'lib/backbone', 'util',
+        'lib/Backbone.ModelBinder',
+        'views/editMixin', 'views/deleteMixin'],
+       function($, _, Backbone, util,
+                ModelBinder,
+                EditMixin, DeleteMixin)
+{
+    'use strict';
 
-    var $ = require('jquery');
-    var Backbone = require('lib/backbone');
-    var util = require('util');
+    var WorkView = Backbone.View.extend(_.extend(EditMixin, DeleteMixin, {
+        events: _.extend(EditMixin.events, DeleteMixin.events, {
 
-    var View = Backbone.View.extend({
-        binder: new Backbone.ModelBinder(),
-        initialize: function(model, el){
+        }),
 
-            this.el = el;
-            this.model = model;
-            var self = this;
-            this.render();
+        initialize: function() {
+            this._binder = new ModelBinder();
+            this._perms = this.model.get('permissions') || {};
 
-            /* switch to edit mode */
-            $('.edit').one('click', function(ev){
-                util.editMode(ev, self);
+            this.listenTo(this, 'delete:success', function () {
+                document.location = '/works';
             });
-            return;
         },
-        render: function(){
-            this.binder.bind(this.model, this.el);
-            return this;
-        }
-    });
 
-    return View;
+        render: function() {
+            if (this._perms.delete) {
+                // This is hidden by default by the template
+                this.$('[data-action="delete"]').show();
+            }
+
+            this._binder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
+            return this;
+        },
+    }));
+
+    return WorkView;
 });

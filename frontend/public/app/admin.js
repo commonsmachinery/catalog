@@ -1,4 +1,8 @@
-/*global define*/
+/* Catalog web application - admin app
+ *
+ * Copyright 2014 Commons Machinery http://commonsmachinery.se/
+ * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+ */
 
 define(['jquery'], function($) {
 	'use strict';
@@ -25,7 +29,9 @@ define(['jquery'], function($) {
             });
     }
 
-    $('.lock').on('click', onLock);
+	return function admin(router) {
+		$('.lock').on('click', onLock);
+	};
 });
 
 
