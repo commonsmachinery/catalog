@@ -5,13 +5,17 @@
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
-		'models/workModel',
+        'lib/Backbone.ModelBinder',
+        'models/workModel',
 		'collections/workCollection',
-		'views/collectionView'],
-	   function($, _, Backbone, util,
+        'views/collectionView',
+        'views/createWorkView'],
+       function($, _, Backbone, util,
+                ModelBinder,
 				Work,
 				WorkCollection,
-				CollectionView)
+                CollectionView,
+                CreateWorkView)
 {
 	'use strict';
 
@@ -22,14 +26,14 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 	var WorksActionView = Backbone.View.extend({
 		events: {
 			'click #batch-update': 'onBatchUpdate',
-			'click #new-work': 'onNewWork'
+            'click #add-work': 'onAddWork'
 		},
 
 		onBatchUpdate: function onBatchUpdate() {
 			var changes = {};
 			var trigger = false;
 
-			var visibility = this.$('#new-visibility').val();
+            var visibility = this.$('#new-visibility').val();
 			if (visibility) {
 				changes.visibility = visibility;
 				trigger = true;
@@ -45,19 +49,30 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				hub.trigger('batchUpdate', changes);
 			}
 		},
-		onNewWork: function onNewWork() {
-			$.get('/createWork', function(data){
-				$('body').append(data);
-				$('#newWork [data-action="cancel"]').on('click',function(){
-					$('#newWork').remove();
-				});
-			});
-		}
+
+        onAddWork: function onAddWork() {
+            var createView = new CreateWorkView({
+                el: $($('#addWorkTemplate').html()),
+            });
+
+            $(document.body).append(createView.render().el);
+
+            this.listenTo(createView, 'create:success', function (view, work) {
+                createView.remove();
+
+                // Just redirect to the new work
+                document.location = work.get('resource');
+            });
+
+            this.listenTo(createView, 'create:cancel', function () {
+                createView.remove();
+            });
+        }
 	});
 
 	var WorkListItemView = Backbone.View.extend({
 		initialize: function() {
-			this._modelBinder = new Backbone.ModelBinder();
+            this._modelBinder = new ModelBinder();
 			this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
             this._perms = this.model.get('permissions') || {};
 		},
@@ -68,11 +83,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				this.$('.batchSelectItem').prop('disabled', false);
 			}
 
-			var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'data-bind');
-
-			bindings.resource.elAttribute = 'href';
-
-			this._modelBinder.bind(this.model, this.el, bindings);
+            this._modelBinder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
 		},
 
 		remove: function() {

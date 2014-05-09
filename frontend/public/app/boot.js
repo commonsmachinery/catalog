@@ -26,9 +26,6 @@ requirejs.config({
 require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
     'use strict';
 
-    /* add backbone plugins */
-	require(['lib/Backbone.ModelBinder']);
-
 	function _init(){
 		session.init();
 

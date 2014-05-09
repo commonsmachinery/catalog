@@ -16,7 +16,9 @@ mixin workListItemView(work, idPrefix)
                 span(data-bind="visibility") #{work.visibility || '' }
                 = ', '
                 span(data-bind="state") #{work.state || '' }
-                = ') by '
+                = ')'
+            div
+                = 'Created by '
                 span(data-bind="creator") #{work.creator || ''}
                 = ' on '
                 span(data-bind="created") #{work.created || ''}
@@ -41,7 +43,7 @@ include includes/top
                 option(value="draft") Draft
                 option(value="published") Published
             button(id="batch-update") Batch update
-            button(id="new-work") +
+            button(id="add-work") +Add work
 
         ul#works
             for work in works
@@ -54,5 +56,29 @@ include includes/top
     script#workListItemTemplate(type="text/template")
         +workListItemView({}, null)
 
+    script#addWorkTemplate(type='text/template')
+        div#addWork.dialog(class="prefix-35 grid-30 tablet-prefix-25 tablet-grid-50 mobile-grid-100")
+            div: h3 Add a work to the catalog
+            formset.editable
+                div
+                    label(for="visibility") Visibility:
+                    select(data-bind="visibility", id="visibility")
+                        option(value="private") Private
+                        option(value="group") Group
+                        option(value="public") Public
+
+                    label(for="state") State:
+                    select(data-bind="state", id="state")
+                        option(value="draft") Draft
+                        option(value="published") Published
+                div
+                    label(for="metadata") Metadata:
+                    br
+                    textarea(data-bind="metadataGraph", id="metadata")
+            formset.actions: div
+                button(data-action="create") Create
+                button(data-action="cancel") Cancel
+
     script.bootstrapData(type='application/json')
         != bootstrapData({ "data": works || [] })
+

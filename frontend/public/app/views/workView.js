@@ -5,8 +5,10 @@
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
+        'lib/Backbone.ModelBinder',
         'views/editMixin', 'views/deleteMixin'],
        function($, _, Backbone, util,
+                ModelBinder,
                 EditMixin, DeleteMixin)
 {
     'use strict';
@@ -17,7 +19,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         }),
 
         initialize: function() {
-            this._binder = new Backbone.ModelBinder();
+            this._binder = new ModelBinder();
             this._perms = this.model.get('permissions') || {};
 
             this.listenTo(this, 'delete:success', function () {
@@ -31,20 +33,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 this.$('[data-action="delete"]').show();
             }
 
-            var bindings = Backbone.ModelBinder.createDefaultBindings(this.el, 'data-bind');
-
-            bindings.metadata.elAttribute = 'href';
-
-            bindings.metadataGraph.converter = function(direction, value) {
-                if (direction === Backbone.ModelBinder.Constants.ModelToView) {
-                    return JSON.stringify(value, null, 2);
-                }
-                else {
-                    return JSON.parse(value);
-                }
-            };
-
-            this._binder.bind(this.model, this.el, bindings);
+            this._binder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
             return this;
         },
     }));

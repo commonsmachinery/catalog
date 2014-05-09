@@ -9,46 +9,17 @@
 */
 
 
-define(['jquery'], function($) {
-	'use strict'; 
+define(['jquery', 'lib/Backbone.ModelBinder'],
+	  function($, ModelBinder)
+{
+	'use strict';
 
-	function enableInput (index, elem) {
-		$(elem).attr('disabled', false);
-		return;
-	}
-	function makeText(index, elem){
-		$(elem).attr('disabled', true);
-		return;
-	}
-	function save(ev, view){
-		$(ev.target).val('edit');
-		$(view.el).find('.editable').each(makeText);
-		$(ev.target).one('click', function(ev){
-			editMode(ev, view);
-		});
-		var model = view.model;
-		var changes = model.changesMade;
-		if (changes >= 1){
-			model.sync('update', model);
-		}
-		else{
-			/* ToDo: when only one change made, patch */
-			console.log('a');
-			model.sync('update', model);
-		}
-		return;
-	}
+	var exports = {};
 
-	function editMode(ev, view) {
-		$(ev.target).val('save');
-		$(view.el).find('.editable').each(enableInput);
-		$(ev.target).one('click', function(){
-			save(ev, view);
-		});
-		return;
-	}
-
-	var bootstrapData = function bootstrapData(selector) {
+	/* Locate, parse and return bootstrapped data.  If there isn't
+	 * any, or it can't be parsed, return null.
+	 */
+	exports.bootstrapData = function bootstrapData(selector) {
 		if (!selector) {
 			selector = '.bootstrapData';
 		}
@@ -70,8 +41,37 @@ define(['jquery'], function($) {
 		}
 	};
 
-	return {
-		editMode: editMode,
-		bootstrapData: bootstrapData,
+	/* Create default bindings for a view, setting up standard converters etc.
+	   * The returned object can be passed to ModelBinder.bind().
+	  */
+	exports.createDefaultBindings = function createDefaultBindings(el, entryType) {
+		var bindings = ModelBinder.createDefaultBindings(el, 'data-bind');
+
+		// TODO: these should have a proper converter function that
+		// detects <a> and sets href on them, on others just set
+		// the contents as normal
+
+		if (bindings.resource) {
+			bindings.resource.elAttribute = 'href';
+		}
+
+		if (bindings.metadata) {
+			bindings.metadata.elAttribute = 'href';
+		}
+
+		if (bindings.metadataGraph) {
+            bindings.metadataGraph.converter = function(direction, value) {
+                if (direction === ModelBinder.Constants.ModelToView) {
+                    return JSON.stringify(value, null, 2);
+                }
+                else {
+                    return JSON.parse(value);
+                }
+            };
+		}
+
+		return bindings;
 	};
+
+	return exports;
 });
