@@ -89,7 +89,7 @@ header
            width 40%
     ul, li
         display inline-block
-    nav
+    nav#header
         background-color nav-color
         border-radius 0  0 (round-factor * 0.3em) (round-factor * 0.3em)
         height nav-height
@@ -197,13 +197,17 @@ footer
 
 #breadCrumbs
     margin 0
-    width 90%
+    text-align left
+    vertical-align top
+    width 100%
     ul, li
         display inline-block   
     > ul
         width 100%
         > li:before
                 content " > "
+        > li:first-child:before
+                content ""
 
 #content
     display block

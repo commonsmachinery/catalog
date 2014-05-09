@@ -27,35 +27,36 @@ html(lang="en")
     body(data-login-user=user || '', data-login-email=loginEmail || '', data-login-type=loginType || '')
         header(class="grid-container grid-100", id="#{isHome}")
             div#logo(class="grid-30 tablet-grid-40 mobile-grid-100"): a(href="/")
-            div(class="grid-50 tablet-grid-60 mobile-grid-100"): nav
-                ul#pages
-                    li: a(href="/"): img(src="/media/home.png")
-                    li: a(href="/works"): | catalog
-                ul#user
-                    if (user)
-                        li(class="#{loginType}"): a(href="/users/#{user}")
-                            | #{loginEmail}
-                        case loginType
-                            when 'persona'
-                                li: a#logout-persona(href="#")
-                                    | Logout
-                            when 'test'
-                                li: a(href="/test/logout")
-                                    | Logout
-                    else
-                        li: a(href="/login")
+            div(class="grid-50 tablet-grid-60 mobile-grid-100")
+                nav#header
+                    ul#pages
+                        li: a(href="/"): img(src="/media/home.png")
+                        li: a(href="/works"): | works
+                    ul#user
+                        if (user)
+                            li(class="#{loginType}"): a(href="/users/#{user}")
+                                | #{loginEmail}
+                            case loginType
+                                when 'persona'
+                                    li: a#logout-persona(href="#")
+                                        | Logout
+                                when 'test'
+                                    li: a(href="/test/logout")
+                                        | Logout
+                        else
+                            li: a(href="/login")
                             | Login
-        nav#breadCrumbs: ul
-            - var path = url;
-            - path = path.replace(/(^\/|\/$)/g, '').split('/');
-            for i in path
-                - step = i.match(/([-_A-Z]?[^A-Z]*)/g);
-                - step = step.join(' ').toLowerCase();
-                if i != path[path.length -1]
-                    - var exp = new RegExp('.*' + i + '(.*)', 'i');
-                    - var remove = url.match(exp)[1];
-                    li: a(href="#{url.replace(remove, '')}") #{step}
-                else
+                nav#breadCrumbs: ul
+                    - var path = url;
+                    - path = path.replace(/(^\/|\/$)/g, '').split('/');
+                    for i in path
+                        - step = i.match(/([-_A-Z]?[^A-Z]*)/g);
+                        - step = step.join(' ').toLowerCase();
+                        if i != path[path.length -1]
+                            - var exp = new RegExp('.*' + i + '(.*)', 'i');
+                            - var remove = url.match(exp)[1];
+                            li: a(href="#{url.replace(remove, '')}") #{step}
+                        else
                     li.last: | #{step}
         div#content(class="grid-container")
             | 
