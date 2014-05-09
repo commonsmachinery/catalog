@@ -5,12 +5,14 @@
 
 - var works = data;
 
+- function shortenUserURI(uri) { var pos = uri.search(/\/[^\/]+$/); return pos > 0 ? uri.slice(pos + 1) : uri; };
+
 mixin workListItemView(work, idPrefix)
     div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
         div.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
             div
                 input.batchSelectItem(type='checkbox', disabled=true)
-                h2: a(data-bind="resource", href=work.resource || '#')
+                h2: a(data-bind-href="resource", href=work.resource || '#')
                     span(data-bind="id") #{work.id || ''}
                 = ' ('
                 span(data-bind="visibility") #{work.visibility || '' }
@@ -19,12 +21,12 @@ mixin workListItemView(work, idPrefix)
                 = ')'
             div
                 = 'Created by '
-                span(data-bind="creator") #{work.creator || ''}
+                span(data-bind="creator") #{shortenUserURI(work.creator || '')}
                 = ' on '
                 span(data-bind="created") #{work.created || ''}
             div
                 = 'Last updated by '
-                span(data-bind="updatedBy") #{work.updatedBy || ''}
+                span(data-bind="updatedBy") #{shortenUserURI(work.updatedBy || '')}
                 = ' on '
             span(data-bind="updated") #{work.updated || ''}
 

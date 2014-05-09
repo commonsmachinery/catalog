@@ -5,6 +5,8 @@
 
 - var work = data
 
+- function shortenUserURI(uri) { var pos = uri.search(/\/[^\/]+$/); return pos > 0 ? uri.slice(pos + 1) : uri; };
+
 mixin editWorkView(work)
     div#work
         fieldset.editable(disabled=true)
@@ -14,16 +16,16 @@ mixin editWorkView(work)
                     span(data-bind="id") #{work.id || ''}
             div
                 | Permalink:
-                a(data-bind="resource", href=work.resource || '#')
+                a(data-bind-href="resource", href=work.resource || '#')
                     span(data-bind="resource") #{work.resource || ''}
             div
                 = 'Created by '
-                span(data-bind="creator") #{work.creator || ''}
+                span(data-bind="creator") #{shortenUserURI(work.creator || '')}
                 = ' on '
                 span(data-bind="created") #{work.created || ''}
             div
                 = 'Last updated by '
-                span(data-bind="updatedBy") #{work.updatedBy || ''}
+                span(data-bind="updatedBy") #{shortenUserURI(work.updatedBy || '')}
                 = ' on '
                 span(data-bind="updated") #{work.updated || ''}
             div
@@ -39,7 +41,7 @@ mixin editWorkView(work)
                     option(value="published", selected=(work.state === 'published')) Published
             div
                 h4
-                    a(data-bind="metadata", href=work.metadata || '#')
+                    a(data-bind-href="metadata", href=work.metadata || '#')
                         | Metadata:
             textarea(data-bind="metadataGraph")
                 = JSON.stringify(work.metadataGraph || '', null, 4)
@@ -60,16 +62,16 @@ mixin readWorkView(work)
                     span(data-bind="id") #{work.id || ''}
             div
                 | Permalink:
-                a(data-bind="resource", href=work.resource || '#')
+                a(data-bind-href="resource", href=work.resource || '#')
                     span(data-bind="resource") #{work.resource || ''}
             div
                 = 'Created by '
-                span(data-bind="creator") #{work.creator || ''}
+                span(data-bind="creator") #{shortenUserURI(work.creator || '')}
                 = ' on '
                 span(data-bind="created") #{work.created || ''}
             div
                 = 'Last updated by '
-                span(data-bind="updatedBy") #{work.updatedBy || ''}
+                span(data-bind="updatedBy") #{shortenUserURI(work.updatedBy || '')}
                 = ' on '
                 span(data-bind="updated") #{work.updated || ''}
             div
@@ -80,7 +82,7 @@ mixin readWorkView(work)
                 span(data-bind="state", id="state") #{work.state || ''}
             div
                 h4
-                    a(data-bind="metadata", href=work.metadata || '#')
+                    a(data-bind-href="metadata", href=work.metadata || '#')
                         | Metadata:
             pre(data-bind="metadataGraph")
                 = JSON.stringify(work.metadataGraph || '', null, 4)
