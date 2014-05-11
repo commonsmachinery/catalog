@@ -143,8 +143,8 @@ class RedisLock(object):
             self._locked = False
 
 
-thread_local.main_store = MainStore("works")
-thread_local.public_store = PublicStore("public")
+thread_local.main_store = None
+thread_local.public_store = None
 thread_local.lock_db = redis.Redis(config.CATALOG_REDIS_URL)
 if config.CATALOG_EVENT_LOG_TYPE == 'sqlite':
     thread_local.log = SqliteLog(config.CATALOG_DATA_DIR)
@@ -161,10 +161,14 @@ class StoreTask(app.Task):
 
     @property
     def main_store(self):
+        if thread_local.main_store is None:
+            thread_local.main_store = MainStore("works")
         return thread_local.main_store
 
     @property
     def public_store(self):
+        if thread_local.public_store is None:
+            thread_local.public_store = PublicStore("public")
         return thread_local.public_store
 
     @property
