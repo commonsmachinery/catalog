@@ -4,9 +4,7 @@
 # image, avoiding to get and build all dependencies each time that
 # image is built.
 
-FROM dockerfile/ubuntu
-
-# dockerfile/ubuntu has already added the apt repository and updated itself
+FROM commonsmachinery/ubuntu
 
 RUN apt-get update
 RUN apt-get install -y \
