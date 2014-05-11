@@ -9,39 +9,39 @@ resulting in `Error resize: Error: bad file descriptor`.  Workaround:
 https://github.com/dotcloud/docker/pull/4574
 
 
-Getting third-party images
+Pulling catalog images
 --------------------------
 
-We don't use many third-party images directly.  This one is only
-needed if you want to build run the frontend in a container in
-development mode:
+Instead of building the catalog infrastructure images, they can be fetched from
+the Docker index:
 
-    sudo docker pull dockerfile/nodejs
+    docker.io pull commonsmachinery/backend-base
+    docker.io pull commonsmachinery/rabbitmq
+    docker.io pull commonsmachinery/redis
+    docker.io pull commonsmachinery/mongodb
+    docker.io pull commonsmachinery/postgres
 
 
 Building catalog images
 -----------------------
 
-We'll might upload our own images to a registry later, but for now you
-have to build them yourself:
-
 The backend dependencies are built into a base image, which can then
 either be used as-is to run the backend manually, or used to build a
 proper backend image.
 
-    sudo docker build -t commonsmachinery/backend-base docker/backend-base
+    docker.io build -t commonsmachinery/backend-base docker/backend-base
 
 The actual frontend and backend images can then be built:
 
-    sudo docker build -t commonsmachinery/backend backend
-    sudo docker build -t commonsmachinery/frontend frontend
+    docker.io build -t commonsmachinery/backend backend
+    docker.io build -t commonsmachinery/frontend frontend
 
 We also have some infrastructure images:
 
-    sudo docker build -t commonsmachinery/rabbitmq docker/rabbitmq
-    sudo docker build -t commonsmachinery/mongodb docker/mongodb
-    sudo docker build -t commonsmachinery/redis docker/redis
-    sudo docker build -t commonsmachinery/postgres docker/postgres
+    docker.io build -t commonsmachinery/rabbitmq docker/rabbitmq
+    docker.io build -t commonsmachinery/mongodb docker/mongodb
+    docker.io build -t commonsmachinery/redis docker/redis
+    docker.io build -t commonsmachinery/postgres docker/postgres
 
 
 Data image and container
@@ -53,11 +53,11 @@ easily refer to.
 
 Build the data image:
 
-    sudo docker build -t data docker/data
+    docker.io build -t data docker/data
 
 Then create a container for it:
 
-    sudo docker run -d --name=DATA data
+    docker.io run -d --name=DATA data
 
 The container is set up to run forever, so it is a bit harder to
 remove it accidentially.  (It must be stopped first.)
@@ -65,11 +65,11 @@ remove it accidentially.  (It must be stopped first.)
 The data volume can be inspected by running a temporary container that
 uses it:
 
-    sudo docker run -t -i --rm --volumes-from=DATA ubuntu bash
+    docker.io run -t -i --rm --volumes-from=DATA ubuntu bash
 
 It can be backed up like this:
 
-    sudo docker run --rm --volumes-from=DATA -v $(pwd):/backup busybox tar cvf /backup/backup.tar /data
+    docker.io run --rm --volumes-from=DATA -v $(pwd):/backup busybox tar cvf /backup/backup.tar /data
 
 Multiple data containers can be set up to handle different tests.
 Remember to use the other container name in all the commands below.
@@ -79,10 +79,10 @@ Development usage
 
 Start the infrastructure containers:
 
-    sudo docker run --name=cat-mongodb -d -p 127.0.0.1:27017:27017 -p 127.0.0.1:28017:28017 --volumes-from=DATA commonsmachinery/mongodb
-    sudo docker run --name=cat-redis -d -p 127.0.0.1:6379:6379 --volumes-from=DATA commonsmachinery/redis
-    sudo docker run --name=cat-rabbitmq -d -p 127.0.0.1:5672:5672 -p 127.0.0.1:15672:15672 --volumes-from=DATA commonsmachinery/rabbitmq
-    sudo docker run --name=cat-postgres -d -p 127.0.0.1:5432:5432 --volumes-from=DATA commonsmachinery/postgres
+    docker.io run --name=cat-mongodb -d -p 127.0.0.1:27017:27017 -p 127.0.0.1:28017:28017 --volumes-from=DATA commonsmachinery/mongodb
+    docker.io run --name=cat-redis -d -p 127.0.0.1:6379:6379 --volumes-from=DATA commonsmachinery/redis
+    docker.io run --name=cat-rabbitmq -d -p 127.0.0.1:5672:5672 -p 127.0.0.1:15672:15672 --volumes-from=DATA commonsmachinery/rabbitmq
+    docker.io run --name=cat-postgres -d -p 127.0.0.1:5432:5432 --volumes-from=DATA commonsmachinery/postgres
 
 In development you might want to run the frontend and backend in the
 host environment, so `-p` here forwards the container ports.  The
@@ -136,9 +136,9 @@ in /data/backend/data from the DATA container.
 
 Useful commands for managing the backend:
 
-    sudo docker restart backend-dev
-    sudo docker logs -f backend-dev
-    sudo docker stop backend-dev
+    docker.io restart backend-dev
+    docker.io logs -f backend-dev
+    docker.io stop backend-dev
 
 For some reason celery lists the loaded tasks in a way that they only
 appear when the image is shut down, but "celery@xyz ready" should
@@ -147,7 +147,7 @@ indicate that it is running ok.
 PostgreSQL (or SQLite) storage should be initialized manually by running backend/init_db.sh.
 To run it in docker use the command:
 
-    sudo docker run -ti --rm -v "$PWD:/backend:rw" --volumes-from=DATA --env="init_db_mode=docker" --link=cat-postgres:postgres --entrypoint="/backend/init_db.sh" local/backend-dev
+    docker.io run -ti --rm -v "$PWD:/backend:rw" --volumes-from=DATA --env="init_db_mode=docker" --link=cat-postgres:postgres --entrypoint="/backend/init_db.sh" local/backend-dev
 
 Production usage
 ----------------
@@ -159,12 +159,13 @@ TODO: handle account setup and configuration for production.
 
 Start the backend:
 
-    sudo docker run -d \
+    docker.io run -d \
         --name=backend \
         --volumes-from=DATA \
         --link=cat-mongodb:mongodb \
         --link=cat-rabbitmq:rabbitmq \
         --link=cat-redis:redis \
+        --link=cat-postgres:postgres \
         commonsmachinery/backend
 
 
@@ -172,7 +173,7 @@ Start the frontend, listening and exposing port 80 (the base URL
 should be set in a more stable way than this, but it's good enough for
 now):
 
-    sudo docker run -d \
+    docker.io run -d \
         --name=frontend \
         --link=cat-mongodb:mongodb \
         --link=cat-rabbitmq:rabbitmq \
@@ -187,10 +188,10 @@ Useful commands
 
 List available images:
 
-    sudo docker images
+    docker.io images
 
 List running containers (add `-a` to see inactive too):
 
-    sudo docker ps
+    docker.io ps
     
 

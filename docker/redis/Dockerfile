@@ -2,7 +2,7 @@
 #
 # Based on: https://github.com/dockerfile/redis
 
-FROM dockerfile/ubuntu
+FROM commonsmachinery/ubuntu
 
 # Install Redis.
 RUN apt-get install -y software-properties-common

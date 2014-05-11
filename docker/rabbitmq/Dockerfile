@@ -5,7 +5,7 @@
 #   Logs:     /data/rabbitmq/log
 
 
-FROM dockerfile/ubuntu
+FROM commonsmachinery/ubuntu
 
 # Grab the latest rabbitmq - it's noarch, so we don't have to worry about the exact dist
 RUN echo "deb http://www.rabbitmq.com/debian/ testing main" >> /etc/apt/sources.list

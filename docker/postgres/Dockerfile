@@ -5,7 +5,7 @@
 #   Logs:     /data/postgres/log
 
 
-FROM ubuntu
+FROM commonsmachinery/ubuntu
 
 RUN apt-get -y update
 RUN apt-get install -y postgresql-9.3
