@@ -29,7 +29,7 @@ test:
 clean:
 
 run:
-	NODE_ENV=development $(DEBUG) $(MOCHA) --reporter spec $(TEST)
+	NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development $(DEBUG) $(MOCHA) --reporter spec $(TEST)
 
 lint:
 	$(JSHINT) $(REPORTER) $(test-js)
