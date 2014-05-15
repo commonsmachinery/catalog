@@ -1,0 +1,287 @@
+<?xml version="1.0" encoding="UTF-8"?><diagram program="umlet" version="11.3">
+  <zoom_level>10</zoom_level>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>400</x>
+      <y>390</y>
+      <w>240</w>
+      <h>100</h>
+    </coordinates>
+    <panel_attributes>_Work_
+rem3:Entry, catalog:Entry
+--
+rem3:metadata
+catalog:visible
+catalog:state
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>780</x>
+      <y>390</y>
+      <w>250</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>_Post_
+rem3:Reference, catalog:Entry
+--
+rem3:resource
+rem3:cachedExternalMetadata
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>610</x>
+      <y>400</y>
+      <w>190</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-&gt;
+m1= 1
+m2=* 
+catalog:post
+
+</panel_attributes>
+    <additional_attributes>30;50;170;50</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>400</x>
+      <y>580</y>
+      <w>240</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>_Source_
+rem3:Entry, catalog:Entry
+--
+rem3:metadata
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>350</x>
+      <y>460</y>
+      <w>138</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;&lt;&lt;-&gt;
+m1=  1
+m2=  *
+catalog:source
+</panel_attributes>
+    <additional_attributes>70;30;70;120</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>490</x>
+      <y>460</y>
+      <w>138</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+m1=  *
+m2=    0..1
+rem3:resource
+
+</panel_attributes>
+    <additional_attributes>70;120;70;30</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>40</x>
+      <y>270</y>
+      <w>230</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>_User_
+rem3:User, rem3:Entry, catalog:Entry
+--
+rem3:metadata
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>40</x>
+      <y>120</y>
+      <w>230</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>_Organisation_
+rem3:Entry, catalog:Entry
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>240</x>
+      <y>260</y>
+      <w>266</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+catalog:owner</panel_attributes>
+    <additional_attributes>200;130;200;50;30;50</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>240</x>
+      <y>120</y>
+      <w>220</w>
+      <h>290</h>
+    </coordinates>
+    <panel_attributes>lt=-&gt;
+
+</panel_attributes>
+    <additional_attributes>200;270;200;30;30;30</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>70</x>
+      <y>160</y>
+      <w>178</w>
+      <h>130</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+catalog:administrator
+</panel_attributes>
+    <additional_attributes>90;110;90;30</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>40</x>
+      <y>410</y>
+      <w>230</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>_Group_
+rem3:Group, catalog:Entry
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>80</x>
+      <y>310</y>
+      <w>150</w>
+      <h>120</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+catalog:member</panel_attributes>
+    <additional_attributes>80;30;80;100</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>240</x>
+      <y>400</y>
+      <w>180</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+rem3:read/write
+</panel_attributes>
+    <additional_attributes>160;50;30;50</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>200</x>
+      <y>310</y>
+      <w>220</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+rem3:read/write
+</panel_attributes>
+    <additional_attributes>200;120;30;30</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>540</x>
+      <y>210</y>
+      <w>230</w>
+      <h>70</h>
+    </coordinates>
+    <panel_attributes>_Collection_
+rem3:Graph, catalog:Entry
+--
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>490</x>
+      <y>250</y>
+      <w>126</w>
+      <h>160</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-
+catalog:item
+</panel_attributes>
+    <additional_attributes>70;140;70;30</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>240</x>
+      <y>220</y>
+      <w>320</w>
+      <h>110</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>30;90;200;90;200;30;300;30</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>240</x>
+      <y>120</y>
+      <w>320</w>
+      <h>150</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;-</panel_attributes>
+    <additional_attributes>30;30;200;30;200;130;300;130</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>710</x>
+      <y>20</y>
+      <w>260</w>
+      <h>140</h>
+    </coordinates>
+    <panel_attributes>_catalog:Entry_
+--
+catalog:id
+catalog:name
+catalog:addedBy
+catalog:added
+catalog:updatedBy
+catalog:updated
+
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+</diagram>
