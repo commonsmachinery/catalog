@@ -240,9 +240,9 @@ class Entry(object):
                             if type == "literal":
                                 object_node = RDF.Node(literal=value)
                             elif type == "uri":
-                                object_node = RDF.Node(uri_string=value)
+                                object_node = RDF.Node(RDF.Uri(value))
                             elif type == "bnode":
-                                object_node = RDF.Node(blank=value)
+                                object_node = RDF.Node(blank=str(value))
 
                             statement = (subject_node, predicate_node, object_node, graph_context)
                             statements.append(statement)
