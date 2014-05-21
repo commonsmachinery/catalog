@@ -37,6 +37,7 @@ var deletePost,
     deleteSource,
     deleteWork,
     getCompleteWorkMetadata,
+    getCurrentUser,
     getPost,
     getPostMetadata,
     getPostCEM,
@@ -45,6 +46,7 @@ var deletePost,
     getSourceCEM,
     getSourceMetadata,
     getStockSources,
+    getUser,
     getWork,
     getWorkMetadata,
     getWorkSources,
@@ -118,6 +120,13 @@ exports.routes = function routes(app) {
 
     /* sparql */
     app.get('/sparql', getSPARQL);
+
+    /* Users */
+    app.route('/users/current')
+        .get(requireUser, getCurrentUser);
+
+    app.route('/users/:userID')
+        .get(getUser);
 };
 
 
@@ -624,3 +633,24 @@ getSPARQL = function getSPARQL(req, res) {
         res);
 };
 
+
+getUser = function getUser(req, res) {
+    // TODO: get profile from frontend/backend
+
+    var data = {
+        id: req.params.userID,
+        resource: uris.buildUserURI(req.params.userID)
+    };
+
+    // Include email when responding to ourselves
+    if (req.params.userID === req.session.uid) {
+            data.email = req.session.email;
+    }
+
+    res.send(data);
+};
+
+
+getCurrentUser = function getCurrentUser(req, res) {
+    res.redirect(uris.buildUserURI(req.session.uid));
+};
