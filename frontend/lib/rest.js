@@ -396,7 +396,7 @@ postStockSource = function postStockSource(req, res) {
         cluster.increment('next-source-id')
             .then(
                 function(sourceID) {
-                    sourceURI = uris.buildStockSourceURI('test_1', sourceID);
+                    sourceURI = uris.buildStockSourceURI(req.session.uid, sourceID);
                     queryData.source_uri = sourceURI;
                     queryData.source_data.id = sourceID;
                     updateMetadata(queryData.source_data.metadataGraph, sourceURI);
