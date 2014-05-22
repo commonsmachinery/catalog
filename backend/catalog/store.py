@@ -69,6 +69,7 @@ class Entry(object):
         self._uri = str(uri)
         self._dict = dict
         self._dict['type'] = self.__class__.rdf_type
+        self._dict['uri'] = uri
 
     def __getitem__(self, name):
         if self._dict.has_key(name):
