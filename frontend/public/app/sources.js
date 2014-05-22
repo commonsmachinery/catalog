@@ -1,49 +1,97 @@
-/* Catalog web application - browsing list of works
+/* Catalog web application - browsing list of sources
  *
  * Copyright 2014 Commons Machinery http://commonsmachinery.se/
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
-define(['jquery', 'views/sourceView', 'views/collectionView',
-		'models/sourceModel', 'collections/sourceCollection'],
-	   function($, SourceView, CollectionView, Source, SourceCollection)
+define(['jquery', 'underscore', 'lib/backbone', 'util',
+        'lib/Backbone.ModelBinder',
+        'models/sourceModel',
+        'collections/sourceCollection',
+        'views/collectionView'],
+       function($, _, Backbone, util,
+                ModelBinder,
+                Source,
+                SourceCollection,
+                CollectionView)
 {
-	'use strict';
+    'use strict';
 
-	var collection;
-	function promptForm (ev) {
-		var model = new Source();
-		var $dialog = $($('#formTemplate').html())
-			.attr('id','formDialog');
-		$('#content').append($dialog);
-		var form = new SourceView(model, '#formDialog'); // jshint ignore:line
-		$('#formDialog > .save').on('click', function(ev){
-			model.urlRoot = window.location.pathname;
-			model.sync('create', model);
-			$dialog.remove();
-			collection.add(model.toJSON());
-			return;
-		});
-		return;
-	}
+    var collection = null;
+    var view = null;
 
-	return function sources (router) {
-		/* make initial models */
-		var $bootstrapData = $('.bootstrapData');
-		var sourceData = JSON.parse($bootstrapData.text()).data;
-		$bootstrapData.remove();
+    var SourceListItemView = Backbone.View.extend({
+        events: {
+            'dragstart img.sourceImage': 'onDragStart',
+        },
 
-		/* bind views */
-		collection = new SourceCollection(sourceData);
-		var collectionView = new CollectionView({
-			el: '#sources',
-			template: '#sourceTemplate',
-			childTag: '.source',
-			childView: SourceView,
-			collection: collection
-		});
-		collectionView.render();
+        initialize: function() {
+//            this._modelBinder = new ModelBinder();
+        },
 
-		$('#sources > .add').on('click', promptForm);
-	};
+        render: function() {
+//            this._modelBinder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'source'));
+        },
+
+        remove: function() {
+//			this._modelBinder.unbind();
+            Backbone.View.remove.apply(this, arguments);
+        },
+
+        // Add source information to the drag item store so the
+        // destination can use the metadata
+        onDragStart: function(ev) {
+            var orig = ev.originalEvent;
+            var dt = orig.dataTransfer;
+
+            if (dt) {
+                dt.setData('application/x-catalog-entry', JSON.stringify(this.model.toJSON()));
+                dt.effectAllowed = 'copyLink';
+            }
+
+            // No overriding the default, we want the drag operation to start
+        },
+    });
+
+    var SourcesBrowseView = Backbone.View.extend({
+        initialize: function() {
+            this._sourcesView = new CollectionView({
+                el: '#sources',
+                collection: collection,
+
+                ItemView: SourceListItemView,
+                itemTemplate: '', // $('#sourceListItemTemplate').html(),
+            });
+
+        },
+
+        render: function() {
+            this._sourcesView.render();
+        },
+    });
+
+    return function browseSources(router, parentURL) {
+        console.log('activating sources view');
+
+        var data = util.bootstrapData();
+
+        collection = new SourceCollection(data || [], {
+            parentURL: parentURL
+        });
+        collection.on('error', function (obj, response, options) {
+            console.error('error syncing %s: %s %s %s',
+                          obj.id, response.status, response.statusText,
+                          response.responseText);
+        });
+
+        view = new SourcesBrowseView();
+        view.render();
+
+/*
+        if (!data) {
+            console.log('fetching sources from server (no bootstrap data)');
+            collection.fetch();
+        }
+*/
+    };
 });

@@ -1,21 +1,14 @@
-/*global define*/
+//- Catalog web - model for a work
+//-
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-define(function(require){
-	'use strict'; 
+define(['lib/backbone'], function(Backbone) {
+    'use strict';
 
-	var Backbone = require('lib/backbone');
-	var Source = Backbone.Model.extend({
-		changesMade: '0',
-		defaults: {
-			metadata: '{\n\t"testMeta": "meta meta"\n}'
-		},
-		initialize: function(){
-			var self = this;
-			this.on('change', function(){
-				self.changesMade++;
-			});
-			return;
-		}
-	});
-	return Source;
+    var Source = Backbone.Model.extend({
+        // TODO: validate dates, RDF/JSON etc
+    });
+
+    return Source;
 });
