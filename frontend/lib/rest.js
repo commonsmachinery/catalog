@@ -13,15 +13,18 @@
 
 var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
+var Promise = require('bluebird');
 
 var BackendError = require('./backend').BackendError;
 var uris = require('./uris');
 var requireUser = require('./sessions').requireUser;
+var gravatar = require('./gravatar');
 
 /* Module global vars */
 var backend;
 var env;
 var cluster;
+var User;
 
 // TODO: this should perhaps go into a json file instead
 var errorMap = {
@@ -64,6 +67,9 @@ exports.init = function init(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
     cluster = localCluster;
+
+    // We can load the User model now that mongodb is connected
+    User = require('./model/user');
 
     // TODO: add request ID checking
     // TODO: add request sanity checking
@@ -162,6 +168,7 @@ var bootstrapData = function bootstrapData(data) {
         .replace('<script', '<\\script')
         .replace('</script', '<\\/script');
 };
+
 
 /* Helper method to return a result object correctly formatted.
  */
@@ -635,19 +642,33 @@ getSPARQL = function getSPARQL(req, res) {
 
 
 getUser = function getUser(req, res) {
-    // TODO: get profile from frontend/backend
+    // TODO: get profile from backend too
 
-    var data = {
-        id: req.params.userID,
-        resource: uris.buildUserURI(req.params.userID)
-    };
+    handleErrors(
+        User.findOne({uid: req.params.userID})
+            .then(function(user) {
+                if (!user) {
+                    // Fake a 404 from the backend
+                    return Promise.reject({ type: 'EntryNotFoundError' });
+                }
 
-    // Include email when responding to ourselves
-    if (req.params.userID === req.session.uid) {
-            data.email = req.session.email;
-    }
+                // translate internal fields into external ones
+                var data = {
+                    id: user.uid,
+                    resource: user.uri,
+                };
 
-    res.send(data);
+                // Include full email when responding to ourselves
+                if (req.params.userID === req.session.uid) {
+                    data.email = user.emails[0];
+                }
+
+                // Always include gravatar email hash
+                data.gravatarHash = gravatar.emailHash(user.emails[0]);
+
+                formatResult(res, 'userProfile')(data);
+            }),
+        res);
 };
 
 

@@ -149,6 +149,8 @@ header
                     width nav-height
             > li:not(:last-child):after
                 content " | "
+            > li.gravatar:after
+                content ""
 
 
 footer
@@ -245,3 +247,10 @@ footer
 /* Used by templates to hide some stuff by default */
 .hidden
     display none
+
+
+/* User profile page */
+.userProfile
+    .gravatar, .email
+        vertical-align middle
+        margin 5px

@@ -9,10 +9,15 @@
 
 // var debug = require('debug')('frontend:webapp');
 
+var gravatar = require('./gravatar');
+
 /* Globals */
 // var isDev = process.env.NODE_ENV === 'development';
 
+
 exports.init = function init(app) {
+    app.locals.gravatarEmailURL = gravatar.emailURL;
+    app.locals.gravatarHashURL = gravatar.hashURL;
 };
 
 exports.routes = function routes(app) {
