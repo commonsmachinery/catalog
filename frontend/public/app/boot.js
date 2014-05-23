@@ -15,6 +15,7 @@ requirejs.config({
 		collections: '../app/collections',
 		underscore: '../lib/underscore',
 		jquery : '../lib/jquery',
+        rdflib : '../lib/rdflib',
         },
 	map: {
 		'lib': {

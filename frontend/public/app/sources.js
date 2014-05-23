@@ -5,11 +5,13 @@
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
+        'rdflib', 'lib/libcredit',
         'lib/Backbone.ModelBinder',
         'models/sourceModel',
         'collections/sourceCollection',
         'views/collectionView'],
        function($, _, Backbone, util,
+                rdflib, libcredit,
                 ModelBinder,
                 Source,
                 SourceCollection,
@@ -45,8 +47,38 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             var dt = orig.dataTransfer;
 
             if (dt) {
+                var kb = libcredit.parseRDFJSON(this.model.get('cachedExternalMetadataGraph'));
+                var credit = libcredit.credit(kb, this.model.get('resource'));
+
+                if (credit) {
+                    // Create HTML for the image with the attribution
+                    // and replace the drag data store with that instead
+
+                    var topDiv = $('<div></div>');
+                    var objectDiv = $('<div></div>').appendTo(topDiv);
+                    var img = $('<img>').appendTo(objectDiv);
+
+                    // cheat a bit, just grab the URL from the image
+                    // element rather than digging into metadataGraph
+                    var src = ev.target.src;
+
+                    img.attr('src', src);
+
+                    var formatter = libcredit.htmlCreditFormatter(document);
+                    credit.format(formatter, 2, null, src);
+
+                    topDiv.append($(formatter.getRoot()));
+
+                    // Rebuild the drag contents
+                    dt.clearData();
+                    dt.setData('text/html', topDiv.html());
+                    dt.setData('text/uri-list', src);
+                    dt.setData('text/plain', src);
+                }
+
+                // Always add full info about the image, even if we didn't get the credit built
                 dt.setData('application/x-catalog-entry', JSON.stringify(this.model.toJSON()));
-                dt.effectAllowed = 'copyLink';
+                dt.effectAllowed = 'copy';
             }
 
             // No overriding the default, we want the drag operation to start
