@@ -13,15 +13,18 @@
 
 var debug = require('debug')('frontend:rest');
 var _ = require('underscore');
+var Promise = require('bluebird');
 
 var BackendError = require('./backend').BackendError;
 var uris = require('./uris');
 var requireUser = require('./sessions').requireUser;
+var gravatar = require('./gravatar');
 
 /* Module global vars */
 var backend;
 var env;
 var cluster;
+var User;
 
 // TODO: this should perhaps go into a json file instead
 var errorMap = {
@@ -37,6 +40,7 @@ var deletePost,
     deleteSource,
     deleteWork,
     getCompleteWorkMetadata,
+    getCurrentUser,
     getPost,
     getPostMetadata,
     getPostCEM,
@@ -45,6 +49,7 @@ var deletePost,
     getSourceCEM,
     getSourceMetadata,
     getStockSources,
+    getUser,
     getWork,
     getWorkMetadata,
     getWorkSources,
@@ -62,6 +67,9 @@ exports.init = function init(app, localBackend, localCluster) {
     backend = localBackend;
     env = process.env;
     cluster = localCluster;
+
+    // We can load the User model now that mongodb is connected
+    User = require('./model/user');
 
     // TODO: add request ID checking
     // TODO: add request sanity checking
@@ -118,6 +126,13 @@ exports.routes = function routes(app) {
 
     /* sparql */
     app.get('/sparql', getSPARQL);
+
+    /* Users */
+    app.route('/users/current')
+        .get(requireUser, getCurrentUser);
+
+    app.route('/users/:userID')
+        .get(getUser);
 };
 
 
@@ -153,6 +168,7 @@ var bootstrapData = function bootstrapData(data) {
         .replace('<script', '<\\script')
         .replace('</script', '<\\/script');
 };
+
 
 /* Helper method to return a result object correctly formatted.
  */
@@ -387,7 +403,7 @@ postStockSource = function postStockSource(req, res) {
         cluster.increment('next-source-id')
             .then(
                 function(sourceID) {
-                    sourceURI = uris.buildStockSourceURI('test_1', sourceID);
+                    sourceURI = uris.buildStockSourceURI(req.session.uid, sourceID);
                     queryData.source_uri = sourceURI;
                     queryData.source_data.id = sourceID;
                     updateMetadata(queryData.source_data.metadataGraph, sourceURI);
@@ -624,3 +640,38 @@ getSPARQL = function getSPARQL(req, res) {
         res);
 };
 
+
+getUser = function getUser(req, res) {
+    // TODO: get profile from backend too
+
+    handleErrors(
+        User.findOne({uid: req.params.userID})
+            .then(function(user) {
+                if (!user) {
+                    // Fake a 404 from the backend
+                    return Promise.reject({ type: 'EntryNotFoundError' });
+                }
+
+                // translate internal fields into external ones
+                var data = {
+                    id: user.uid,
+                    resource: user.uri,
+                };
+
+                // Include full email when responding to ourselves
+                if (req.params.userID === req.session.uid) {
+                    data.email = user.emails[0];
+                }
+
+                // Always include gravatar email hash
+                data.gravatarHash = gravatar.emailHash(user.emails[0]);
+
+                formatResult(res, 'userProfile')(data);
+            }),
+        res);
+};
+
+
+getCurrentUser = function getCurrentUser(req, res) {
+    res.redirect(uris.buildUserURI(req.session.uid));
+};

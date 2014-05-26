@@ -149,6 +149,8 @@ header
                     width nav-height
             > li:not(:last-child):after
                 content " | "
+            > li.gravatar:after
+                content ""
 
 
 footer
@@ -179,18 +181,24 @@ footer
         font-size 0.9em
         margin 0.5em
 
-.work
+.entry
     padding 1em
     h2
         display inline-block
         font-size 2em
-        margin 0.5em
+        margin 0.5em 0.1em
+    h3
+        display inline-block
+        font-size 1.5em
+        margin 0.2em 0px
     .info
         display block
         font-size 0.9em
-    .seeMeta
-        font-size 1em
-        margin 1em
+
+
+img.thumbnail
+    max-width 200px
+    max-height 200px
 
 #bootstrapData
     display none
@@ -245,3 +253,10 @@ footer
 /* Used by templates to hide some stuff by default */
 .hidden
     display none
+
+
+/* User profile page */
+.userProfile
+    .gravatar, .email
+        vertical-align middle
+        margin 5px

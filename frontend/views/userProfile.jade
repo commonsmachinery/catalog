@@ -1,0 +1,23 @@
+//- Catalog web - user public profile page
+//- 
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+//- TODO: this page is hardcoded for now, as there's nothing
+//- interestingly dynamic to do yet.
+
+- var profile = data
+
+include includes/top
+    div.userProfile
+        img.gravatar(src=gravatarHashURL(profile.gravatarHash, 40), width='40', height='40')
+        span.email= profile.email
+
+    if profile.id == user
+        div
+            a(href=user + '/sources') My stock sources
+
+    include includes/bottom
+
+    script.bootstrapData(type='application/json')
+        != bootstrapData({ "data": profile })

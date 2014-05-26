@@ -1,45 +1,54 @@
+//- Catalog web - list of user stock sources
 //- 
-	Catalog web/view
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-	Copyright 2014 Commons Machinery http://commonsmachinery.se/
+- var sources = data;
 
-	Authors:
-		Elsa Balderrama <elsa@commonsmachinery.se>
+- var dcTitle = 'http://purl.org/dc/elements/1.1/title';
+- var catalogImageSrc = 'http://catalog.commonsmachinery.se/ns#imageSrc';
+- var ccAttributionURL = 'http://creativecommons.org/ns#attributionURL';
+- var ccAttributionName = 'http://creativecommons.org/ns#attributionName';
+- var ccLicense = 'http://creativecommons.org/ns#license';
+- var xhtmlLicense = 'http://www.w3.org/1999/xhtml/vocab#license';
 
-	Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+- var object = function(md, pred) { return md[pred] ? md[pred][0].value : null; };
 
-- var sources = data
-- data = {"data":sources};
-- var stringData = JSON.stringify(data);
+mixin sourceListItemView(source, idPrefix)
+    - var catMetadata = source.metadataGraph[source.uri] || {};
+    - var extMetadata = source.cachedExternalMetadataGraph[source.resource] || {};
+    - var o = function(pred) { return object(extMetadata, pred); };
 
-mixin sourceView(data)
-	- data = data || {}
-	div.post
-		h2: a(href="#{data.resource || ''}" name="id") #{data.id || ''}
-		| by 
-		span(name="creator") #{data.creator || ''} 
-		| on 
-		span(name="created") #{data.created || ''}
-		br
-		| last updated by 
-		span(name="updatedBy") #{data.updatedBy || ' --- '} 
-		| on 
-		span(name="updated") #{data.updated || ' --- '}
+    //- TODO: data binding, but for now we do this hardwired
+    div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
+        div.entry(id=(idPrefix ? idPrefix + '-' + source.id : ''))
+            if object(catMetadata, catalogImageSrc)
+                img.thumbnail(src=object(catMetadata, catalogImageSrc), class="sourceImage")
+            div.info
+                h3: a(href=source.resource || '#')
+                    = o(dcTitle) || source.resource
+                div
+                    if o(ccAttributionURL)
+                        a(href=o(ccAttributionURL))
+                            = o(ccAttributionName) || o(ccAttributionURL)
+                div
+                    if o(xhtmlLicense)
+                        a(href=o(xhtmlLicense))= o(xhtmlLicense)
 
-
-
-script#formTemplate
-	form
-		label(for="resource") URL: 
-		input(type="text" name="resource" default="http://")
-		input.save(type="button" value="save")
-script#sourceTemplate
-	+sourceView()
-div.bootstrapData #{stringData}
-
+ 
 include includes/top
-	div#sources
-		input.add(type="button" value="+")
-		for source in sources
-			+sourceView(source)
-include includes/bottom
+    if sources
+        ul#sources
+            for source in sources
+                +sourceListItemView(source, 'sources')
+    else
+        b You do not have any stock sources
+
+    include includes/bottom
+
+    //- script#sourceListItemTemplate(type="text/template")
+    //-     +sourceListItemView({}, null)
+
+    script.bootstrapData(type='application/json')
+        != bootstrapData({ "data": sources || [] })
+

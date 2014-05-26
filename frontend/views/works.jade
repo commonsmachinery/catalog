@@ -9,7 +9,7 @@
 
 mixin workListItemView(work, idPrefix)
     div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
-        div.work(id=(idPrefix ? idPrefix + '-' + work.id : ''))
+        div.entry(id=(idPrefix ? idPrefix + '-' + work.id : ''))
             div
                 if user
                     input.batchSelectItem(type='checkbox', disabled=true)
