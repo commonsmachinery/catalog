@@ -1,0 +1,54 @@
+//- Catalog web - page displaying a source
+//-
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+- var source = data
+
+- var dcTitle = 'http://purl.org/dc/elements/1.1/title';
+- var catalogImageSrc = 'http://catalog.commonsmachinery.se/ns#imageSrc';
+- var ccAttributionURL = 'http://creativecommons.org/ns#attributionURL';
+- var ccAttributionName = 'http://creativecommons.org/ns#attributionName';
+- var ccLicense = 'http://creativecommons.org/ns#license';
+- var xhtmlLicense = 'http://www.w3.org/1999/xhtml/vocab#license';
+
+- var catMetadata = source.metadataGraph[source.uri] || {};
+- var extMetadata = source.cachedExternalMetadataGraph[source.resource] || {};
+
+- var object = function(md, pred) { return md[pred] ? md[pred][0].value : null; };
+- var o = function(pred) { return object(extMetadata, pred); };
+
+mixin readSourceView(source)
+    div#source
+        if object(catMetadata, catalogImageSrc)
+            img.thumbnail(src=object(catMetadata, catalogImageSrc), class="sourceImage")
+        div.info
+            div: h3= o(dcTitle) || source.resource
+            div
+                span= 'Original: '
+                a(href=source.resource || '#')= source.resource
+            if o(ccAttributionURL)
+                div
+                    span= 'Attribution: '
+                    a(href=o(ccAttributionURL))
+                        = o(ccAttributionName) || o(ccAttributionURL)
+            if o(xhtmlLicense)
+                div
+                    span= 'License: '
+                    a(href=o(xhtmlLicense))= o(xhtmlLicense)
+            div
+                h4
+                    | Metadata:
+                pre= JSON.stringify(source.cachedExternalMetadataGraph || '', null, 4)
+
+
+include includes/top
+    +readSourceView(source)
+
+    include includes/bottom
+
+    script#readSourceTemplate(type="text/template")
+        +readSourceView({})
+
+    script.bootstrapData(type='application/json')
+        != bootstrapData({ "data": source })

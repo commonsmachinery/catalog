@@ -25,12 +25,8 @@ mixin sourceListItemView(source, idPrefix)
             if object(catMetadata, catalogImageSrc)
                 img.thumbnail(src=object(catMetadata, catalogImageSrc), class="sourceImage")
             div.info
-                h3: a(href=source.resource || '#')
+                h3: a(href=source.uri || '#')
                     = o(dcTitle) || source.resource
-                div
-                    if o(ccAttributionURL)
-                        a(href=o(ccAttributionURL))
-                            = o(ccAttributionName) || o(ccAttributionURL)
                 div
                     if o(xhtmlLicense)
                         a(href=o(xhtmlLicense))= o(xhtmlLicense)
