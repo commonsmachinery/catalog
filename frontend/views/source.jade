@@ -6,6 +6,7 @@
 - var source = data
 
 - var dcTitle = 'http://purl.org/dc/elements/1.1/title';
+- var ogTitle = 'http://ogp.me/ns#title';
 - var catalogImageSrc = 'http://catalog.commonsmachinery.se/ns#imageSrc';
 - var ccAttributionURL = 'http://creativecommons.org/ns#attributionURL';
 - var ccAttributionName = 'http://creativecommons.org/ns#attributionName';
@@ -23,7 +24,7 @@ mixin readSourceView(source)
         if object(catMetadata, catalogImageSrc)
             img.thumbnail(src=object(catMetadata, catalogImageSrc), class="sourceImage")
         div.info
-            div: h3= o(dcTitle) || source.resource
+            div: h3= o(dcTitle) || o(ogTitle) || source.resource
             div
                 span= 'Original: '
                 a(href=source.resource || '#')= source.resource
