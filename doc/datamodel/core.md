@@ -69,7 +69,7 @@ updated as such.
 
 `uri`: Permanent URI to the entry.
 
-`alias`: Short name that can be used in URLs.
+`alias`: Optional short name that can be used in URLs.
 
 `owner`: User or Organisation owning the Work object (which doesn't
 imply any kind of copyright ownership).  The user owning the object
@@ -95,7 +95,7 @@ this work.
 
 ### Index
 
-`Work.alias`: For prettier URLs.
+`Work.alias` (sparse): For prettier URLs.
 
 `Work.owner`: List my/our works.
 
@@ -103,7 +103,7 @@ this work.
 
 `Work.sources.source_work`: Show work relationships.
 
-`Work.forked_from`: Show work relationships.
+`Work.forked_from` (sparse): Show work relationships.
 
 `Work.media`: Show works a Media is used in.
 
@@ -117,7 +117,8 @@ The following users have full access to read, update and delete the
 - Any `User` in `Work.collaborators`
 
 For `Group.members` in a `Group` in `Work.collaborators`,
-`Group.access` controls access:
+`Group.access` controls access.  Each higher level includes the access
+of the lower level:
 
 - `read`: see the information about a non-public `Work`
 - `write`: change any of the information in the `Work` except
@@ -158,7 +159,7 @@ string for `xmp`).
 
 ### Index
 
-`Media.replaces`: Show media relationships.
+`Media.replaces` (sparse): Show media relationships.
 
 ### Access
 
@@ -182,7 +183,7 @@ collection, but it helps organising them.
 
 `name`: Name identifying the collection to users.
 
-`alias`: Short name that can be used in URLs.
+`alias`: Optional short name that can be used in URLs.
 
 `description`: More detailed description of the purpose and contents
 of the collection.
@@ -195,7 +196,7 @@ of the collection.
 
 ### Index
 
-`Collection.alias`: For prettier URLs.
+`Collection.alias` (sparse): For prettier URLs.
 
 `Collection.owner`: List my/our collections.
 
@@ -213,7 +214,8 @@ The following users have full access to list, modify and delete the
 - Any `User` in `Collection.collaborators`
 
 For `Group.members` in a `Group` in `Collection.collaborators`,
-`Group.access` controls access:
+`Group.access` controls access.  Each higher level includes the access
+of the lower level:
 
 - `read`: see a non-public `Collection`
 - `write`: change any of the information in the `Collection` except
