@@ -17,18 +17,16 @@ single Lookup object.
 
 `uri`: The URI, property is omitted if there is none.
 
-`object_type`: a core object type, e.g. `Work` or `User`.
+`object_type`: an object type, e.g. `core.Work` or `core.User`.
 
 `object_id`: The ID of the object.
 
-`property_type`: The type of the property for `text`.
+`property_type`: The type of the property, typically
+the value of `Annotation.propertyName` but could also be e.g. `alias`
+or `profile.name`.
 
-`property_id`: The ID of the property, if applicable (e.g. `Annotation._id`).
-
-`public`: If this object is publically visible.
-
-`visible_to`: List of `User._id` or `Group._id` that can see the
-object, if not public.
+`property_id`: The ID of the property, if applicable
+(e.g. `Annotation._id`), otherwise the same as `property_type`.
 
 
 ### Index
@@ -37,5 +35,5 @@ object, if not public.
 
 `uri` (hash, sparse): Used for searches.
 
-`object_id, property_id`: Compound index used when updating the data
+`object_id, property_id` (TODO: unique?): Compound index used when updating the data
 model.

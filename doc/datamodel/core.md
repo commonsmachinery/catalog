@@ -49,8 +49,17 @@ properties and support for atomic updates.
 
 `_id`: Unique ID, assigned via an ObjectID
 
-`nonce`: Used to detect conflicting updates
-([usage example here](http://docs.mongodb.org/ecosystem/use-cases/metadata-and-asset-management/))
+`version`: Used to detect conflicting updates, and also included in
+events to allow correct serialisation.  Incremented on each change.
+
+`added_by`: The `User` who added the entry.
+
+`added_at`: The `Date` when the entry was added.
+
+`updated_by`: The `User` who last modified the entry.
+
+`updated_at`: The `Date` when the entry was last modified.
+
 
 
 Work
@@ -69,7 +78,8 @@ updated as such.
 
 `uri`: Permanent URI to the entry.
 
-`alias`: Optional short name that can be used in URLs.
+`alias`: Optional short name that can be used in URLs, omitted if not
+set.
 
 `owner`: User or Organisation owning the Work object (which doesn't
 imply any kind of copyright ownership).  The user owning the object
@@ -79,14 +89,15 @@ or the admins of the organisation are always allowed to edit a work.
 user's own purposes.  Not considered work metadata.
 
 `forked_from`: If this work was created by forking another work, this
-is the ID of the parent, otherwise `null`.
+is the ID of the parent.  Omitted if not forked.
 
 `public`: `true` if this work is publically visible.
 
-`collaborators`: List of Groups and Users who can access this Work.
+`collaborators`: List of IDs for `Group` and `User` who can access
+this `Work` and its linked `Media`.
 
-`annotations`: The work metadata (see Annotation below).  This is an
-unordered list of embedded Annotation documents.
+`annotations`: The work metadata (see `Annotation` below).  This is an
+unordered list of embedded `Annotation` documents.
 
 `sources`: List of sources as embedded documents.
 
@@ -95,17 +106,17 @@ this work.
 
 ### Index
 
-`Work.alias` (sparse): For prettier URLs.
+`owner, alias` (sparse, unique): For prettier URLs.
 
-`Work.owner`: List my/our works.
+`owner`: List my/our works.
 
-`Work.collaborators`: List my/our collaborations.
+`collaborators` (multikey): List my/our collaborations.
 
-`Work.sources.source_work`: Show work relationships.
+`sources.source_work` (multikey): Show work relationships.
 
-`Work.forked_from` (sparse): Show work relationships.
+`forked_from` (sparse): Show work relationships.
 
-`Work.media`: Show works a Media is used in.
+`media` (multikey): Show works a Media is used in.
 
 ### Access
 
@@ -145,9 +156,9 @@ refined, "curated", information in the corresponding Work objects.
 
 ### Properties
 
-`replaces`: If the data for a Media instance is refreshed, a new
+`replaces`: If the data for a `Media` instance is refreshed, a new
 instance is created and linked through this property to the old
-version.
+version.  Omitted if not a replacement.
 
 `annotations`: The annotations about this Media instance, typically
 derived from the file/page metadata.
@@ -159,7 +170,7 @@ string for `xmp`).
 
 ### Index
 
-`Media.replaces` (sparse): Show media relationships.
+`replaces` (sparse): Show media relationships.
 
 ### Access
 
@@ -183,7 +194,8 @@ collection, but it helps organising them.
 
 `name`: Name identifying the collection to users.
 
-`alias`: Optional short name that can be used in URLs.
+`alias`: Optional short name that can be used in URLs, omitted if not
+set.
 
 `description`: More detailed description of the purpose and contents
 of the collection.
@@ -196,13 +208,13 @@ of the collection.
 
 ### Index
 
-`Collection.alias` (sparse): For prettier URLs.
+`owner, alias` (sparse, unique): For prettier URLs.
 
-`Collection.owner`: List my/our collections.
+`owner`: List my/our collections.
 
-`Collection.collaborators`: List my/our collaborations
+`collaborators` (multikey): List my/our collaborations
 
-`Collection.works`: List the collections a work is included in.
+`works` (multikey): List the collections a work is included in.
 
 ### Access
 
@@ -243,13 +255,13 @@ of the organisation.
 
 ### Index
 
-`Organisation.alias`: For prettier URLs.
+`alias` (unique): For prettier URLs.
 
-`Organisation.owners`: Enable user summary listing organisation ownership.
+`owners` (multikey): Enable user summary listing organisation ownership.
 
 ### Access
 
-Anyone can see the information about an Organisation.
+Anyone can see the information about an `Organisation`.
 
 
 User
@@ -273,11 +285,11 @@ etc.
 
 ### Index
 
-`User.alias`: For prettier URLs.
+`alias` (unique): For prettier URLs.
 
 ### Access
 
-Anyone can see `User.username` and any information in `User.profile`.
+Anyone can see the information about a `User`.
 
 
 Group
@@ -299,9 +311,11 @@ works.
 
 ### Index
 
-`Group.org`: Enable organisation summary listing all groups.
+`org`: Enable organisation summary listing all groups.
 
-`Group.members`: Enable user summary listing all memberships.
+`org, name` (unique): Enforce unique group names.
+
+`members` (multikey): Enable user summary listing all memberships.
 
 ### Access
 
@@ -347,13 +361,13 @@ Some key annotation types will be:
 ### Properties
 
 `_id`: ObjectID for the annotation, to make it easier to refer to it
-  in the REST API.
+in the REST API.
 
-`updated_by`: Only included if the latest update was by someone else
-than the user who added the Work record (note: not the owner User).
+`updated_by`: May be omitted if the latest update was by the
+`Work.added_by` `User`.
 
-`updated_at`: The date and time when this record was updated.  If
-omitted `Work.added_at` should be used instead.
+`updated_at`: The date and time when this record was updated.  May be
+omitted if the same as `Work.added_at`.
 
 `score`: A metadata reliability score from 0-100.  0 means that the
 annotation should be hidden from the users, and is an alternative to
@@ -376,6 +390,16 @@ derived from.
 **TODO:** There probably should be some scope to capture how the works
 are related in this source object - the provenance - but that can be
 decided later.
+
+### Properties
+
+`source_work`: The ID of the source `Work`.
+
+`added_by`: The `User` who added the link, may be omitted if the same
+as `Work.added_by`.
+
+`added_at`: The `Date` when the link was added, may be omitted if the
+same as `Work.added_at`.
 
 
 Profile
