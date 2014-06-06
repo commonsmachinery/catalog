@@ -6,15 +6,17 @@ The catalog consists of a set of logically separate modules, where
 most of them have a data model of their own.  The non-core data models
 typically refer to objects in the core data model.
 
-* Core: facts about organisations, users, groups, works, media and
+* Core: Facts about organisations, users, groups, works, media and
   collections.
 
-* Auth: Authentication and authorization to access the catalog
+* Event: Log all events in the system.
 
-* View: thumbnails, view counts, object summaries and other data which
+* Auth: Authentication and authorization to access the catalog.
+
+* View: Thumbnails, view counts, object summaries and other data which
   improves the presentation of the core data.
 
-* Search: locate works based on URIs or full-text searches.
+* Search: Locate works based on URIs or full-text searches.
 
 
 Documentation
