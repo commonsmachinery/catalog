@@ -10,8 +10,8 @@
 
 'use strict';
 
-var db = require('../wrappers/mongo');
-var config = require('../config');
+var db = require('../../../lib/mongo');
+var config = require('../../../lib/config');
 
 var schema = new db.Schema(
     {

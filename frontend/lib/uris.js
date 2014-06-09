@@ -9,7 +9,7 @@
 */
 
 'use strict';
-var config = require('./config');
+var config = require('../../lib/config');
 
 function buildURI() {
     return config.catalog.baseURL + '/' + Array.prototype.join.call(arguments, '/');

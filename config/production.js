@@ -10,4 +10,4 @@ module.exports = {
         usersDB: "users",
         usersAutoIndex: false
     }
-}
+};

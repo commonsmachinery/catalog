@@ -20,7 +20,7 @@ var persona = require('express-persona');
 
 var cluster = require('./cluster');
 var uris = require('./uris');
-var config = require('./config');
+var config = require('../../lib/config');
 
 /* Module globals */
 var env;

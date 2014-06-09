@@ -1,5 +1,5 @@
 module.exports = {
-    test: {
+    catalog: {
         baseURL: "http://localhost:8004",
         brokerURL: "amqp://guest@localhost:5672//",
         mongodbURL: "mongodb://localhost/",
@@ -8,6 +8,6 @@ module.exports = {
         secret: "rainbow pegasi",
         static: "/public",
         usersDB: "users-dev",
-        usersAutoIndex: false
+        usersAutoIndex: true
     }
-}
+};

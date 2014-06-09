@@ -1,7 +1,7 @@
 'use strict';
 
 var dbgfn = require('debug');
-var config = require('../frontend/lib/config.js');
+var config = require('../lib/config.js');
 var expect = require('expect.js');
 var util = require('./modules/util');
 

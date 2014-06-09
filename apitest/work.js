@@ -5,7 +5,7 @@
 /* Test rest calls for an individual work and other failed cases */
 
 var dbgfn = require('debug');
-var config = require('../frontend/lib/config.js');
+var config = require('../lib/config.js');
 var expect = require('expect.js');
 var util = require('./modules/util');
 

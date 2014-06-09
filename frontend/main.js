@@ -3,16 +3,12 @@
 
   Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
-  Authors: 
-    Peter Liljenberg <peter@commonsmachinery.se>
-    Elsa Balderrama <elsa@commonsmachinery.se>
-
   Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
 'use strict';
 
-var debug = require('debug')('frontend:server'); // jshint ignore:line
+var debug = require('debug')('frontend:main'); // jshint ignore:line
 
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
@@ -24,18 +20,17 @@ var Promise = require('bluebird');
 var serveStatic = require('serve-static');
 var stylus = require('stylus');
 
-var sessionStore = require('./lib/wrappers/sessionStore');
+var config = require('../lib/config');
+var db = require('../lib/mongo');
+var sessionStore = require('../lib/sessionStore');
+
 var backend = require('./lib/backend');
-var db = require('./lib/wrappers/mongo');
 var cluster = require('./lib/cluster');
 
 var sessions = require('./lib/sessions');
 var rest = require('./lib/rest');
 var admin = require('./lib/admin');
 var webapp = require('./lib/webapp');
-
-var err = require('./err.json');
-var config = require('./lib/config');
 
 
 function main() {
@@ -53,8 +48,6 @@ function main() {
         console.log('starting in production mode');
     }
 
-    app.set('err', err);
-
     // Middlewares
 
     if (process.env.NODE_ENV === 'development'){
@@ -63,6 +56,7 @@ function main() {
     }
 
     app.use(serveStatic(__dirname + config.catalog.static));
+    app.use(serveStatic(__dirname + config.catalog.static_lib));
 
     app.use(morgan());
     app.use(bodyParser.json());
@@ -72,6 +66,7 @@ function main() {
     // Templating
     app.engine('.jade', cons.jade);
     app.set('view engine', 'jade');
+    app.set('views', __dirname + '/views');
     app.use(stylus.middleware({
         src: __dirname + config.catalog.style_src,
         dest: __dirname + config.catalog.style_dest,
@@ -110,14 +105,10 @@ function main() {
 
             app.listen(config.catalog.port);
             console.log('listening on port %s', config.catalog.port);
-
-            return;
         }, function(err){
             console.error('Services connection error: %s', err);
         }
     );
-
-    return;
 }
 
 module.exports = main;

@@ -11,6 +11,7 @@ module.exports = {
         redisURL: 'tcp://localhost:6379',
         secret: 'rainbow pegasi',
         static: '/public',
+        static_lib: '/../public',
         usersDB: 'users-dev',
         usersAutoIndex: true
     }
