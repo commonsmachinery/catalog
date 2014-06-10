@@ -1,0 +1,250 @@
+FORMAT: 1A
+HOST: https://catalog.elog.io
+
+# Catalog
+A REST API for clients and third-party sites to interact with the data in the catalog.
+
+The various objects and their properties are documented in much more detail here:
+https://github.com/commonsmachinery/catalog/blob/master/doc/datamodel/core.md
+
+# Work resources
+
+## Work [/works/{id}{?include}]
+
+A work record.
+
+The annotations can either be manipulated via the sublist in the document, 
+or via the separate Annotation collection endpoint.
+
+
++ Parameters
+    + id (string) ... Work record ID
+    + include (string, optional) ... Which sublists to include in the response objects. 
+        If omitted or empty, all lists are returned in full.  If `none`, all are omitted.
+        Otherwise acomma-separated names: `collaborators`, `annotations`, `sources`, `media`.
+
++ Model
+
+    + Headers
+
+            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee>;rel="self"
+
+    + Body
+    
+            {
+                "id": "5396e592d7d163613d7321ee",
+                "version": 17,
+                "added_by": "https://catalog.elog.io/users/someUserID",
+                "added_at": "2014-04-14T02:15:15Z",
+                "updated_by": "https://catalog.elog.io/users/anotherUserID",
+                "updated_at": "2014-04-14T02:15:15Z",
+                "uri": "https://catalog.elog.io/works/5396e592d7d163613d7321ee",
+                "alias": "short-name",
+                "owner": "https://catalog.elog.io/users/someUserID",
+                "description": "Description of work to guide catalog users (not part of the metadata)",
+                "forked_from": "https://catalog.elog.io/works/parentworkID",
+                "public": true,
+                "collaborators": [
+                    "https://catalog.elog.io/users/anotherUserID",
+                    "https://catalog.elog.io/groups/someGroupID"
+                    ],
+                "annotations": [{
+                        "id", "63613d7321ee5396e592d7d1",
+                        "updated_by": "https://catalog.elog.io/users/anotherUserID",
+                        "updated_at": "2014-04-14T02:15:15Z",
+                        "score": 100,
+                        "property": {
+                            "propertyName": "title",
+                            "titleLabel": "Title of the work",
+                        }
+                    }],
+                "sources": [{
+                        "source_work": "https://catalog.elog.io/works/sourceWorkID",
+                        "added_by": "https://catalog.elog.io/users/anotherUserID",
+                        "added_at": "2014-04-14T02:15:15Z"
+                    }],
+                "media": [
+                    "https://catalog.elog.io/media/someMediaID",
+                    "https://catalog.elog.io/media/anotherMediaID"
+                    ]
+            }
+
+
+### Retrieve a Work [GET]
++ Response 200
+
+    [Work][]
+
+
+### Update a Work [PUT]
+The following parameters can be updated, any others are ignored:
+
+    - alias
+    - description
+    - public
+    - collaborators
+    - annotations (see below)
+    - sources (only source_work)
+    - media
+    
+This really behaves like `PATCH`, so that any omitted parameters are not changed.
+
+`version` can be included, which instructs the server to only perform the update if that is still
+the current version of the object in the database, allowing client-side conflict handling on 
+`409 Conflict`.
+
+If `id` is included the server must check that it is the same as the URL parameter, 
+to catch misaddressed updates.
+
+If the `annotations` list is modified, new items should not include the `id` field.  
+Attempting to update a missing annotation will result in a `409 Conflict`.
+
+
++ Request (application/json)
+
+    [Work][]
+
++ Response 200 (application/json)
+
+    [Work][]
+
++ Response 409 (application/json)
+
+        {
+            "message": "annotation does not exist",
+            "property": "annotations",
+            "id": "d7d163613d7321ee5396e592",
+        }
+
+
+### Update a Work [PATCH]
+
+See `PUT` for details.
+
++ Request (application/json)
+
+        {
+            "version": 16,
+            "public": true,
+        }
+
++ Response 200 (application/json)
+
+    [Work][]
+
++ Response 409 (application/json)
+
+        {
+            "message": "annotation does not exist",
+            "property": "annotations",
+            "id": "d7d163613d7321ee5396e592",
+        }
+
+
+### Delete a Work [DELETE]
++ Response 204
+
+
+## Work collection [/works{?offset,count,filter,sort,include}]
+
+### List Works [GET]
+List all works visible to the current user, optionally applying paging, filters and sorting.
+
+TODO: define filters and sorting.
+
+Pagination is supported by returning a `Link` header with links according to 
+http://tools.ietf.org/html/rfc5005
+
++ Parameters
+    + offset (number, optional) ... Skip this many records in the result. Default: 0
+    + count (number, optional) ... Return this many records. Default and max values are system-dependent.
+    + filter (string, optional) ... Filter responses (see above). Default: no filter.
+    + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
+    + include (string, optional) ... Which sublists to include in the response objects.
+        See above for details.
+
++ Response 200 (application/json)
+
+    + Header
+    
+            Link: <?offset=0&count=N&...>;rel="first", <?offset=Z&count=N&...>;rel="last", <?offset=X&count=N&...>;rel="previous", <?offset=Y&count=N&...>;rel="next"
+
+    + Body
+    
+            []
+
+
+### Create Work [POST]
+Create a new work.  The following parameters are used, all others are included:
+
+The following parameters can be updated, any others are ignored:
+
+    - alias
+    - description
+    - public
+    - collaborators
+    - annotations (see below)
+    - sources (only source_work)
+    - media
+
+If any fields are missing, they are set to empty values or lists.  
+The default for `public` depends on system configuration.
+
++ Request (application/json)
+
+    [Work][]
+    
++ Response 201 (application/json)
+
+    [Work][]
+
+
+## Annotation [/works/{workID}/annotations/{annotionID}]
+
+TODO
+
+## Work Annotation collection [/works/{workID}/annotations]
+
+TODO
+
+# Media resources
+
+## Media [/media/{mediaID}]
+
+TODO
+
+## Media Collection [/media]
+
+TODO
+
+# Collection resources
+
+## Collection [/collections/{collectionID}]
+
+TODO
+
+## Collection collection [/collections]
+
+TODO
+
+# Users and organisation resources
+
+## User [/users/{userID}]
+
+TODO
+
+## Organisation [/orgs/{orgID}]
+
+TODO
+
+## Organisation collections [/orgs]
+
+TODO
+
+## Group [/orgs/{orgID}/groups/{groupID}]
+
+TODO
+
+## Group collection [/orgs/{orgID}/groups]
+
+TODO
