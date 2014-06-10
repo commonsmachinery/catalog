@@ -2,33 +2,16 @@
 
    Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
-   Authors: 
-        Elsa Balderrama <elsa@commonsmachinery.se>
-
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
 'use strict';
 
-var db = require('../../../lib/mongo');
+var mongo = require('../../../lib/mongo');
 var config = require('../../../lib/config');
 
-var schema = new db.Schema(
+var schema = new mongo.Schema(
     {
-        uid: {
-            type: String,
-            required: true,
-            index: {
-                unique: true
-            }
-        },
-        uri: {
-            type: String,
-            required: true,
-            index: {
-                unique: true
-            }
-        },
         emails: {
             type: [String],
             required: true,
@@ -48,7 +31,7 @@ var schema = new db.Schema(
 
     // Options
     {
-        autoIndex: config.catalog.usersAutoIndex === "true",
+        autoIndex: config.autoIndex,
     }
 );
 
@@ -56,4 +39,7 @@ var schema = new db.Schema(
 //schema.methods({
 //});
 
-module.exports = db.model('User', schema);
+module.exports = function(db) {
+    return db.model('User', schema);
+};
+
