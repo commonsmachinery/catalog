@@ -39,6 +39,11 @@ define(['jquery', 'underscore', 'util'],
             // Hide edit and show save/cancel
             this.$('[data-action="edit"]').hide();
             this.$('[data-action="save"], [data-action="cancel"]').show();
+
+            // "working" indicator
+            this.listenTo(this.model, 'request', this.working);
+            this.listenTo(this.model, 'sync', this.workingDone);
+            this.listenTo(this.model, 'error', this.workingDone);
         },
 
         onEditSave: function onEditSave() {
@@ -46,8 +51,6 @@ define(['jquery', 'underscore', 'util'],
 
             console.debug('start saving');
             this.trigger('edit:save:start', this);
-
-            this.$('.editable').prop('disabled', true);
 
             // Indicate that we're working
             this.$('.actions').prop('disabled', true);
@@ -76,8 +79,6 @@ define(['jquery', 'underscore', 'util'],
                                   model.id, response.status, response.statusText,
                                   response.responseText);
 
-                    // Re-enable buttons
-                    self.$('.actions').prop('disabled', false);
                     self.$('[data-action="save"]').text('Retry saving');
                 },
             });
@@ -105,6 +106,19 @@ define(['jquery', 'underscore', 'util'],
             // starting editing
             this.$('[data-action="save"]').prop('disabled', false);
         },
+
+        working: function onRequest(){
+            $(this.el).find('.editable').prop('disabled', true);
+            $(this.el).addClass('working');
+            $(this.el).prepend('<div class="overlay"></div>');
+            $(this.el).find('.overlay').append('<div class="loading"></div>');
+        },
+
+        workingDone: function onSync(){
+            $(this.el).find('.actions').prop('disabled', false);
+            $(this.el).removeClass('working');
+            $(this.el).find('.overlay').remove();
+        }
     };
 
     return EditMixin;

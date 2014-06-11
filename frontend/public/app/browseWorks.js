@@ -75,6 +75,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             this._modelBinder = new ModelBinder();
 			this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
             this._perms = this.model.get('permissions') || {};
+
+            // "working" indicator
+            this.listenTo(this.model, 'request', this.onRequest);
+            this.listenTo(this.model, 'sync', this.onSync);
 		},
 
 		render: function() {
@@ -84,6 +88,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 			}
 
             this._modelBinder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
+			$(this.el).removeClass('working');
 		},
 
 		remove: function() {
@@ -96,6 +101,21 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				this.model.save(changes, { wait: true });
 			}
 		},
+
+        onRequest: function onRequest(){
+            $(this.el).find('input').prop('checked', false);
+            $(this.el).find('input').prop('disabled', true);
+            $(this.el).addClass('working');
+            $(this.el).prepend('<div class="overlay"></div>');
+            $(this.el).find('.overlay').append('<div class="loading"></div>');
+        },
+
+        onSync: function onSync(){
+            $(this.el).find('input').prop('disabled', false);
+            $(this.el).find('input').prop('checked', true);
+            $(this.el).removeClass('working');
+            $(this.el).find('.overlay').remove();
+        }
 	});
 
 
@@ -112,7 +132,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				ItemView: WorkListItemView,
 				itemTemplate: $('#workListItemTemplate').html(),
 			});
-
 		},
 
 		render: function() {

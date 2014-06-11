@@ -29,6 +29,11 @@ define(['jquery', 'underscore', 'lib/backbone'],
 			this.listenTo(this.collection, 'add', this.onAdd);
 			this.listenTo(this.collection, 'remove', this.onRemove);
 			this.listenTo(this.collection, 'destroy', this.onRemove);
+
+            // "working" indicator
+            this.listenTo(this.collection, 'request', this.onRequest);
+            this.listenTo(this.collection, 'sync', this.onSync);
+            this.listenTo(this.collection, 'error', this.onSync);
 		},
 
 		onAdd: function onAdd(model) {
@@ -103,6 +108,23 @@ define(['jquery', 'underscore', 'lib/backbone'],
 		getItemID: function getItemID(id) {
 			return this.el.id + '-' + id;
 		},
+
+        onRequest: function onRequest(origin){
+            if (this.collection === origin) {
+                $(this.el).find('input, textarea, button, select').prop('disabled', true);
+                $(this.el).addClass('working');
+                $(this.el).prepend('<div class="overlay"></div>');
+                $(this.el).find('.overlay').append('<div class="loading"></div>');
+            }
+        },
+
+        onSync: function onSync(origin){
+            if (this.collection === origin) {
+                $(this.el).find('input, textarea, button, select').prop('disabled', false);
+                $(this.el).removeClass('working');
+                $(this.el).find('.overlay').remove();
+            }
+        }
 	});
 
 	return CollectionView;
