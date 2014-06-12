@@ -90,6 +90,54 @@ Only the following properties in the request will be used:
     [Media][]
     
 
+## Create Media from an uploaded file [/media/actions/upload{?email}]
+
+Instead of extracting all the metadata from the file locally, the catalog may provide the
+service to clients to upload files for server-side processing instead.  This either requires an 
+active session for a user, or an email address to be provided in the request.  In both cases an email
+will be sent to the user when the file has been processed with a link to confirm the uploaded data.
+
+### Upload file [POST]
+
+TODO: is this a sane way to upload files, or should multi-part requests be used instead?  
+Or is this really up to the client's discretion and we should accept both?
+
++ Parameters
+    + email (string, optional) ... Uploader email, if there isn't already an active user session.
+    
++ Request (mime-type/of-file)
+
+        <file contents>
+
++ Response 202 (application/json)
+
+        { "confirm_email": "foo@example.org" }
+        
+
+## Create Media from an online source [/media/actions/fetch{?url,email}]
+
+Similar to uploading a file, this fetches information about a work that's available at a URL online
+and sends a confirmation email when the processing is finished.
+
+### Fetch online source [POST]
+
++ Parameters
+    + url (optional, string) ... The URL, if not specified in the request body.
+    + email (string, optional) ... User email, if not specified in the request body and there isn't already an active user session.
+
++ Request (application/json)
+
+        { "url": "http://some/where", "email": "foo@example.org" }
+        
++ Request (application/x-www-form-urlencoded)
+
+        url=http://some/where&email=foo@example.org
+
++ Response 202 (application/json)
+
+        { "confirm_email": "foo@example.org" }
+
+
 ## Work [/works/{id}{?include}]
 A work record.
 
@@ -302,13 +350,57 @@ that creates a Media instance and links it to an existing work in one operation.
 See `POST /media` for details.
 
 + Request (application/json)
-
     [Media][]
     
 + Response 201 (application/json)
-
     [Media][]
         
+
+## Create Work Media from an uploaded file [/works/{workID}/media/actions/upload]
+
+Similar to creating a loose Media instance by uploading a file (see `POST /media/actions/upload`)
+this uploads a file to create a new Media instance.  The difference is that the user must have a
+session and permission to edit the Work, so there is no `email` parameter.  
+
+The Media will be linked to the work automatically without the need for a confirmation.
+
+TODO: should an email be sent anyway?
+
+### Upload file [POST]
+
+TODO: is this a sane way to upload files, or should multi-part requests be used instead?  
+Or is this really up to the client's discretion and we should accept both?
+
++ Request (mime-type/of-file)
+
+        <file contents>
+
++ Response 202 (application/json)
+
+        { }
+
+## Create Work Media from an online source [/works/{workID}/media/actions/fetch{?url}]
+
+Similar to uploading a file, this fetches information about a work that's available at a URL online.
+See upload file to Work Media for details.
+
+### Fetch online source [POST]
+
++ Parameters
+    + url (optional, string) ... The URL, if not specified in the request body.
+
++ Request (application/json)
+
+        { "url": "http://some/where" }
+        
++ Request (application/x-www-form-urlencoded)
+
+        url=http://some/where
+
++ Response 202 (application/json)
+
+        { }
+
 
 ## Work Media [/works/{workID}/media/{mediaID}]
 Accessing a Media may require going via a linked Work, using this endpoint.
