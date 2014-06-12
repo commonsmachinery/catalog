@@ -7,12 +7,22 @@ A REST API for clients and third-party sites to interact with the data in the ca
 The various objects and their properties are documented in much more detail here:
 https://github.com/commonsmachinery/catalog/blob/master/doc/datamodel/core.md
 
-## Media [/media/{mediaID}]
+## Media [/media/{mediaID}{?annotations}]
 A media instance, which is a read-only record of a particular media instance of a Work
 at the time it was recorded in the catalog.
 
 Media instances are intended to be the "raw material" of Works, so access to them
 may be restricted in the catalog to require a reference via a Work (see Work Media below).
+
+To make the annotations easier to use in web pages the parameter `annotations` can be set
+to a list of property names, e.g. `title,locator`.  This will change the response from a plain list to a map, only
+including the listed properties.  (`all` means that all properties are included in the map.)
+The keys in this map are the `propertyName`, and the value a list of the Annotations for
+that property.  This allows easy access like `annotations.title[0].property.value` to show
+e.g. a title without having to dig through the list.
+
++ Parameters
+    + annotations (string, optional) ... Select properties to get or update in map.
 
 + Model
     + Headers
@@ -47,7 +57,7 @@ may be restricted in the catalog to require a reference via a Work (see Work Med
     [Media][]
 
 
-## Media collection [/media{?offset,count,filter,sort}]
+## Media collection [/media{?offset,count,filter,sort,annotations}]
 Given the role of Media as mainly internal raw material means that it often makes more sense to use
 the Work Media collection instead of this one (see below).
 
@@ -63,6 +73,7 @@ http://tools.ietf.org/html/rfc5005
     + count (number, optional) ... Return this many records. Default and max values are system-dependent.
     + filter (string, optional) ... Filter responses (see above). Default: no filter.
     + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
+    + annotations (string, optional) ... Select properties to get in response.
 
 + Response 200 (application/json)
     + Headers
@@ -138,7 +149,7 @@ and sends a confirmation email when the processing is finished.
         { "confirm_email": "foo@example.org" }
 
 
-## Work [/works/{id}{?include}]
+## Work [/works/{id}{?include,annotations}]
 A work record.
 
 The annotations can either be manipulated via the sublist in the document, 
@@ -151,12 +162,19 @@ in the `media` property always use URLs referencing such an endpoint.
 When adding another Work's Media to this Work, add the Work Media endpoint for that other
 work to the `media` list.  It will be rewritten to the Media endpoint for the target Work.
 
+To make the annotations easier to use in web pages the parameter `annotations` can be set
+to a list of property names, e.g. `title,locator`.  This will change the response from a plain list to a map, only
+including the listed properties.  (`all` means that all properties are included in the map.)
+The keys in this map are the `propertyName`, and the value a list of the Annotations for
+that property.  This allows easy access like `annotations.title[0].property.value` to show
+e.g. a title without having to dig through the list.
 
 + Parameters
     + id (string) ... Work record ID
     + include (string, optional) ... Which sublists to include in the response objects. 
         If omitted or empty, all lists are returned in full.  If `none`, all are omitted.
         Otherwise acomma-separated names: `collaborators`, `annotations`, `sources`, `media`.
+    + annotations (string, optional) ... Select properties to get or update.
 
 + Model
     + Headers
@@ -212,13 +230,13 @@ work to the `media` list.  It will be rewritten to the Media endpoint for the ta
 ### Update a Work [PUT]
 The following parameters can be updated, any others are ignored:
 
-    - alias
-    - description
-    - public
-    - collaborators
-    - annotations (see below)
-    - sources (only source_work)
-    - media
+- alias
+- description
+- public
+- collaborators
+- annotations (see below)
+- sources (only source_work)
+- media
     
 This really behaves like `PATCH`, so that any omitted parameters are not changed.
 
@@ -275,7 +293,7 @@ See `PUT` for details.
 + Response 204
 
 
-## Work collection [/works{?offset,count,filter,sort,include}]
+## Work collection [/works{?offset,count,filter,sort,include,annotations}]
 
 ### List Works [GET]
 List all works visible to the current user, optionally applying paging, filters and sorting.
@@ -292,6 +310,7 @@ http://tools.ietf.org/html/rfc5005
     + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
     + include (string, optional) ... Which sublists to include in the response objects.
         See above for details.
+    + annotations (string, optional) ... Select properties to get or update.
 
 + Response 200 (application/json)
     + Headers
