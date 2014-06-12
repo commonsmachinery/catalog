@@ -421,14 +421,117 @@ This does not delete the underlying Media instance, just the link to it.
 
 
 ## Annotation [/works/{workID}/annotations/{annotionID}]
+A Work or Media annotation, based on the [W3C Ontology for media resources](http://www.w3.org/TR/mediaont-10/).
+This maps format-specific metadata into a common set of properties.
 
-TODO
+This endpoint is provided as an alternative to modifying `Work.annotations` through the
+main Work endpoint.
+
+Media objects also contain Annotations, but since Media are read-only there is no endpoint for manipulating 
+that list.
+
++ Model
+    + Headers
+
+            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee>;rel="self"
+
+    + Body
+
+            {
+                "id", "63613d7321ee5396e592d7d1",
+                "updated_by": "https://catalog.elog.io/users/anotherUserID",
+                "updated_at": "2014-04-14T02:15:15Z",
+                "score": 100,
+                "property": {
+                    "propertyName": "title",
+                    "titleLabel": "Title of the work",
+                }
+            }
+
+
+### Get a Work Annotation [GET]
++ Response 200 (application/json)
+    [Annotation][]
+
+
+### Update an Annotation [PUT]
+Only the `score` and `property` Annotation properties may be changed.
+Only properties included in the request are changed.
+
++ Request (application/json)
+    [Annotation][]
+
++ Response 200 (application/json)
+    [Annotation][]
+
+
+### Update an Annotation [PATCH]
+Same as `PUT`.
+
++ Request (application/json)
+    [Annotation][]
+
++ Response 200 (application/json)
+    [Annotation][]
+
+
+### Delete an Annotation [DELETE]
++ Response 204
+
 
 ## Work Annotation collection [/works/{workID}/annotations]
+This endpoint is provided as an alternative to accessing or adding annotations in
+`Work.annotations` through the main Work endpoint.
 
-TODO
+### List Work Annotations [GET]
++ Response 200 (application/json)
 
-# Collection resources
+        []
+
+
+### Add a Work Annotation [POST]
+Only `score` and `property` are used from the request body.  
+
+`property` must include at least `propertyName` and `value`.
+
+If `score` is omitted it is calculated from `property`.
+
++ Request (application/json)
+    [Annotation][]
+
++ Response 201 (application/json)
+    [Annotation][]
+
+
+## Lookup works by URI [/lookup{?uri,offset,count,include}]
+
+Lookup works based on a URI, typically either a URL denoting a web location
+or a URN indicating a hash or other non-web identifier.
+
+The best matches are always returned first.
+
+Pagination is supported by returning a `Link` header with links according to 
+http://tools.ietf.org/html/rfc5005
+
+### Lookup by URI [GET]
+
++ Parameters
+    + uri (string) ... A URI to lookup. Multiple URIs can be specified by repeating the parameter.
+    + offset (number, optional) ... Skip this many records in the result. Default: 0
+    + count (number, optional) ... Return this many records. Default and max values are system-dependent.
+        If set to 1, it instructs that only the best Work object should be returned or a `404`, not a list of works.
+    + include (string, optional) ... Which sublists to include in the response objects.
+        See Work above for details.
+
++ Response 200 (application/json)
+    + Headers
+    
+            Link: <?offset=0&count=N&...>;rel="first", <?offset=Z&count=N&...>;rel="last", <?offset=X&count=N&...>;rel="previous", <?offset=Y&count=N&...>;rel="next"
+
+    + Body
+    
+            []
+
 
 ## Collection [/collections/{collectionID}]
 
@@ -437,8 +540,6 @@ TODO
 ## Collection collection [/collections]
 
 TODO
-
-# Users and organisation resources
 
 ## User [/users/{userID}]
 
