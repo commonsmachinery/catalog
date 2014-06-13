@@ -5,8 +5,8 @@
  */
 
 
-define(['jquery', 'underscore', 'lib/backbone'],
-	   function($, _, Backbone)
+define(['jquery', 'underscore', 'lib/backbone', 'util'],
+	   function($, _, Backbone, util)
 {
 	'use strict';
 
@@ -111,18 +111,13 @@ define(['jquery', 'underscore', 'lib/backbone'],
 
         onRequest: function onRequest(origin){
             if (this.collection === origin) {
-                $(this.el).find('input, textarea, button, select').prop('disabled', true);
-                $(this.el).addClass('working');
-                $(this.el).prepend('<div class="overlay"></div>');
-                $(this.el).find('.overlay').append('<div class="loading"></div>');
+                util.working('start', this.el)
             }
         },
 
         onSync: function onSync(origin){
             if (this.collection === origin) {
-                $(this.el).find('input, textarea, button, select').prop('disabled', false);
-                $(this.el).removeClass('working');
-                $(this.el).find('.overlay').remove();
+                util.working('stop', this.el)
             }
         }
 	});

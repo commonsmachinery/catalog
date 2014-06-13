@@ -39,11 +39,6 @@ define(['jquery', 'underscore', 'util'],
             // Hide edit and show save/cancel
             this.$('[data-action="edit"]').hide();
             this.$('[data-action="save"], [data-action="cancel"]').show();
-
-            // "working" indicator
-            this.listenTo(this.model, 'request', this.working);
-            this.listenTo(this.model, 'sync', this.workingDone);
-            this.listenTo(this.model, 'error', this.workingDone);
         },
 
         onEditSave: function onEditSave() {
@@ -55,6 +50,7 @@ define(['jquery', 'underscore', 'util'],
             // Indicate that we're working
             this.$('.actions').prop('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
+            util.working('start', this.el);
 
             this.model.save(null, {
                 success: function() {
@@ -67,6 +63,7 @@ define(['jquery', 'underscore', 'util'],
 
                     // Re-enable buttons
                     self.$('.actions').prop('disabled', false);
+                    util.working('stop', self.el);
 
                     self._editStartAttrs = null;
                 },
@@ -80,6 +77,7 @@ define(['jquery', 'underscore', 'util'],
                                   response.responseText);
 
                     self.$('[data-action="save"]').text('Retry saving');
+                    util.working('stop', self.el);
                 },
             });
         },
@@ -106,19 +104,6 @@ define(['jquery', 'underscore', 'util'],
             // starting editing
             this.$('[data-action="save"]').prop('disabled', false);
         },
-
-        working: function onRequest(){
-            $(this.el).find('.editable').prop('disabled', true);
-            $(this.el).addClass('working');
-            $(this.el).prepend('<div class="overlay"></div>');
-            $(this.el).find('.overlay').append('<div class="loading"></div>');
-        },
-
-        workingDone: function onSync(){
-            $(this.el).find('.actions').prop('disabled', false);
-            $(this.el).removeClass('working');
-            $(this.el).find('.overlay').remove();
-        }
     };
 
     return EditMixin;
