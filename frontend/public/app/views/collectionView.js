@@ -111,13 +111,13 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
 
         onRequest: function onRequest(origin){
             if (this.collection === origin) {
-                util.working('start', this.el)
+                util.working('start', this.el);
             }
         },
 
         onSync: function onSync(origin){
             if (this.collection === origin) {
-                util.working('stop', this.el)
+                util.working('stop', this.el);
             }
         }
 	});

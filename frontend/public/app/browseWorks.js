@@ -89,7 +89,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 			}
 
             this._modelBinder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
-			$(this.el).removeClass('working');
 		},
 
 		remove: function() {
@@ -105,10 +104,12 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         onRequest: function onRequest(){
             util.working('start', this.el);
+            $(this.el).find('.batchSelectItem').prop('disabled', true);
         },
 
         onSync: function onSync(){
             util.working('stop', this.el);
+            $(this.el).find('.batchSelectItem').prop('disabled', false);
         }
 	});
 

@@ -130,17 +130,15 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 	};
 
 	exports.working = function working(status, el){
-        if(status == 'start'){
-            $(el).find('form, input, textarea, select, button').prop('disabled', true);
+        if(status === 'start'){
             $(el).addClass('working');
             $(el).prepend('<div class="overlay"><div class="loading"></div></div>');
         }
-        else if(status == 'stop'){ 
-            $(el).find('form, input, textarea, select, button').prop('disabled', false);
+        else if(status === 'stop'){ 
             $(el).removeClass('working');
             $(el).find('.overlay').remove();
         }
-	}
+	};
 
 	return exports;
 });

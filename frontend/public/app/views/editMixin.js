@@ -50,6 +50,7 @@ define(['jquery', 'underscore', 'util'],
             // Indicate that we're working
             this.$('.actions').prop('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
+            this.$('.editable').prop('disabled', true);
             util.working('start', this.el);
 
             this.model.save(null, {
@@ -77,6 +78,9 @@ define(['jquery', 'underscore', 'util'],
                                   response.responseText);
 
                     self.$('[data-action="save"]').text('Retry saving');
+                    
+                    // Re-enable buttons
+                    self.$('.actions').prop('disabled', false);
                     util.working('stop', self.el);
                 },
             });
