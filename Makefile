@@ -5,6 +5,7 @@ top := $(CURDIR)
 modules := . lib frontend apitest
 modules += modules/core
 modules += modules/auth
+modules += modules/event
 
 # Modules should add files to be checked with jshint
 jshint-files =

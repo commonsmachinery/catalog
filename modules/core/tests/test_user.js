@@ -33,16 +33,30 @@ describe('Create user', function() {
     it('should use src._id for new object', function() {
         var r = user.command.create({ _id: id });
         expect( r ).to.have.property( 'obj' );
-        expect( r ).to.have.property( 'events' );
         var u = r.obj;
 
         expect( u._id ).to.be(id);
     });
 
+    it('should generate events', function() {
+        var r = user.command.create({ _id: id });
+        expect( r ).to.have.property( 'obj' );
+        expect( r ).to.have.property( 'event' );
+        var u = r.obj;
+        var e = r.event;
+
+        expect( e.user ).to.eql( id );
+        expect( e.type ).to.be( 'core.User' );
+        expect( e.object ).to.eql( id );
+        expect( e.events ).to.have.length( 1 );
+        expect( e.events[0].type ).to.be( 'user.created' );
+        expect( e.events[0].param ).to.have.property( 'user' );
+        expect( e.events[0].param.user._id.toString() ).to.eql( u.id );
+    });
+
     it('should set added_by and update_by to new user', function() {
         var r = user.command.create({ _id: id });
         expect( r ).to.have.property( 'obj' );
-        expect( r ).to.have.property( 'events' );
         var u = r.obj;
 
         expect( u.added_by ).to.be(id);
@@ -53,7 +67,6 @@ describe('Create user', function() {
         var r = user.command.create({ _id: id });
 
         expect( r ).to.have.property( 'obj' );
-        expect( r ).to.have.property( 'events' );
         var u = r.obj;
 
         expect( u.alias ).to.be( undefined );
@@ -79,7 +92,6 @@ describe('Create user', function() {
         });
 
         expect( r ).to.have.property( 'obj' );
-        expect( r ).to.have.property( 'events' );
         var u = r.obj;
 
         expect( u.alias ).to.be( 'foo' );
@@ -101,7 +113,6 @@ describe('Create user', function() {
         });
 
         expect( r ).to.have.property( 'obj' );
-        expect( r ).to.have.property( 'events' );
         var u = r.obj;
 
         expect( u ).to.have.property( 'profile' );
@@ -119,7 +130,6 @@ describe('Create user', function() {
         });
 
         expect( r ).to.have.property( 'obj' );
-        expect( r ).to.have.property( 'events' );
         var u = r.obj;
 
         expect( u ).to.have.property( 'profile' );

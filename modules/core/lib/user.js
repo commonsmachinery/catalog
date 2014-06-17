@@ -102,11 +102,17 @@ cmd.create = function command_create_user(src) {
         dest.profile.gravatar_email || dest._id.toString());
 
     var user = new db.User(dest);
+    var event = new db.CoreEvent({
+        user: user.id,
+        type: 'core.User',
+        object: user.id,
+        events: [{
+            type: 'user.created',
+            param: { user: user.toObject() },
+        }],
+    });
 
-    debug('creating new user: %j', user);
+    debug('creating new user: %j', user.toObject());
 
-    return {
-        obj: user,
-        events: [ {type: 'user.created', user: user} ],
-    };
+    return { obj: user, event: event };
 };

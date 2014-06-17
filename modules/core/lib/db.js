@@ -9,21 +9,24 @@
 
 var debug = require('debug')('catalog:core:db'); // jshint ignore:line
 
-// External modules
+// External libs
 var _ = require('underscore');
 
-// Common modules
+// Common libs
 var config = require('../../../lib/config');
 var mongo = require('../../../lib/mongo');
 
-var ObjectId = mongo.Schema.Types.ObjectId;
+// Modules
+var event = require('../../event/event');
+
+var ObjectId = mongo.Types.ObjectId;
 
 // We need a connection, but not necessarily an open one, to
 // define the models
 var conn = mongo.connection();
 
 // Common fields in Entry objects
-var EntrySchema = {
+var entry = {
     added_by: { type: ObjectId, required: true, ref: 'User' },
     added_at: { type: Date, default: Date.now },
     updated_by: { type: ObjectId, required: true, ref: 'User' },
@@ -45,26 +48,21 @@ var profile = {
 
 // Core models
 
+exports.CoreEvent = conn.model('CoreEvent', event.EventBatchSchema);
+
 exports.User = conn.model(
     'User',
-    new mongo.Schema(
-        _.extend(EntrySchema, {
-            alias: {
-                type: String,
-                index: {
-                    unique: true,
-                    sparse: true,
-                }
-            },
+    mongo.schema(_.extend(entry, {
+        alias: {
+            type: String,
+            index: {
+                unique: true,
+                sparse: true,
+            }
+        },
 
-            profile: profile,
-        }),
-
-        // Options
-        {
-            autoIndex: config.autoIndex,
-        }
-    )
+        profile: profile,
+    }))
 );
 
 

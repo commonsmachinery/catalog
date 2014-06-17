@@ -8,9 +8,8 @@
 'use strict';
 
 var mongo = require('../../../lib/mongo');
-var config = require('../../../lib/config');
 
-var schema = new mongo.Schema(
+var schema = mongo.schema(
     {
         emails: {
             type: [String],
@@ -27,11 +26,6 @@ var schema = new mongo.Schema(
             type: Boolean,
             default: false
         },
-    },
-
-    // Options
-    {
-        autoIndex: config.autoIndex,
     }
 );
 

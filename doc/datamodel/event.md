@@ -25,9 +25,9 @@ for system-generated events.
 
 `date`: Event batch `Date`.
 
-`object_type`: Affected object type, e.g. `core.Work`.
+`type`: Affected object type, e.g. `core.Work`.
 
-`object_id`: Affected object `ObjectID`.
+`object`: Affected object `ObjectId`.
 
 `version`: Object version generating the events.
 
@@ -35,7 +35,7 @@ for system-generated events.
 
 ### Index
 
-`user_id, date` (sparse): Enable user audit log.
+`user, date` (sparse): Enable user audit log.
 
 `object_id, date`: Enable object audit log.
 
@@ -45,7 +45,7 @@ Event
 
 `type`: Event name (see below for lists).
 
-Additional event-specific properties are added in this document.
+`param`: Event-specific parameters as a map.
 
 
 Core Events
@@ -134,8 +134,8 @@ Mirrored from other objects:
 Object events:
 
     user.created(user)
-    user.PROPERTY.changed(old_value, new_value)
-    user.profile.PROPERTY.changed(old_value, new_value)
+    user.PROPERTY.changed(old, new)
+    user.profile.PROPERTY.changed(old, new)
 
 Mirrored from other objects:
 

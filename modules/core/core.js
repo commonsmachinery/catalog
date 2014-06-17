@@ -7,7 +7,7 @@
 
 'use strict';
 
-var debug = require('debug')('catalog:core:user'); // jshint ignore:line
+var debug = require('debug')('catalog:core'); // jshint ignore:line
 
 // External modules
 
