@@ -30,5 +30,9 @@ module.exports = {
         auth: {
             db: 'auth',
         },
+
+        core: {
+            db: 'core',
+        },
     },
 };

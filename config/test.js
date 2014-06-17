@@ -11,5 +11,9 @@ module.exports = {
         auth: {
             db: 'auth-test',
         },
+
+        core: {
+            db: 'core-test',
+        },
     },
 };

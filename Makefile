@@ -22,13 +22,17 @@ JSHINT = $(top)/node_modules/.bin/jshint
 MOCHA = $(top)/node_modules/.bin/mocha
 STYLUS = $(top)/node_modules/.bin/stylus
 
-SET_DEBUG =
-DO_MOCHA = NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development $(SET_DEBUG) $(MOCHA) --reporter spec
+JSHINT_REPORTER =
+MOCHA_COLORS =
 
-REPORTER=
 ifeq ($(EMACS),t)
-REPORTER=--reporter=$(top)/.jshint-emacs.js
+JSHINT_REPORTER = --reporter=$(top)/.jshint-emacs.js
+MOCHA_COLORS = --no-colors
 endif
+
+SET_DEBUG =
+DO_MOCHA = NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development $(SET_DEBUG) $(MOCHA) $(MOCHA_COLORS) --reporter spec
+
 
 
 # The submodules can add dependencies to these to do specific stuff.
@@ -37,10 +41,10 @@ endif
 all: lint
 
 lint: $(jshint-files)
-	$(JSHINT) $(REPORTER) $(jshint-files)
+	$(JSHINT) $(JSHINT_REPORTER) $(jshint-files)
 
 test: $(mocha-files)
-#	$(DO_MOCHA) $(mocha-files)
+	$(DO_MOCHA) $(mocha-files)
 
 clean:
 	rm -f $(clean-files)

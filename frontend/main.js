@@ -23,6 +23,8 @@ var config = require('../lib/config');
 var mongo = require('../lib/mongo');
 var sessionStore = require('../lib/sessionStore');
 
+var core = require('../modules/core/core');
+
 var sessions = require('./lib/sessions');
 //var rest = require('./lib/rest');
 //var admin = require('./lib/admin');
@@ -66,15 +68,12 @@ function main() {
 
     /* ======================= Connect services and start ======================= */
 
-    Promise.join(
+    Promise.all([
         mongo.createConnection(config.auth.db),
-        sessionStore(config.frontend.sessionDB))
-    .catch(
-        function(err) {
-            console.error('Services connection error: %s', err);
-        })
+        sessionStore(config.frontend.sessionDB),
+        core.init()])
     .spread(
-        function(db, sessionstore) {
+        function(db, sessionstore, coreOK) {
             console.log('Services connected... starting server...');
 
             // Wire up the rest of the app that depended on the
@@ -91,6 +90,11 @@ function main() {
 
             app.listen(config.frontend.port);
             console.log('listening on port %s', config.frontend.port);
+        })
+    .catch(
+        function(err) {
+            console.error('Services connection error: %s', err);
+            return Promise.reject(err);
         });
 }
 

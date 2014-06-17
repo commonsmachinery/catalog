@@ -11,5 +11,9 @@ module.exports = {
         auth: {
             db: 'auth-dev',
         },
+
+        core: {
+            db: 'core-dev',
+        },
     },
 };

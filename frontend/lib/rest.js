@@ -18,7 +18,7 @@ var Promise = require('bluebird');
 var BackendError = require('./backend').BackendError;
 var uris = require('./uris');
 var requireUser = require('./sessions').requireUser;
-var gravatar = require('./gravatar');
+var gravatar = require('../../lib/gravatar');
 
 /* Module global vars */
 var backend;

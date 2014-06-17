@@ -9,14 +9,20 @@
 
 var debug = require('debug')('catalog:frontend:sessions');
 
+// External modules
 var url = require('url');
 var Promise = require('bluebird');
 var expressSession = require('express-session');
 var persona = require('express-persona');
 
+// Common modules
+var config = require('../../lib/config');
+
+var core = require('../../modules/core/core');
+
+// Frontend modules
 var cluster = require('./cluster');
 var uris = require('./uris');
-var config = require('../../lib/config');
 
 /* Module globals */
 var env;
@@ -193,11 +199,16 @@ checkUserSession = function checkUserSession(req, res, next) {
     if (!uid) {
         // Look up user from email, or create one if necessary
 
-        User.findOneAsync({ emails: email }).
-            then(
+        User.findOneAsync({ emails: email })
+            .then(
                 function(user) {
                     if (user) {
-                        debug('found user %s from email %s', user._id, email);
+                        debug('found user %s from email %s', user.id, email);
+
+                        if (user.locked) {
+                            // TODO: throw UserLockedError instead
+                        }
+
                         return Promise.resolve(user);
                     }
 
@@ -214,60 +225,61 @@ checkUserSession = function checkUserSession(req, res, next) {
                                 reject(err);
                             }
                             else {
-                                if (affected > 0) {
-                                    // the uniqueness on uid should ensure that
-                                    // this never happens, but can't-happens have
-                                    // a tendency to happen.
-                                    console.error('overwrote existing user with %j', savedUser);
-                                }
-
                                 resolve(savedUser);
                             }
                         });
                     });
-                }
-            ).then(
-                function(user) {
-                    debug('creating new session for user %s', user._id);
+                })
+            .then(
+                function(authUser) {
+                    // Ensure that we have a core.User too
+                    return core.get_user(authUser.id)
+                        .catch(
+                            core.UserNotFoundError,
+                            function (err) {
+                                debug('creating new core.User for %j', authUser);
+                                return core.create_user({ _id: authUser._id });
+                            })
+                        .then(function(coreUser) {
+                            return [authUser, coreUser];
+                        });
+                })
+            .spread(
+                function(authUser, coreUser) {
+                    debug('creating new session for user %s', authUser.id);
+                    req.session.uid = authUser.id;
 
-                    if (user.locked) {
-                        console.warn('removing session for locked user: %s', user.uid);
-                        req.session.destroy();
-                    }
-                    else {
-                        req.session.uid = user._id;
-                    }
+                    req.session.gravatarHash = coreUser.profile.gravatar_hash;
 
                     // Proceed to whatever the request is supposed to do
                     next();
-                }
-            ).catch(
+                })
+            .catch(
                 function(err) {
                     console.error('error looking up/creating user from email %s: %s', email, err);
                     res.send(500, dev ? err.stack : '');
-                }
-            ).done();
+                })
+            .done();
     }
     else {
         // Just check that the user isn't locked
 
-        User.findByIdAsync(uid).
-            then(
+        User.findByIdAsync(uid)
+            .then(
                 function(user) {
                     if (user.locked) {
-                        console.warn('removing session for locked user: %s', user.uid);
-                        req.session.destroy();
+                        // TODO: throw UserLockedError instead
                     }
 
                     // Proceed to whatever the request is supposed to do
                     next();
-                }
-            ).catch(
+                })
+            .catch(
                 function(err) {
                     console.error('error looking up user from uid %s: %s', uid, err);
                     res.send(500, dev ? err.stack : '');
-                }
-            ).done();
+                })
+            .done();
     }
 };
 
@@ -279,6 +291,7 @@ setLocals = function setLocals(req, res, next) {
         locals.loginEmail = req.session.email;
         locals.loginType = req.session.loginType;
         locals.url = req.url;
+        locals.loginGravatarHash = req.session.gravatarHash;
     }
     next();
 };
