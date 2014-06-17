@@ -80,6 +80,7 @@ header
    width 100%
    > #logo
        background logo center/contain no-repeat
+       float left
        height 80%
        margin 5px 0
        a
@@ -92,6 +93,7 @@ header
     nav#header
         background-color nav-color
         border-radius 0  0 (round-factor * 0.3em) (round-factor * 0.3em)
+        float left
         height nav-height
         margin 0 1em
         text-align left
@@ -113,6 +115,7 @@ header
                 border-right solid 1px nav-color
                 height 100%
                 line-height nav-height
+                margin-right 0.1em
                 padding 0 0.5em
                 transition all 0.2s
                 &:hover 
@@ -138,6 +141,7 @@ header
                 font main-font
                 font-size 80%
                 line-height nav-height
+                margin 0.1em
                 vertical-align top
                 &.persona:before
                     background url('/media/persona-glyph.png') 0 0 / contain no-repeat
@@ -170,6 +174,8 @@ footer
         display block
 
 .entries
+    float none
+    display: inline-block
     padding 0.5em
     h2
         display inline-block
@@ -181,8 +187,10 @@ footer
         font-size 0.9em
         margin 0.5em
 
-.entry
+.entry, .entries
     padding 1em
+    position relative
+    vertical-align top
     h2
         display inline-block
         font-size 2em
@@ -196,9 +204,51 @@ footer
         font-size 0.9em
 
 
-img.thumbnail
+mg.thumbnail
     max-width 200px
     max-height 200px
+
+.working
+    overflow hidden
+    .loading
+        display block
+        height 0
+        left 50%
+        max-width 3.5em
+        min-width 1em
+        position absolute
+        top 50%
+        width 100%
+        &:before
+            background-image loading 
+            background-repeat-y no-repeat
+            background-size auto 100%
+            background-position 0px 50%
+            content ''
+            display block
+            margin-left -50%
+            margin-top -50%
+            padding-top 100%
+            width 100%
+            animation spin 0.35s steps(10) infinite
+            -o-animation spin 0.35s steps(10) infinite
+            -moz-animation spin 0.35s steps(10) infinite
+            -webkit-animation spin 0.35s steps(10) infinite
+            -ms-animation spin 0.35s steps(10) infinite
+    .overlay
+        background-color rgba(240,240,240,0.8)
+        height 100%
+        left 0px
+        position absolute
+        top 0px
+        width 100%
+
+@keyframes spin
+    0% 
+        background-position 0%
+    100% 
+        background-position -1000%
+
 
 #bootstrapData
     display none
@@ -242,6 +292,12 @@ img.thumbnail
 #wrapper
     display block
     width 90%
+
+#works
+    padding 0
+    position relative
+
+
 
 @media screen and (max-width: 55em)
     #wrapper

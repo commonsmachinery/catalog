@@ -5,8 +5,8 @@
  */
 
 
-define(['jquery', 'underscore', 'lib/backbone'],
-	   function($, _, Backbone)
+define(['jquery', 'underscore', 'lib/backbone', 'util'],
+	   function($, _, Backbone, util)
 {
 	'use strict';
 
@@ -29,6 +29,11 @@ define(['jquery', 'underscore', 'lib/backbone'],
 			this.listenTo(this.collection, 'add', this.onAdd);
 			this.listenTo(this.collection, 'remove', this.onRemove);
 			this.listenTo(this.collection, 'destroy', this.onRemove);
+
+            // "working" indicator
+            this.listenTo(this.collection, 'request', this.onRequest);
+            this.listenTo(this.collection, 'sync', this.onSync);
+            this.listenTo(this.collection, 'error', this.onSync);
 		},
 
 		onAdd: function onAdd(model) {
@@ -103,6 +108,18 @@ define(['jquery', 'underscore', 'lib/backbone'],
 		getItemID: function getItemID(id) {
 			return this.el.id + '-' + id;
 		},
+
+        onRequest: function onRequest(origin){
+            if (this.collection === origin) {
+                util.working('start', this.el);
+            }
+        },
+
+        onSync: function onSync(origin){
+            if (this.collection === origin) {
+                util.working('stop', this.el);
+            }
+        }
 	});
 
 	return CollectionView;
