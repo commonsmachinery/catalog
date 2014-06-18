@@ -21,8 +21,6 @@ var config = require('../../lib/config');
 var core = require('../../modules/core/core');
 
 // Frontend modules
-var cluster = require('./cluster');
-var uris = require('./uris');
 
 /* Module globals */
 var env;
@@ -233,12 +231,14 @@ checkUserSession = function checkUserSession(req, res, next) {
             .then(
                 function(authUser) {
                     // Ensure that we have a core.User too
-                    return core.get_user(authUser.id)
+                    return core.get_user({ userId: authUser.id }, authUser.id)
                         .catch(
                             core.UserNotFoundError,
                             function (err) {
                                 debug('creating new core.User for %j', authUser);
-                                return core.create_user({ _id: authUser._id });
+                                return core.create_user(
+                                    { userId: authUser.id },
+                                    { _id: authUser.id });
                             })
                         .then(function(coreUser) {
                             return [authUser, coreUser];
@@ -250,6 +250,14 @@ checkUserSession = function checkUserSession(req, res, next) {
                     req.session.uid = authUser.id;
 
                     req.session.gravatarHash = coreUser.profile.gravatar_hash;
+
+                    // TEST CODE: trigger an update, not really
+                    // bothering about the result.
+                    core.update_user(
+                        { userId: authUser.id },
+                        coreUser.id,
+                        { alias: "test" })
+                        .then(debug);
 
                     // Proceed to whatever the request is supposed to do
                     next();
