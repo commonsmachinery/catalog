@@ -9,7 +9,7 @@
 
 // var debug = require('debug')('frontend:webapp');
 
-var gravatar = require('./gravatar');
+var gravatar = require('../../lib/gravatar');
 
 /* Globals */
 // var isDev = process.env.NODE_ENV === 'development';

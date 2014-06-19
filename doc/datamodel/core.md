@@ -28,10 +28,6 @@ Key concepts
 - ObjectIDs are translated into full REST API endpoint URLs by the
   frontend when sending objects to clients as JSON.
 
-- Objects which may be referred to from external datasets by their URI
-  store this uri as a backup, to avoid being wholly dependent on the
-  REST API endpoint.
-
 - For now this data model contains indices to support the website, but as
   the view module is extended several of them may be possible to drop.
   
@@ -49,8 +45,7 @@ properties and support for atomic updates.
 
 `_id`: Unique ID, assigned via an ObjectID
 
-`version`: Used to detect conflicting updates, and also included in
-events to allow correct serialisation.  Incremented on each change.
+`__v`: Mongoose object version ID.
 
 `added_by`: The `User` who added the entry.
 
@@ -75,8 +70,6 @@ The rationale is that the work information is a whole and should be
 updated as such.
 
 ### Properties
-
-`uri`: Permanent URI to the entry.
 
 `alias`: Optional short name that can be used in URLs, omitted if not
 set.
@@ -190,8 +183,6 @@ collection, but it helps organising them.
 
 ### Properties
 
-`uri`: Permanent URI to the entry.
-
 `name`: Name identifying the collection to users.
 
 `alias`: Optional short name that can be used in URLs, omitted if not
@@ -246,8 +237,6 @@ groups of people who collaborate on works or collections.
 
 ### Properties
 
-`uri`: Permanent URI to the entry.
-
 `alias`: Short name that can be used in URLs.
 
 `owners`: List of `User` who have the right to administer all aspects
@@ -274,8 +263,6 @@ Links to the user from the surrounding world are handled by the auth
 module.
 
 ### Properties
-
-`uri`: Permanent URI to the entry.
 
 `alias`: Short name that can be used in URLs.
 

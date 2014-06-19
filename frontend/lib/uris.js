@@ -2,17 +2,14 @@
 
    Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
-   Authors:
-        Peter Liljenberg <peter@commonsmachinery.se>
-
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
 'use strict';
-var config = require('./config');
+var config = require('../../lib/config');
 
 function buildURI() {
-    return config.catalog.baseURL + '/' + Array.prototype.join.call(arguments, '/');
+    return config.frontend.baseURL + '/' + Array.prototype.join.call(arguments, '/');
 }
 exports.buildURI = buildURI;
 

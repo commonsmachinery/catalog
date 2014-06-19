@@ -2,25 +2,25 @@
 
    Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
-   Authors: 
-        Peter Liljenberg <peter@commonsmachinery.se>
-        Elsa Balderrama <elsa@commonsmachinery.se>
-
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
 'use strict';
 
-var debug = require('debug')('frontend:sessions');
+var debug = require('debug')('catalog:frontend:sessions');
 
+// External modules
 var url = require('url');
 var Promise = require('bluebird');
 var expressSession = require('express-session');
 var persona = require('express-persona');
 
-var cluster = require('./cluster');
-var uris = require('./uris');
-var config = require('./config');
+// Common modules
+var config = require('../../lib/config');
+
+var core = require('../../modules/core/core');
+
+// Frontend modules
 
 /* Module globals */
 var env;
@@ -40,18 +40,18 @@ var useTestAccount,
 /*
  * Set up middlewares for session management.
  */
-exports.init = function init(app, sessionstore) {
+exports.init = function init(app, sessionstore, db) {
     env = process.env;
     dev = env.NODE_ENV === 'development';
     test = env.NODE_ENV === 'test';
 
     // We can load the User model now that mongodb is connected
-    User = require('./model/user');
+    User = require('./model/user')(db);
 
     /* Session middlewares */
     sessions = sessionstore;
     app.use(expressSession({
-        secret: config.catalog.secret,
+        secret: config.frontend.secret,
         store: sessionstore
     }));
 
@@ -197,97 +197,97 @@ checkUserSession = function checkUserSession(req, res, next) {
     if (!uid) {
         // Look up user from email, or create one if necessary
 
-        User.findOne({ emails: email }).
-            then(
+        User.findOneAsync({ emails: email })
+            .then(
                 function(user) {
                     if (user) {
-                        debug('found user %s from email %s', user.uid, email);
+                        debug('found user %s from email %s', user.id, email);
+
+                        if (user.locked) {
+                            // TODO: throw UserLockedError instead
+                        }
+
                         return Promise.resolve(user);
                     }
 
-                    return cluster.increment('next-user-id').
-                        then(
-                            function(newId) {
-                                // Reduce the risk of overlapping accounts by
-                                // having prefixes on the dev and test accounts
-                                if (dev) {
-                                    newId = 'dev_' + newId;
-                                }
-                                else if (dev) {
-                                    newId = 'test_' + newId;
-                                }
+                    debug('creating new user for %s', email);
 
-                                debug('creating new user with id %s for %s', newId, email);
+                    return new Promise(function(resolve, reject) {
+                        var newUser = new User({
+                            emails: [email],
+                        });
 
-                                return new Promise(function(resolve, reject) {
-                                    var newUser = new User({
-                                        uid: newId,
-                                        uri: uris.buildUserURI(newId),
-                                        emails: [email],
-                                    });
-
-                                    newUser.save(function(err, savedUser, affected) {
-                                        if (err) {
-                                            console.error('error saving new user: %s %j', err, newUser);
-                                            reject(err);
-                                        }
-                                        else {
-                                            if (affected > 0) {
-                                                // the uniqueness on uid should ensure that
-                                                // this never happens, but can't-happens have
-                                                // a tendency to happen.
-                                                console.error('overwrote existing user with %j', savedUser);
-                                            }
-
-                                            resolve(savedUser);
-                                        }
-                                    });
-                                });
+                        newUser.save(function(err, savedUser, affected) {
+                            if (err) {
+                                console.error('error saving new user: %s %j', err, newUser);
+                                reject(err);
                             }
-                        );
-                }
-            ).then(
-                function(user) {
-                    debug('creating new session for user %s', user.uid);
+                            else {
+                                resolve(savedUser);
+                            }
+                        });
+                    });
+                })
+            .then(
+                function(authUser) {
+                    // Ensure that we have a core.User too
+                    return core.get_user({ userId: authUser.id }, authUser.id)
+                        .catch(
+                            core.UserNotFoundError,
+                            function (err) {
+                                debug('creating new core.User for %j', authUser);
+                                return core.create_user(
+                                    { userId: authUser.id },
+                                    { _id: authUser.id });
+                            })
+                        .then(function(coreUser) {
+                            return [authUser, coreUser];
+                        });
+                })
+            .spread(
+                function(authUser, coreUser) {
+                    debug('creating new session for user %s', authUser.id);
+                    req.session.uid = authUser.id;
 
-                    if (user.locked) {
-                        console.warn('removing session for locked user: %s', user.uid);
-                        req.session.destroy();
-                    }
-                    else {
-                        req.session.uid = user.uid;
-                    }
+                    req.session.gravatarHash = coreUser.profile.gravatar_hash;
+
+                    // TEST CODE: trigger an update, not really
+                    // bothering about the result.
+                    core.update_user(
+                        { userId: authUser.id },
+                        coreUser.id,
+                        { alias: "test" })
+                        .then(debug);
 
                     // Proceed to whatever the request is supposed to do
                     next();
-                }
-            ).catch(
+                })
+            .catch(
                 function(err) {
                     console.error('error looking up/creating user from email %s: %s', email, err);
                     res.send(500, dev ? err.stack : '');
-                }
-            ).done();
+                })
+            .done();
     }
     else {
         // Just check that the user isn't locked
 
-        User.findOne({ uid: uid }).
-            then(
+        User.findByIdAsync(uid)
+            .then(
                 function(user) {
                     if (user.locked) {
-                        console.warn('removing session for locked user: %s', user.uid);
-                        req.session.destroy();
+                        // TODO: throw UserLockedError instead
                     }
 
                     // Proceed to whatever the request is supposed to do
                     next();
-                }
-            ).catch(
+                })
+            .catch(
                 function(err) {
                     console.error('error looking up user from uid %s: %s', uid, err);
                     res.send(500, dev ? err.stack : '');
-                }
-            ).done();
+                })
+            .done();
     }
 };
 
@@ -299,6 +299,7 @@ setLocals = function setLocals(req, res, next) {
         locals.loginEmail = req.session.email;
         locals.loginType = req.session.loginType;
         locals.url = req.url;
+        locals.loginGravatarHash = req.session.gravatarHash;
     }
     next();
 };
@@ -309,7 +310,7 @@ setLocals = function setLocals(req, res, next) {
  * base URL
  */
 personaAudience = function personaAudience() {
-    var u = url.parse(config.catalog.baseURL);
+    var u = url.parse(config.frontend.baseURL);
     var port = u.port;
     var audience;
 
@@ -332,7 +333,7 @@ personaAudience = function personaAudience() {
 loginScreen = function loginScreen (req, res) {
     res.setHeader('X-UA-Compatible', 'IE=Edge'); //requirement for persona
     var referer = req.headers.referer;
-    var landing = !referer || referer.search(config.catalog.baseURL) < 0;
+    var landing = !referer || referer.search(config.frontend.baseURL) < 0;
 
     if (!req.session.uid){
         res.render('login',{

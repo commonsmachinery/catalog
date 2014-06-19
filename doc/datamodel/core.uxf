@@ -39,7 +39,6 @@ Entry
 --
 owner: User._id/Organisation._id
 alias: String
-uri: String
 description: String
 forked_from: Work._id
 public: Boolean
@@ -142,7 +141,6 @@ sourceWork
     <panel_attributes>_User_
 Entry
 --
-uri: String
 alias: String
 profile: Profile
 </panel_attributes>
@@ -159,7 +157,6 @@ profile: Profile
     <panel_attributes>_Organisation_
 Entry
 --
-uri: String
 alias: String
 profile: Profile
 owners: [User._ids]
@@ -253,7 +250,6 @@ members</panel_attributes>
 Entry
 --
 owner: User._id/Organisation._id
-uri: String
 name: String
 alias: String
 description: String
@@ -314,7 +310,7 @@ owner
 &lt;&lt;abstract base class&gt;&gt;
 --
 _id: ObjectID
-version: Integer
+__v: Integer
 added_by: User._id
 added_at: Date
 updated_by: User._id

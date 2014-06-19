@@ -1,5 +1,3 @@
 
-all clean test lint style:
+all %:
 	$(MAKE) -C .. $@
-
-.PHONY: all clean test lint style

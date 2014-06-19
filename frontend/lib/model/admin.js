@@ -43,7 +43,7 @@ var schema = new db.Schema(
 
     // Options
     {
-        autoIndex: config.catalog.usersAutoIndex
+        autoIndex: config.autoIndex,
     }
 );
 
