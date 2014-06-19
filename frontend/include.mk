@@ -3,6 +3,7 @@ frontend = $(top)/frontend
 
 jshint-files += $(frontend)/*.js
 jshint-files += $(frontend)/lib/*.js
+jshint-files += $(frontend)/lib/api/*.js
 jshint-files += $(frontend)/public/app/*.js
 jshint-files += $(frontend)/public/app/*/*.js
 

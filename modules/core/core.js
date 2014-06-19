@@ -26,12 +26,15 @@ var debug = require('debug')('catalog:core'); // jshint ignore:line
 
 // Common modules
 
-
+// Core modules
 var db = require('./lib/db');
+var common = require('./lib/common');
 
 exports.init = function() {
     return db.connect();
 };
+
+exports.NotFoundError = common.NotFoundError;
 
 //
 // User
@@ -40,6 +43,6 @@ exports.init = function() {
 var user = require('./lib/user');
 
 exports.UserNotFoundError = user.UserNotFoundError;
-exports.get_user = user.get_user;
-exports.create_user = user.create_user;
-exports.update_user = user.update_user;
+exports.getUser = user.getUser;
+exports.createUser = user.createUser;
+exports.updateUser = user.updateUser;

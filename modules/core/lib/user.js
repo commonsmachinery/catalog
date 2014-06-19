@@ -19,6 +19,7 @@ var gravatar = require('../../../lib/gravatar');
 
 // Core modules
 var db = require('./db');
+var common = require('./common');
 
 
 /*
@@ -37,6 +38,9 @@ var userFilter = function(context) {
         delete obj._id;
         obj.id = user.id;
 
+        delete obj.__v;
+        obj.version = user.__v;
+
         if (context.userId !== user.id) {
             // Only user may see the gravatar_email
             delete obj.gravatar_email;
@@ -50,12 +54,12 @@ var userFilter = function(context) {
 /* Error raised when a User object is not found.
  */
 var UserNotFoundError = exports.UserNotFoundError = function UserNotFoundError(id) {
-    this.message = 'core.User not found: ' + id;
     this.name = "UserNotFoundError";
+    common.NotFoundError.call(this, 'core.User', id);
     Error.captureStackTrace(this, UserNotFoundError);
 };
 
-UserNotFoundError.prototype = Object.create(Error.prototype);
+UserNotFoundError.prototype = Object.create(common.NotFoundError.prototype);
 UserNotFoundError.prototype.constructor = UserNotFoundError;
 
 
@@ -70,7 +74,9 @@ var cmd = exports.command = {};
  *
  * Returns a promise that resolves to the user or null if not found.
  */
-exports.get_user = function get_user(context, userId) {
+exports.getUser = function getUser(context, userId) {
+    common.checkId(userId, UserNotFoundError);
+
     return db.User.findByIdAsync(userId)
         .then(function(user) {
             if (!user) {
@@ -92,12 +98,12 @@ exports.get_user = function get_user(context, userId) {
  *
  * Returns a promise that resolves to the new user
  */
-exports.create_user = function create_user(context, src) {
+exports.createUser = function createUser(context, src) {
     return command.execute(cmd.create, context, src)
         .then(userFilter(context));
 };
 
-cmd.create = function command_create_user(context, src) {
+cmd.create = function commandCreateUser(context, src) {
     if (!src._id) {
         throw new command.CommandError('src._id missing');
     }
@@ -141,7 +147,9 @@ cmd.create = function command_create_user(context, src) {
  *
  * Returns a promise that resolves to the updated user.
  */
-exports.update_user = function update_user(context, userId, src) {
+exports.updateUser = function updateUser(context, userId, src) {
+    common.checkId(userId, UserNotFoundError);
+
     return db.User.findByIdAsync(userId)
         .then(function(user) {
             if (!user) {
@@ -155,9 +163,9 @@ exports.update_user = function update_user(context, userId, src) {
 };
 
 
-cmd.update = function command_update_user(context, user, src) {
+cmd.update = function commandUpdateUser(context, user, src) {
     // Check permissions
-    if (context.userId.toString() !== user.id.toString()) {
+    if (!context.userId || context.userId.toString() !== user.id.toString()) {
         throw new command.PermissionError(context.userId, user.id);
     }
 

@@ -38,7 +38,7 @@ var useTestAccount,
 
 
 /*
- * Set up middlewares for session management.
+ * Set up middlewares and routes for session management.
  */
 exports.init = function init(app, sessionstore, db) {
     env = process.env;
@@ -63,13 +63,7 @@ exports.init = function init(app, sessionstore, db) {
     // Common session checks
     app.use(checkUserSession);
     app.use(setLocals);
-};
 
-
-/*
- * Setup routes for session management.
- */
-exports.routes = function routes(app) {
     // AJAX Persona routes
     persona(app, {
         audience: personaAudience(),
@@ -231,12 +225,12 @@ checkUserSession = function checkUserSession(req, res, next) {
             .then(
                 function(authUser) {
                     // Ensure that we have a core.User too
-                    return core.get_user({ userId: authUser.id }, authUser.id)
+                    return core.getUser({ userId: authUser.id }, authUser.id)
                         .catch(
                             core.UserNotFoundError,
                             function (err) {
                                 debug('creating new core.User for %j', authUser);
-                                return core.create_user(
+                                return core.createUser(
                                     { userId: authUser.id },
                                     { _id: authUser.id });
                             })
@@ -251,21 +245,13 @@ checkUserSession = function checkUserSession(req, res, next) {
 
                     req.session.gravatarHash = coreUser.profile.gravatar_hash;
 
-                    // TEST CODE: trigger an update, not really
-                    // bothering about the result.
-                    core.update_user(
-                        { userId: authUser.id },
-                        coreUser.id,
-                        { alias: "test" })
-                        .then(debug);
-
                     // Proceed to whatever the request is supposed to do
                     next();
                 })
             .catch(
                 function(err) {
                     console.error('error looking up/creating user from email %s: %s', email, err);
-                    res.send(500, dev ? err.stack : '');
+                    next(err);
                 })
             .done();
     }
@@ -285,7 +271,7 @@ checkUserSession = function checkUserSession(req, res, next) {
             .catch(
                 function(err) {
                     console.error('error looking up user from uid %s: %s', uid, err);
-                    res.send(500, dev ? err.stack : '');
+                    next(err);
                 })
             .done();
     }
