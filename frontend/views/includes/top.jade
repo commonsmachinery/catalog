@@ -35,7 +35,7 @@ html(lang="en")
                         li: a(href="/works"): | works
                     ul#user
                         if (user)
-                            li.gravatar: img(src=gravatarEmailURL(loginEmail, 20), width='20', height='20')
+                            li.gravatar: img(src=gravatarHashURL(loginGravatarHash, 20), width='20', height='20')
                             li(class="#{loginType}"): a(href="/users/#{user}")
                                 | #{loginEmail}
                             case loginType
