@@ -19,7 +19,7 @@ var mongo = require('../../../lib/mongo');
 // Modules
 var event = require('../../event/event');
 
-var ObjectId = mongo.Types.ObjectId;
+var ObjectId = mongo.Schema.Types.ObjectId;
 
 // We need a connection, but not necessarily an open one, to
 // define the models
