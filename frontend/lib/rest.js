@@ -45,6 +45,10 @@ var setContext = function setContext(req, res, next) {
         }
     }
 
+    // Map from object IDs to permissions, collected during processing
+    // (e.g. picking up access tokens)
+    req.context.perms = {};
+
     next();
 };
 

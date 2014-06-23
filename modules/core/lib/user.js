@@ -21,6 +21,31 @@ var gravatar = require('../../../lib/gravatar');
 var db = require('./db');
 var common = require('./common');
 
+/* Return a function that sets the permissions for this User object in
+ * the context.  It can be put in a promise chain after reading the
+ * object.
+ *
+ * Export it so it can be unit tested.
+ */
+var setUserPerms = exports.setUserPerms = function(context) {
+    return function(user) {
+        if (!context.perms) {
+            context.perms = {};
+        }
+
+        var perms = context.perms[user.id];
+        if (!perms) {
+            perms = context.perms[user.id] = {};
+        }
+
+        // Only user can modify the object
+        if (context.userId && context.userId.toString() === user.id.toString()) {
+            perms.write = true;
+        }
+
+        return user;
+    };
+};
 
 /*
  * Return a function that can be put last in a promise chain to turn a
@@ -45,6 +70,9 @@ var userFilter = function(context) {
             // Only user may see the gravatar_email
             delete obj.profile.gravatar_email;
         }
+
+        // Copy in the permissions
+        obj._perms = context.perms[user.id] || {};
 
         return obj;
     };
@@ -86,6 +114,7 @@ exports.getUser = function getUser(context, userId) {
 
             return user;
         })
+        .then(setUserPerms(context))
         .then(userFilter(context));
 };
 
@@ -100,6 +129,7 @@ exports.getUser = function getUser(context, userId) {
  */
 exports.createUser = function createUser(context, src) {
     return command.execute(cmd.create, context, src)
+        .then(setUserPerms(context))
         .then(userFilter(context));
 };
 
@@ -157,6 +187,10 @@ exports.updateUser = function updateUser(context, userId, src) {
                 throw new UserNotFoundError(userId);
             }
 
+            return user;
+        })
+        .then(setUserPerms(context))
+        .then(function(user) {
             return command.execute(cmd.update, context, user, src);
         })
         .then(userFilter(context));
@@ -164,8 +198,8 @@ exports.updateUser = function updateUser(context, userId, src) {
 
 
 cmd.update = function commandUpdateUser(context, user, src) {
-    // Check permissions
-    if (!context.userId || context.userId.toString() !== user.id.toString()) {
+    // Check permissions set with setUserPerms()
+    if (!(context.perms[user.id] && context.perms[user.id].write)) {
         throw new command.PermissionError(context.userId, user.id);
     }
 

@@ -97,6 +97,41 @@ describe('Users', function() {
                 })
                 .end(done);
         });
+
+        it('should include write permission for user itself', function(done) {
+            req.get(userURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+                    expect( u._perms.write ).to.be.ok();
+                })
+                .end(done);
+        });
+
+        it('should not include write permission for other users', function(done) {
+            req.get(userURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.otherUser))
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+                    expect( u._perms.write ).to.not.be.ok();
+                })
+                .end(done);
+        });
+
+        it('should not include write permission for anonymous users', function(done) {
+            req.get(userURI)
+                .set('Accept', 'application/json')
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+                    expect( u._perms.write ).to.not.be.ok();
+                })
+                .end(done);
+        });
     });
 
     describe('PUT /users/ID', function() {
@@ -121,7 +156,7 @@ describe('Users', function() {
                 .expect(403, done);
         });
 
-        it('should be possible for user to update profile', function(done) {
+        it('should be possible for user to update profile, resulting in new etag', function(done) {
             req.put(userURI)
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
@@ -130,6 +165,8 @@ describe('Users', function() {
                 .expect(200)
                 .expect(function(res) {
                     checkProfile(res.body, true);
+
+                    expect( res.header.etag ).to.not.be( origEtag );
 
                     expect( res.header.link ).to.not.be( undefined );
                     expect( parseLinks(res.header.link).self ).to.be( userURI );
