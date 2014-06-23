@@ -65,6 +65,9 @@ var handleErrors = function handleErrors(err, req, res, next) {
         debug('%s: %s', req.path, err);
         res.send(403); // forbidden
     }
+    else if (err instanceof command.DuplicateKeyError) {
+        res.json(409, { collection: err.collection, property: err.property });
+    }
     else if (err instanceof core.NotFoundError) {
         res.send(404);
     }
