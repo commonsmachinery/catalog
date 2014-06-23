@@ -6,6 +6,11 @@
 */
 
 'use strict';
+
+// External libs
+var util = require('util');
+
+// Common libs
 var config = require('../../lib/config');
 
 function buildURI() {
@@ -74,3 +79,23 @@ function stockSourceURIFromReq(req) {
     throw new Error('missing sourceID param');
 }
 exports.stockSourceURIFromReq = stockSourceURIFromReq;
+
+
+/* Set the Link header in a response object from a map of
+ * { rel: URI } pairs.
+ *
+ * This should only be called for URIs generated from controlled data,
+ * preferably only the functions above.
+ */
+exports.setLinks = function setLinks(res, linkMap) {
+    var links = [];
+    var rel;
+
+    for (rel in linkMap) {
+        if (linkMap.hasOwnProperty(rel)) {
+            links.push(util.format('<%s>;rel="%s"', linkMap[rel], rel));
+        }
+    }
+
+    res.set('Link', links.join(', '));
+};

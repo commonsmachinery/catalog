@@ -34,6 +34,8 @@ exports.getUser = function getUser(req, res, next) {
     core.getUser(req.context, req.params.userId)
         .then(function(user) {
             etag.set(res, user);
+            uris.setLinks(res, { self: uris.buildUserURI(user.id) });
+
             res.format({
                 html: function() {
                     res.locals.user = user;
@@ -55,6 +57,8 @@ exports.updateUser = function updateUser(req, res, next) {
     core.updateUser(req.context, req.params.userId, req.body)
         .then(function(user) {
             etag.set(res, user);
+            uris.setLinks(res, { self: uris.buildUserURI(user.id) });
+
             res.json(user);
         })
         .catch(function(err) {

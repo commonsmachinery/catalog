@@ -1,7 +1,8 @@
 
 apitest = $(top)/apitest
 
-jshint-files += $(apitest)/*.js $(apitest)/modules/*.js
+jshint-files += $(apitest)/*.js
+jshint-files += $(apitest)/lib/*.js
 
 ifdef test
 apitest-files += '$(apitest)/$(test).js'

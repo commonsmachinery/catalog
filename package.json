@@ -40,7 +40,8 @@
     "volo": "0.3.x",
     "expect.js": "0.3.x",
     "mocha": "1.x.x",
-    "supertest": "0.x.x"
+    "supertest": "0.x.x",
+    "parse-links": "*"
   },
   "license": "AGPLv3",
   "amd": {},

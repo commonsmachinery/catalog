@@ -43,7 +43,7 @@ var userFilter = function(context) {
 
         if (context.userId !== user.id) {
             // Only user may see the gravatar_email
-            delete obj.gravatar_email;
+            delete obj.profile.gravatar_email;
         }
 
         return obj;

@@ -58,7 +58,7 @@ var handleErrors = function handleErrors(err, req, res, next) {
         }
         else {
             debug('conflict while updating: %s', err);
-            res.send(409); // conflict
+            res.send(503); // internal service error
         }
     }
     else if (err instanceof command.PermissionError) {
