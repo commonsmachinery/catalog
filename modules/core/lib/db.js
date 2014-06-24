@@ -45,6 +45,33 @@ var profile = {
     gravatar_hash: { type: 'string', required: true },
 };
 
+/*var property = {
+    propertyName: { type: 'string', required: true },
+    value: { type: 'string', required: true },
+    language: 'string',
+    sourceFormat: 'string',
+    fragmentIdentifier: 'string',
+    mappingType: 'string',
+    extended: ,
+};*/
+
+var annotation = {
+    updated_by: { type: ObjectId, required: true, ref: 'User' },
+    updated_at: { type: Date, default: Date.now },
+    score: 'number',
+    property: {
+        type: mongo.Schema.Types.Mixed,
+        validate: [{
+            validator: function(property) {
+                return property.hasOwnProperty('propertyName');
+            }, msg: 'property.propertyName is required.',
+        }, {
+            validator: function(property) {
+                return property.hasOwnProperty('value');
+            }, msg: 'property.value is required.'
+        }]
+    },
+};
 
 // Core models
 
@@ -65,6 +92,20 @@ exports.User = conn.model(
     }))
 );
 
+exports.Media = conn.model(
+    'Media',
+    mongo.schema({
+        added_by: { type: ObjectId, required: true, ref: 'User' },
+        added_at: { type: Date, default: Date.now },
+        replaces: { type: ObjectId, ref: 'Media',
+            index: {
+                sparse: true,
+            }
+        },
+        annotations: [annotation],
+        metadata: mongo.Schema.Types.Mixed,
+    })
+);
 
 // Connect, returning a promise that resolve when connected
 

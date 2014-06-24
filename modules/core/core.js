@@ -41,8 +41,13 @@ exports.NotFoundError = common.NotFoundError;
 //
 
 var user = require('./lib/user');
+var media = require('./lib/media');
 
 exports.UserNotFoundError = user.UserNotFoundError;
 exports.getUser = user.getUser;
 exports.createUser = user.createUser;
 exports.updateUser = user.updateUser;
+
+exports.MediaNotFoundError = user.MediaNotFoundError;
+exports.getMedia = media.getMedia;
+exports.createMedia = media.createMedia;
