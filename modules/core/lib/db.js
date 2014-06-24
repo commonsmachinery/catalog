@@ -52,7 +52,7 @@ exports.CoreEvent = conn.model('CoreEvent', event.EventBatchSchema);
 
 exports.User = conn.model(
     'User',
-    mongo.schema(_.extend(entry, {
+    mongo.schema(_.extend({}, entry, {
         alias: {
             type: String,
             index: {
