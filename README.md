@@ -98,11 +98,28 @@ TODO: OAuth access to the REST API.
 REST API
 --------
 
-All `PUT`, `POST` and `DELETE` require a valid user session (see above
-about development accounts).  `GET` without a session queries the
-public store, and when a session is available it queries the main
-store applying the access rules.
+The API is documented here: http://docs.cmcatalog.apiary.io/
 
+All `PUT`, `POST` and `DELETE` require a valid user session (see above
+about development accounts).  `GET` will return publically visible
+information without any session.
+
+Here are some useful curl commands to poke the API:
+
+Find out current user:
+
+    curl -k -v -u test: -X GET http://localhost:8004/users/current
+
+Get user profile:
+
+    curl -k -v -u test: -H 'Accept: application/json' -X GET http://localhost:8004/users/53a80969b22cfae451ec8ed4
+
+Update user profile:
+
+    curl -k -v -u test: -d '{"alias":"new alias"}' -H 'Content-Type: application/json' -X PUT http://localhost:8004/users/53a80969b22cfae451ec8ed4
+
+
+### Old API, move stuff out of here as it is replaced
 
 List works:
 

@@ -14,6 +14,7 @@ var debug = require('debug')('catalog:core:test:user'); // jshint ignore:line
 // External modules
 var expect = require('expect.js');
 var Types = require('mongoose').Types;
+var _ = require('underscore');
 
 // Catalog modules
 var gravatar = require('../../../lib/gravatar');
@@ -21,6 +22,39 @@ var command = require('../../../lib/command');
 
 // Core modules
 var user = require('../lib/user.js');
+
+describe('User permissions', function() {
+    var id = new Types.ObjectId();
+    var u = { id: id.toString() };
+
+    it('should let user write', function() {
+        var context = { userId: id };
+
+        user.setUserPerms(context)(u);
+
+        var perms = context.perms[id.toString()];
+        expect( perms.write ).to.be.ok();
+    });
+
+    it('should not let another user write', function() {
+        var context = { userId: new Types.ObjectId() };
+
+        user.setUserPerms(context)(u);
+
+        var perms = context.perms[id.toString()];
+        expect( perms.write ).to.not.be.ok();
+    });
+
+    it('should not let anonymous users write', function() {
+        var context = { };
+
+        user.setUserPerms(context)(u);
+
+        var perms = context.perms[id.toString()];
+        expect( perms.write ).to.not.be.ok();
+    });
+});
+
 
 describe('Create user', function() {
     var id = new Types.ObjectId();
@@ -143,8 +177,11 @@ describe('Create user', function() {
 
 describe('Update user', function() {
     var id = new Types.ObjectId();
-    var context = { userId: id };
+    var context = { userId: id, perms: {} };
     var oldUser;
+
+    // User has right to update
+    context.perms[id] = { write: true };
 
     /* Create a object to be updated */
     beforeEach(function() {
@@ -165,16 +202,24 @@ describe('Update user', function() {
         oldUser = null;
     });
 
-    it('should only allow the user itself to update', function() {
+    it('should only allow the user with write to update', function() {
+        var otherUserContext = {
+            userId: new Types.ObjectId(),
+            perms: {}
+        };
+
         expect( user.command.update ).withArgs(
-            { userId: new Types.ObjectId() }, oldUser, {}
+            otherUserContext, oldUser, {}
         ).to.throwException(
             function (e) { expect( e ).to.be.a( command.PermissionError ); });
     });
 
     it('should reject conflicts when requesting specific version', function() {
+        var versionContext = _.clone(context);
+        versionContext.version = 4711;
+
         expect( user.command.update ).withArgs(
-            { userId: id, version: 4711 }, oldUser, {}
+            versionContext, oldUser, {}
         ).to.throwException(
             function (e) { expect( e ).to.be.a( command.ConflictError ); });
     });

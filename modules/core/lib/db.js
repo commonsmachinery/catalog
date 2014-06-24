@@ -19,7 +19,7 @@ var mongo = require('../../../lib/mongo');
 // Modules
 var event = require('../../event/event');
 
-var ObjectId = mongo.Types.ObjectId;
+var ObjectId = mongo.Schema.Types.ObjectId;
 
 // We need a connection, but not necessarily an open one, to
 // define the models
@@ -52,7 +52,7 @@ exports.CoreEvent = conn.model('CoreEvent', event.EventBatchSchema);
 
 exports.User = conn.model(
     'User',
-    mongo.schema(_.extend(entry, {
+    mongo.schema(_.extend({}, entry, {
         alias: {
             type: String,
             index: {
