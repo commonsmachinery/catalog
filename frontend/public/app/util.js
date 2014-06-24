@@ -129,5 +129,16 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return mergeBindings(content, href);
 	};
 
+	exports.working = function working(status, el){
+        if(status === 'start'){
+            $(el).addClass('working');
+            $(el).prepend('<div class="overlay"><div class="loading"></div></div>');
+        }
+        else if(status === 'stop'){ 
+            $(el).removeClass('working');
+            $(el).find('.overlay').remove();
+        }
+	};
+
 	return exports;
 });

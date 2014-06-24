@@ -10,6 +10,7 @@
 
 var debug = require('debug')('frontend:main'); // jshint ignore:line
 
+// External libs
 var bodyParser = require('body-parser');
 var cookieParser = require('cookie-parser');
 var cons = require('consolidate');
@@ -19,15 +20,17 @@ var morgan = require('morgan');
 var Promise = require('bluebird');
 var serveStatic = require('serve-static');
 
+// Common libs
 var config = require('../lib/config');
 var mongo = require('../lib/mongo');
 var sessionStore = require('../lib/sessionStore');
 
+// Modules
 var core = require('../modules/core/core');
 
+// Frontend libs
 var sessions = require('./lib/sessions');
-//var rest = require('./lib/rest');
-//var admin = require('./lib/admin');
+var rest = require('./lib/rest');
 var webapp = require('./lib/webapp');
 
 
@@ -79,14 +82,10 @@ function main() {
             // Wire up the rest of the app that depended on the
             // infrastructure being available
             sessions.init(app, sessionstore, db);
-            //rest.init(app, backend, cluster);
-            //admin.init(app);
             webapp.init(app);
 
-            sessions.routes(app);
-            //rest.routes(app);
-            //admin.routes(app);
-            webapp.routes(app);
+            app.use(webapp.router);
+            app.use(rest.router);
 
             app.listen(config.frontend.port);
             console.log('listening on port %s', config.frontend.port);

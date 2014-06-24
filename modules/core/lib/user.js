@@ -19,7 +19,33 @@ var gravatar = require('../../../lib/gravatar');
 
 // Core modules
 var db = require('./db');
+var common = require('./common');
 
+/* Return a function that sets the permissions for this User object in
+ * the context.  It can be put in a promise chain after reading the
+ * object.
+ *
+ * Export it so it can be unit tested.
+ */
+var setUserPerms = exports.setUserPerms = function(context) {
+    return function(user) {
+        if (!context.perms) {
+            context.perms = {};
+        }
+
+        var perms = context.perms[user.id];
+        if (!perms) {
+            perms = context.perms[user.id] = {};
+        }
+
+        // Only user can modify the object
+        if (context.userId && context.userId.toString() === user.id.toString()) {
+            perms.write = true;
+        }
+
+        return user;
+    };
+};
 
 /*
  * Return a function that can be put last in a promise chain to turn a
@@ -37,10 +63,16 @@ var userFilter = function(context) {
         delete obj._id;
         obj.id = user.id;
 
+        delete obj.__v;
+        obj.version = user.__v;
+
         if (context.userId !== user.id) {
             // Only user may see the gravatar_email
-            delete obj.gravatar_email;
+            delete obj.profile.gravatar_email;
         }
+
+        // Copy in the permissions
+        obj._perms = context.perms[user.id] || {};
 
         return obj;
     };
@@ -50,12 +82,12 @@ var userFilter = function(context) {
 /* Error raised when a User object is not found.
  */
 var UserNotFoundError = exports.UserNotFoundError = function UserNotFoundError(id) {
-    this.message = 'core.User not found: ' + id;
     this.name = "UserNotFoundError";
+    common.NotFoundError.call(this, 'core.User', id);
     Error.captureStackTrace(this, UserNotFoundError);
 };
 
-UserNotFoundError.prototype = Object.create(Error.prototype);
+UserNotFoundError.prototype = Object.create(common.NotFoundError.prototype);
 UserNotFoundError.prototype.constructor = UserNotFoundError;
 
 
@@ -70,7 +102,9 @@ var cmd = exports.command = {};
  *
  * Returns a promise that resolves to the user or null if not found.
  */
-exports.get_user = function get_user(context, userId) {
+exports.getUser = function getUser(context, userId) {
+    common.checkId(userId, UserNotFoundError);
+
     return db.User.findByIdAsync(userId)
         .then(function(user) {
             if (!user) {
@@ -80,6 +114,7 @@ exports.get_user = function get_user(context, userId) {
 
             return user;
         })
+        .then(setUserPerms(context))
         .then(userFilter(context));
 };
 
@@ -92,12 +127,13 @@ exports.get_user = function get_user(context, userId) {
  *
  * Returns a promise that resolves to the new user
  */
-exports.create_user = function create_user(context, src) {
+exports.createUser = function createUser(context, src) {
     return command.execute(cmd.create, context, src)
+        .then(setUserPerms(context))
         .then(userFilter(context));
 };
 
-cmd.create = function command_create_user(context, src) {
+cmd.create = function commandCreateUser(context, src) {
     if (!src._id) {
         throw new command.CommandError('src._id missing');
     }
@@ -141,7 +177,9 @@ cmd.create = function command_create_user(context, src) {
  *
  * Returns a promise that resolves to the updated user.
  */
-exports.update_user = function update_user(context, userId, src) {
+exports.updateUser = function updateUser(context, userId, src) {
+    common.checkId(userId, UserNotFoundError);
+
     return db.User.findByIdAsync(userId)
         .then(function(user) {
             if (!user) {
@@ -149,15 +187,19 @@ exports.update_user = function update_user(context, userId, src) {
                 throw new UserNotFoundError(userId);
             }
 
+            return user;
+        })
+        .then(setUserPerms(context))
+        .then(function(user) {
             return command.execute(cmd.update, context, user, src);
         })
         .then(userFilter(context));
 };
 
 
-cmd.update = function command_update_user(context, user, src) {
-    // Check permissions
-    if (context.userId.toString() !== user.id.toString()) {
+cmd.update = function commandUpdateUser(context, user, src) {
+    // Check permissions set with setUserPerms()
+    if (!(context.perms[user.id] && context.perms[user.id].write)) {
         throw new command.PermissionError(context.userId, user.id);
     }
 

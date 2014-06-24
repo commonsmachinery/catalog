@@ -75,6 +75,11 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             this._modelBinder = new ModelBinder();
 			this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
             this._perms = this.model.get('permissions') || {};
+
+            // "working" indicator
+            this.listenTo(this.model, 'request', this.onRequest);
+            this.listenTo(this.model, 'sync', this.onSync);
+            this.listenTo(this.model, 'error', this.onSync);
 		},
 
 		render: function() {
@@ -96,6 +101,16 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				this.model.save(changes, { wait: true });
 			}
 		},
+
+        onRequest: function onRequest(){
+            util.working('start', this.el);
+            $(this.el).find('.batchSelectItem').prop('disabled', true);
+        },
+
+        onSync: function onSync(){
+            util.working('stop', this.el);
+            $(this.el).find('.batchSelectItem').prop('disabled', false);
+        }
 	});
 
 
@@ -112,7 +127,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 				ItemView: WorkListItemView,
 				itemTemplate: $('#workListItemTemplate').html(),
 			});
-
 		},
 
 		render: function() {

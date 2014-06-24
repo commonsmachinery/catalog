@@ -47,11 +47,11 @@ define(['jquery', 'underscore', 'util'],
             console.debug('start saving');
             this.trigger('edit:save:start', this);
 
-            this.$('.editable').prop('disabled', true);
-
             // Indicate that we're working
             this.$('.actions').prop('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
+            this.$('.editable').prop('disabled', true);
+            util.working('start', this.el);
 
             this.model.save(null, {
                 success: function() {
@@ -64,6 +64,7 @@ define(['jquery', 'underscore', 'util'],
 
                     // Re-enable buttons
                     self.$('.actions').prop('disabled', false);
+                    util.working('stop', self.el);
 
                     self._editStartAttrs = null;
                 },
@@ -76,9 +77,11 @@ define(['jquery', 'underscore', 'util'],
                                   model.id, response.status, response.statusText,
                                   response.responseText);
 
+                    self.$('[data-action="save"]').text('Retry saving');
+                    
                     // Re-enable buttons
                     self.$('.actions').prop('disabled', false);
-                    self.$('[data-action="save"]').text('Retry saving');
+                    util.working('stop', self.el);
                 },
             });
         },

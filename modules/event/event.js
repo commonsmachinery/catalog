@@ -15,7 +15,7 @@ var debug = require('debug')('catalog:event'); // jshint ignore:line
 var mongo = require('../../lib/mongo');
 
 
-var ObjectId = mongo.Types.ObjectId;
+var ObjectId = mongo.Schema.Types.ObjectId;
 
 /* EventBatch schema, common to all event emitting
  * modules.  They should instantiate their own Models
@@ -25,7 +25,7 @@ var ObjectId = mongo.Types.ObjectId;
 var Event = mongo.schema(
     {
         type: { type: String, required: true },
-        param: mongo.Types.Mixed,
+        param: mongo.Schema.Types.Mixed,
     }
 );
 
