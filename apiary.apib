@@ -7,149 +7,7 @@ A REST API for clients and third-party sites to interact with the data in the ca
 The various objects and their properties are documented in much more detail here:
 https://github.com/commonsmachinery/catalog/blob/master/doc/datamodel/core.md
 
-## Media [/media/{mediaID}{?annotations}]
-A media instance, which is a read-only record of a particular media instance of a Work
-at the time it was recorded in the catalog.
-
-Media instances are intended to be the "raw material" of Works, so access to them
-may be restricted in the catalog to require a reference via a Work (see Work Media below).
-
-To make the annotations easier to use in web pages the parameter `annotations` can be set
-to a list of property names, e.g. `title,locator`.  This will change the response from a plain list to a map, only
-including the listed properties.  (`all` means that all properties are included in the map.)
-The keys in this map are the `propertyName`, and the value a list of the Annotations for
-that property.  This allows easy access like `annotations.title[0].property.value` to show
-e.g. a title without having to dig through the list.
-
-+ Parameters
-    + annotations (string, optional) ... Select properties to get or update in map.
-
-+ Model
-    + Headers
-    
-            Link: <https://catalog.elog.io/media/6e1ee592539d7d163613d732>;rel="self"
-
-    + Body
-
-            {
-                "id": "6e1ee592539d7d163613d732",
-                "added_by": "https://catalog.elog.io/users/someUserID",
-                "added_at": "2014-04-14T02:15:15Z",
-                "replaces": "https://catalog.elog.io/media/prevMediaID",
-                "annotations": [{
-                        "id": "63613d7321ee5396e592d7d1",
-                        "updated_by": "https://catalog.elog.io/users/anotherUserID",
-                        "updated_at": "2014-04-14T02:15:15Z",
-                        "score": 100,
-                        "property": {
-                            "propertyName": "title",
-                            "titleLabel": "Title of the work",
-                        }
-                    }],
-                "metadata": {
-                        "xmp": "<?xml...",
-                        "oembed": { "url": "http://some/photo.jpg" }
-                    }
-            }
-
-### Retrieve a Media [GET]
-+ Response 200 (application/json)
-    [Media][]
-
-
-## Media collection [/media{?offset,count,filter,sort,annotations}]
-Given the role of Media as mainly internal raw material means that it often makes more sense to use
-the Work Media collection instead of this one (see below).
-
-
-### List Media instances [GET]
-TODO: define filters and sorting.
-
-Pagination is supported by returning a `Link` header with links according to 
-http://tools.ietf.org/html/rfc5005
-
-+ Parameters
-    + offset (number, optional) ... Skip this many records in the result. Default: 0
-    + count (number, optional) ... Return this many records. Default and max values are system-dependent.
-    + filter (string, optional) ... Filter responses (see above). Default: no filter.
-    + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
-    + annotations (string, optional) ... Select properties to get in response.
-
-+ Response 200 (application/json)
-    + Headers
-    
-            Link: <?offset=0&count=N&...>;rel="first", <?offset=Z&count=N&...>;rel="last", <?offset=X&count=N&...>;rel="previous", <?offset=Y&count=N&...>;rel="next"
-
-    + Body
-    
-            []
-
-### Create new Media instances [POST]
-Since creating a Media without a Work may not make much sense in some cases, 
-this endpoint might be disabled in the catalog.
-
-Only the following properties in the request will be used:
-
-    - annotations (empty list if omitted)
-    - metadata (empty object if omitted)
-    - replaces (null if omitted)
-
-+ Request (application/json)
-    [Media][]
-    
-+ Response 201 (application/json)
-    [Media][]
-    
-
-## Create Media from an uploaded file [/media/actions/upload{?email}]
-
-Instead of extracting all the metadata from the file locally, the catalog may provide the
-service to clients to upload files for server-side processing instead.  This either requires an 
-active session for a user, or an email address to be provided in the request.  In both cases an email
-will be sent to the user when the file has been processed with a link to confirm the uploaded data.
-
-### Upload file [POST]
-
-TODO: is this a sane way to upload files, or should multi-part requests be used instead?  
-Or is this really up to the client's discretion and we should accept both?
-
-+ Parameters
-    + email (string, optional) ... Uploader email, if there isn't already an active user session.
-    
-+ Request (mime-type/of-file)
-
-        <file contents>
-
-+ Response 202 (application/json)
-
-        { "confirm_email": "foo@example.org" }
-        
-
-## Create Media from an online source [/media/actions/fetch{?url,email}]
-
-Similar to uploading a file, this fetches information about a work that's available at a URL online
-and sends a confirmation email when the processing is finished.
-
-### Fetch online source [POST]
-
-+ Parameters
-    + url (optional, string) ... The URL, if not specified in the request body.
-    + email (string, optional) ... User email, if not specified in the request body and there isn't already an active user session.
-
-+ Request (application/json)
-
-        { "url": "http://some/where", "email": "foo@example.org" }
-        
-+ Request (application/x-www-form-urlencoded)
-
-        url=http://some/where&email=foo@example.org
-
-+ Response 202 (application/json)
-
-        { "confirm_email": "foo@example.org" }
-
-
-## Work [/works/{id}{?include,annotations}]
+## Work [/works/{workID}{?include,annotations}]
 A work record.
 
 The annotations can either be manipulated via the sublist in the document, 
@@ -170,7 +28,7 @@ that property.  This allows easy access like `annotations.title[0].property.valu
 e.g. a title without having to dig through the list.
 
 + Parameters
-    + id (string) ... Work record ID
+    + workID (string) ... Work record ID
     + include (string, optional) ... Which sublists to include in the response objects. 
         If omitted or empty, all lists are returned in full.  If `none`, all are omitted.
         Otherwise acomma-separated names: `collaborators`, `annotations`, `sources`, `media`.
@@ -327,13 +185,13 @@ Create a new work.  The following parameters are used, all others are included:
 
 The following parameters are used when creating a Work:
 
-    - alias
-    - description
-    - public
-    - collaborators
-    - annotations (see below)
-    - sources (only source_work)
-    - media
+- alias
+- description
+- public
+- collaborators
+- annotations (see below)
+- sources (only source_work)
+- media
 
 If any fields are missing, they are set to empty values or lists.  
 The default for `public` depends on system configuration.
@@ -345,14 +203,120 @@ The default for `public` depends on system configuration.
     [Work][]
 
 
-## Work Media collection [/works/{workID}/media]
-Depending on the access model configured for the catalog, Media instances might only 
-be referenced via works they are linked to, and not directly.  This psuedo collection
-provides that access, as well as an easier way to manipulate the list of Work media 
-instances.
+## Create Work from an uploaded file [/works/actions/upload{?email}]
+
+Instead of extracting all the metadata from a file locally, the catalog may provide the
+service to clients to upload files for server-side processing instead. This either requires an
+active session for a user, or an email address to be provided in the request. In both cases an email
+will be sent to the user when the file has been processed with a link to confirm the uploaded data.
+
+### Upload file [POST]
+
+TODO: is this a sane way to upload files, or should multi-part requests be used instead?
+Or is this really up to the client's discretion and we should accept both?
+
++ Parameters
+    + email (string, optional) ... Uploader email, if there isn't already an active user session.
+    
++ Request (mime-type/of-file)
+
+        <file contents>
+
++ Response 202 (application/json)
+
+        { "confirm_email": "foo@example.org" }
+        
+
+## Create Work from an online source [/works/actions/fetch{?url,email}]
+
+Similar to uploading a file, this fetches information about a work that's available at a URL online
+and sends a confirmation email when the processing is finished.
+
+### Fetch online source [POST]
+
++ Parameters
+    + url (optional, string) ... The URL, if not specified in the request body.
+    + email (string, optional) ... User email, if not specified in the request body and there isn't already an active user session.
+
++ Request (application/json)
+
+        { "url": "http://some/where", "email": "foo@example.org" }
+        
++ Request (application/x-www-form-urlencoded)
+
+        url=http://some/where&email=foo@example.org
+
++ Response 202 (application/json)
+
+        { "confirm_email": "foo@example.org" }
+
+
+
+## Media [/works/{workID}/media/{mediaID}{?annotations}]
+A media instance, which is a read-only record of a particular media instance of a Work
+at the time it was recorded in the catalog.
+
+A given Media instance can be linked to multiple works (e.g. when a Work is forked, or just
+if it is added multiple times by different people from the same media source).  The instances will
+all have the same ID, but must always be accessed via one of the works to determine visibility.
+
+To make the annotations easier to use in web pages the parameter `annotations` can be set
+to a list of property names, e.g. `title,locator`.  This will change the response from a plain list to a map, only
+including the listed properties.  (`all` means that all properties are included in the map.)
+The keys in this map are the `propertyName`, and the value a list of the Annotations for
+that property.  This allows easy access like `annotations.title[0].property.value` to show
+e.g. a title without having to dig through the list.
+
++ Parameters
+    + annotations (string, optional) ... Select properties to get or update in map.
+
++ Model
+    + Headers
+    
+            Link: <https://catalog.elog.io/media/6e1ee592539d7d163613d732>;rel="self"
+
+    + Body
+
+            {
+                "id": "6e1ee592539d7d163613d732",
+                "added_by": "https://catalog.elog.io/users/someUserID",
+                "added_at": "2014-04-14T02:15:15Z",
+                "replaces": "https://catalog.elog.io/media/prevMediaID",
+                "annotations": [{
+                        "id": "63613d7321ee5396e592d7d1",
+                        "updated_by": "https://catalog.elog.io/users/anotherUserID",
+                        "updated_at": "2014-04-14T02:15:15Z",
+                        "score": 100,
+                        "property": {
+                            "propertyName": "title",
+                            "titleLabel": "Title of the work",
+                        }
+                    }],
+                "metadata": {
+                        "xmp": "<?xml...",
+                        "oembed": { "url": "http://some/photo.jpg" }
+                    }
+            }
+
+### Retrieve a Media [GET]
++ Response 200 (application/json)
+    [Media][]
+
+
+### Unlink a Media from a Work [DELETE]
+This does not delete the underlying Media instance, just the link to it.
+If this was the last link to the Media, it will be garbage collected eventually.
+
++ Response 204
+
+
+## Media collection [/works/{workID}/media{?annotations}]
+
+All the Media instances linked to this work.
 
 + Parameters
     + workID (string) ... Work ID whose Media are manipulated
+    + annotations (string, optional) ... Select properties to get in response.
 
 ### List Work Media [GET]
 Return all Media instances of the Work.
@@ -362,11 +326,15 @@ Return all Media instances of the Work.
         []
         
 
-### Create a new Media and link it to the work [POST]
-This is a shortcut (which may be mandatory to use if /media is disabled in the catalog)
-that creates a Media instance and links it to an existing work in one operation.
+### Create a new Media for an existing Work [POST]
 
-See `POST /media` for details.
+Create a new Media instance and link it to the Work.
+
+Only the following properties in the request will be used:
+
+- annotations (empty list if omitted)
+- metadata (empty object if omitted)
+- replaces (null if omitted)
 
 + Request (application/json)
     [Media][]
@@ -375,15 +343,12 @@ See `POST /media` for details.
     [Media][]
         
 
-## Create Work Media from an uploaded file [/works/{workID}/media/actions/upload]
+## Create Media from an uploaded file [/works/{workID}/media/actions/upload]
 
-Similar to creating a loose Media instance by uploading a file (see `POST /media/actions/upload`)
-this uploads a file to create a new Media instance.  The difference is that the user must have a
-session and permission to edit the Work, so there is no `email` parameter.  
+Similar to creating a new Work from an uploaded file (see `POST /works/actions/upload`)
+this creates a new Media instance for the file and links it to the work.
 
-The Media will be linked to the work automatically without the need for a confirmation.
-
-TODO: should an email be sent anyway?
+TODO: should return progress polling URL, or perhaps send an email when done.
 
 ### Upload file [POST]
 
@@ -398,10 +363,13 @@ Or is this really up to the client's discretion and we should accept both?
 
         { }
 
-## Create Work Media from an online source [/works/{workID}/media/actions/fetch{?url}]
 
-Similar to uploading a file, this fetches information about a work that's available at a URL online.
-See upload file to Work Media for details.
+## Create Media from an online source [/works/{workID}/media/actions/fetch{?url}]
+
+Similar to creating a new Work from an online source (see `POST /works/actions/fetch`)
+this creates a new Media instance for the file and links it to the work.
+
+TODO: should return progress polling URL, or perhaps send an email when done.
 
 ### Fetch online source [POST]
 
@@ -419,24 +387,6 @@ See upload file to Work Media for details.
 + Response 202 (application/json)
 
         { }
-
-
-## Work Media [/works/{workID}/media/{mediaID}]
-Accessing a Media may require going via a linked Work, using this endpoint.
-
-+ Parameters
-    + workID (string) ... Work ID linking to the Media
-    + mediaID (string) ... The ID of the linked Media
-
-### Retrieve Work Media [GET]
-+ Response 200 (application/json)
-    [Media][]
-
-
-### Unlink a Media from a Work [DELETE]
-This does not delete the underlying Media instance, just the link to it.
-
-+ Response 204
 
 
 ## Annotation [/works/{workID}/annotations/{annotionID}]
