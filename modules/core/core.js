@@ -38,8 +38,13 @@ exports.init = function() {
 //
 
 var user = require('./lib/user');
+var media = require('./lib/media');
 
 exports.UserNotFoundError = user.UserNotFoundError;
 exports.get_user = user.get_user;
 exports.create_user = user.create_user;
 exports.update_user = user.update_user;
+
+exports.MediaNotFoundError = user.MediaNotFoundError;
+exports.getMedia = media.getMedia;
+exports.createMedia = media.createMedia;
