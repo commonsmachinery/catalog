@@ -18,7 +18,7 @@ var command = require('../../../lib/command');
 
 // Core modules
 var db = require('./db');
-
+var common = require('./common');
 
 /*
  * Return a function that can be put last in a promise chain to turn a
@@ -44,8 +44,8 @@ var mediaFilter = function(context) {
 /* Error raised when a Media object is not found.
  */
 var MediaNotFoundError = exports.MediaNotFoundError = function MediaNotFoundError(id) {
-    this.message = 'core.Media not found: ' + id;
     this.name = "MediaNotFoundError";
+    common.NotFoundError.call(this, 'core.Media', id);
     Error.captureStackTrace(this, MediaNotFoundError);
 };
 

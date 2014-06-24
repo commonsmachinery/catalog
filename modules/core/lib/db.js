@@ -60,7 +60,7 @@ var annotation = {
     updated_at: { type: Date, default: Date.now },
     score: 'number',
     property: {
-        type: mongo.Types.Mixed,
+        type: mongo.Schema.Types.Mixed,
         validate: [{
             validator: function(property) {
                 return property.hasOwnProperty('propertyName');
@@ -103,12 +103,7 @@ exports.Media = conn.model(
             }
         },
         annotations: [annotation],
-        metadata: {
-            rdf: String,
-            exif: Buffer,
-            xmp: String,
-            oembed: String,
-        },
+        metadata: mongo.Schema.Types.Mixed,
     })
 );
 
