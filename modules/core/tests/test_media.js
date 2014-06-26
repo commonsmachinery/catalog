@@ -27,9 +27,9 @@ describe('Create media', function() {
 
     it('should generate events', function() {
         var r = media.command.create(context, {});
-        expect( r ).to.have.property( 'obj' );
+        expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
-        var m = r.obj;
+        var m = r.save;
         var e = r.event;
 
         expect( e.user ).to.eql( userId );
@@ -42,8 +42,8 @@ describe('Create media', function() {
 
     it('should set added_by to given user', function() {
         var r = media.command.create(context, {});
-        expect( r ).to.have.property( 'obj' );
-        var m = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m = r.save;
 
         expect( m.added_by ).to.be( userId );
     });
@@ -60,8 +60,8 @@ describe('Create media', function() {
                 },
             }],
         });
-        expect( r ).to.have.property( 'obj' );
-        var m = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m = r.save;
 
         expect( m ).to.have.property( 'annotations' );
         expect( m.annotations.length ).to.be( 1 );
@@ -79,8 +79,8 @@ describe('Create media', function() {
                 property: { titleLabel: 'test', value: 'test' },
             }],
         });
-        expect( r ).to.have.property( 'obj' );
-        var m = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m = r.save;
 
         m.validate(function(err) {
             if (!err) {
@@ -94,8 +94,8 @@ describe('Create media', function() {
                 property: { titleLabel: 'test', propertyName: 'title' },
             }],
         });
-        expect( r ).to.have.property( 'obj' );
-        m = r.obj;
+        expect( r ).to.have.property( 'save' );
+        m = r.save;
 
         m.validate(function(err) {
             if (!err) {
@@ -106,12 +106,12 @@ describe('Create media', function() {
 
     it('replacing should link to old media', function() {
         var r = media.command.create(context, {});
-        expect( r ).to.have.property( 'obj' );
-        var m1 = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m1 = r.save;
 
         r = media.command.create(context, {}, m1);
-        expect( r ).to.have.property( 'obj' );
-        var m2 = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m2 = r.save;
 
         expect( m2.replaces ).to.be( m1._id );
     });

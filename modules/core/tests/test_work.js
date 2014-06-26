@@ -27,9 +27,9 @@ describe('Create work', function() {
 
     it('should generate events', function() {
         var r = work.command.create(context, {});
-        expect( r ).to.have.property( 'obj' );
+        expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
-        var m = r.obj;
+        var m = r.save;
         var e = r.event;
 
         expect( e.user ).to.eql( userId );
@@ -42,8 +42,8 @@ describe('Create work', function() {
 
     it('should set added_by to given user', function() {
         var r = work.command.create(context, {});
-        expect( r ).to.have.property( 'obj' );
-        var m = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m = r.save;
 
         expect( m.added_by ).to.be( userId );
     });
@@ -60,8 +60,8 @@ describe('Create work', function() {
                 },
             }],
         });
-        expect( r ).to.have.property( 'obj' );
-        var m = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m = r.save;
 
         expect( m ).to.have.property( 'annotations' );
         expect( m.annotations.length ).to.be( 1 );
@@ -73,12 +73,12 @@ describe('Create work', function() {
 
     it('forking should link to original work', function() {
         var r = work.command.create(context, {});
-        expect( r ).to.have.property( 'obj' );
-        var m1 = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m1 = r.save;
 
         r = work.command.create(context, {}, m1);
-        expect( r ).to.have.property( 'obj' );
-        var m2 = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var m2 = r.save;
 
         expect( m2.forked_from ).to.be( m1._id );
     });

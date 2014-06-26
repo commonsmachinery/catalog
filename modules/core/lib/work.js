@@ -86,7 +86,8 @@ WorkNotFoundError.prototype = Object.create(common.NotFoundError.prototype);
 WorkNotFoundError.prototype.constructor = WorkNotFoundError;
 
 
-/* All command methods return { obj: Work(), event: CoreEvent() }.
+/* All command methods return { save: Work(), event: CoreEvent() }
+ * or { remove: Work(), event: CoreEvent() }
  *
  * They are exported here just to aid the unit tests.
  */
@@ -166,7 +167,7 @@ cmd.create = function commandCreateWork(context, src, forkFrom) {
 
     debug('creating new work: %j', work.toObject());
 
-    return { obj: work, event: event };
+    return { save: work, event: event };
 };
 
 /* Update a Work object from a source object.
@@ -229,7 +230,7 @@ cmd.update = function commandUpdateWork(context, work, src) {
     command.updateProperty(src, work, 'media',
         event, 'work.%s.changed');
 
-    return { obj: work, event: event };
+    return { save: work, event: event };
 };
 
 /* Delete a Work
@@ -272,7 +273,5 @@ cmd.delete = function commandDeleteWork(context, work) {
         }],
     });
 
-    work.remove();
-
-    return { obj: work, event: event };
+    return { remove: work, event: event };
 };

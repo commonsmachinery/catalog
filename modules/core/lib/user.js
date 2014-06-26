@@ -91,7 +91,8 @@ UserNotFoundError.prototype = Object.create(common.NotFoundError.prototype);
 UserNotFoundError.prototype.constructor = UserNotFoundError;
 
 
-/* All command methods return { obj: User(), event: CoreEvent() }.
+/* All command methods return { save: User(), event: CoreEvent() }
+ * or { remove: User(), event: CoreEvent() }
  *
  * They are exported here just to aid the unit tests.
  */
@@ -169,7 +170,7 @@ cmd.create = function commandCreateUser(context, src) {
 
     debug('creating new user: %j', user.toObject());
 
-    return { obj: user, event: event };
+    return { save: user, event: event };
 };
 
 
@@ -235,5 +236,5 @@ cmd.update = function commandUpdateUser(context, user, src) {
         }
     }
 
-    return { obj: user, event: event };
+    return { save: user, event: event };
 };
