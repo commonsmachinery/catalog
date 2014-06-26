@@ -593,7 +593,8 @@ The other information is public.
 
             {
                 "id": "5396e592d7d163613d7321ee",
-                "uri": "https://catalog.elog.io/users/5396e592d7d163613d7321ee",
+                "href": "https://catalog.elog.io/users/5396e592d7d163613d7321ee",
+                
                 "alias": "foobar",
                 "profile": {
                     "name": "Foo Barson",
@@ -601,7 +602,7 @@ The other information is public.
                     "location": null,
                     "website": "http://this/page",
                     "gravatar_email": "foo@example.org",
-                    "gravatar_hash": "34cd643fb9230abe3",
+                    "gravatar_hash": "34cd643fb9230abe3"
                 }
             }
 
@@ -617,7 +618,13 @@ Only the included properties are changed, as in `PATCH`.
 Set a property to `null` to remove the value.
 
 + Request
-    [User][]
+    
+        {
+            "alias": "new alias",
+            "profile": {
+                "gravatar_email": "other@example.org"
+            }
+        }
 
 + Response 200 (application/json)
     [User][]
@@ -628,7 +635,13 @@ Set a property to `null` to remove the value.
 See `PUT`.
 
 + Request
-    [User][]
+
+
+        {
+            "profile": {
+                "name": "Foo G. Barson"
+            }
+        }
 
 + Response 200 (application/json)
     [User][]
