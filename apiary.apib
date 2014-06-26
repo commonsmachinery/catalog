@@ -45,50 +45,54 @@ e.g. a title without having to dig through the list.
     
             {
                 "id": "5396e592d7d163613d7321ee",
-                "uri": "https://catalog.elog.io/works/5396e592d7d163613d7321ee",
+                "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee",
 
                 "added_by": {
                     "id": "someUserID",
-                    "uri":  "https://catalog.elog.io/users/someUserID"
+                    "href":  "https://catalog.elog.io/users/someUserID"
                 },
                 "added_at": "2014-04-14T02:15:15Z",
                 
                 "updated_by": {
                     "id": "anotherUserID",
-                    "uri": "https://catalog.elog.io/users/anotherUserID"
+                    "href": "https://catalog.elog.io/users/anotherUserID"
                 },
                 "updated_at": "2014-04-14T02:15:15Z",
                 
                 "owner": {
                     "user": {
                         "id": "someUserID",
-                        "uri": "https://catalog.elog.io/users/someUserID"
-                    },
+                        "href": "https://catalog.elog.io/users/someUserID"
+                    }
                 },
                 
                 "alias": "short-name",
                 "description": "Description of work to guide catalog users (not part of the metadata)",
-                "forked_from": "https://catalog.elog.io/works/parentworkID",
                 "public": true,
+
+                "forked_from": {
+                    "id": "parentWorkID",
+                    "href": "https://catalog.elog.io/works/parentWorkID"
+                },
 
                 "collabs": {
                     "users": [{
                         "id": "anotherUserID",
-                        "uri": "https://catalog.elog.io/users/anotherUserID"
+                        "href": "https://catalog.elog.io/users/anotherUserID"
                     }],
                     "groups": [{
                         "id": "someGroupID",
-                        "uri": "https://catalog.elog.io/groups/someGroupID"
-                    }],
+                        "href": "https://catalog.elog.io/groups/someGroupID"
+                    }]
                 },
                 
                 "annotations": [{
                         "id": "63613d7321ee5396e592d7d1",
-                        "uri": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/annotations/63613d7321ee5396e592d7d1",
+                        "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/annotations/63613d7321ee5396e592d7d1",
                         
                         "updated_by": {
                             "id": "anotherUserID",
-                            "uri": "https://catalog.elog.io/users/anotherUserID"
+                            "href": "https://catalog.elog.io/users/anotherUserID"
                         },
                         "updated_at": "2014-04-14T02:15:15Z",
                         
@@ -96,32 +100,32 @@ e.g. a title without having to dig through the list.
                         "property": {
                             "propertyName": "title",
                             "value": "Title of the work",
-                            "titleLabel": "Title of the work",
+                            "titleLabel": "Title of the work"
                         }
                 }],
 
                 "sources": [{
                         "id": "6e592d7d63613d7321ee5391",
-                        "uri": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/sources/6e592d7d63613d7321ee5391",
+                        "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/sources/6e592d7d63613d7321ee5391",
                         
                         "source_work": {
                             "id": "sourceWorkID",
-                            "uri": "https://catalog.elog.io/works/sourceWorkID"
+                            "href": "https://catalog.elog.io/works/sourceWorkID"
                         },
                         
                         "added_by": {
                             "id": "anotherUserID",
-                            "uri": "https://catalog.elog.io/users/anotherUserID"
+                            "href": "https://catalog.elog.io/users/anotherUserID"
                         },
                         "added_at": "2014-04-14T02:15:15Z"
                 }],
 
                 "media": [
                     {   "id": "someMediaID",
-                        "uri": "https://catalog.elog.io/media/someMediaID"
+                        "href": "https://catalog.elog.io/media/someMediaID"
                     },
-                    {   "id": anotherMediaID",
-                        "uri: "https://catalog.elog.io/media/anotherMediaID"
+                    {   "id": "anotherMediaID",
+                        "href": "https://catalog.elog.io/media/anotherMediaID"
                     }
                 ]
             }
@@ -169,7 +173,9 @@ See `PUT` for details.
 
 
 ### Delete a Work [DELETE]
-+ Response 204
++ Response 200
+    [Work][]
+
 
 
 ## Work collection [/works{?offset,count,filter,sort,include,annotations}]
