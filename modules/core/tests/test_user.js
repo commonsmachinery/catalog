@@ -224,6 +224,19 @@ describe('Update user', function() {
             function (e) { expect( e ).to.be.a( command.ConflictError ); });
     });
 
+    it('should change updated_date', function(done) {
+        // Need a small delay from work creation for this to be guaranteed to work
+        setTimeout(function() {
+            var r = user.command.update(context, oldUser, { alias: 'foo' });
+
+            expect( r ).to.have.property( 'save' );
+            var u = r.save;
+
+            expect( u.updated_at.getTime() ).to.not.be( u.added_at.getTime() );
+            done();
+        }, 20);
+    });
+
     it('should update object and generate events', function() {
         var newProps = {
             alias: 'new alias',

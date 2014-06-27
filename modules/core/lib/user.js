@@ -10,7 +10,7 @@
 var debug = require('debug')('catalog:core:user'); // jshint ignore:line
 
 // External modules
-
+var util = require('util');
 
 // Common modules
 var command = require('../../../lib/command');
@@ -87,8 +87,7 @@ var UserNotFoundError = exports.UserNotFoundError = function UserNotFoundError(i
     Error.captureStackTrace(this, UserNotFoundError);
 };
 
-UserNotFoundError.prototype = Object.create(common.NotFoundError.prototype);
-UserNotFoundError.prototype.constructor = UserNotFoundError;
+util.inherits(UserNotFoundError, common.NotFoundError);
 
 
 /* All command methods return { save: User(), event: CoreEvent() }
@@ -216,17 +215,17 @@ cmd.update = function commandUpdateUser(context, user, src) {
         events: [],
     });
 
+    user.updated_at = new Date();
+    user.updated_by = context.userId;
+
     command.updateProperty(src, user, 'alias', event, 'user.%s.changed');
 
     if (typeof src.profile === 'object') {
-        command.updateProperty(src.profile, user.profile, 'name',
-                               event, 'user.profile.%s.changed');
-        command.updateProperty(src.profile, user.profile, 'email',
-                               event, 'user.profile.%s.changed');
-        command.updateProperty(src.profile, user.profile, 'location',
-                               event, 'user.profile.%s.changed');
-        command.updateProperty(src.profile, user.profile, 'website',
-                               event, 'user.profile.%s.changed');
+        command.updateProperties(
+            src.profile, user.profile,
+            [ 'name', 'email', 'location', 'website' ],
+            event, 'user.profile.%s.changed');
+
         if (command.updateProperty(src.profile, user.profile, 'gravatar_email',
                                    event, 'user.profile.%s.changed')) {
 
