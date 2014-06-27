@@ -61,7 +61,6 @@ media: [Media._id]
 &lt;&lt;readonly&gt;&gt;
 --
 _id: ObjectId
-__v: Integer
 added_by: User._id
 added_at: Date
 replaces: Media._id
@@ -337,18 +336,15 @@ org</panel_attributes>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>660</x>
-      <y>630</y>
+      <x>860</x>
+      <y>650</y>
       <w>160</w>
-      <h>230</h>
+      <h>200</h>
     </coordinates>
-    <panel_attributes>_Annotation_
+    <panel_attributes>_MediaAnnotation_
 &lt;&lt;subobject&gt;&gt;
 --
 _id: ObjectId
-updated_by: User._id
-updated_at: Date
-score: Integer
 property: {
   propertyName
   value
@@ -368,18 +364,18 @@ property: {
       <x>640</x>
       <y>510</y>
       <w>124</w>
-      <h>140</h>
+      <h>160</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-
 annotations
 m1=  1
 m2=  *</panel_attributes>
-    <additional_attributes>70;30;70;120</additional_attributes>
+    <additional_attributes>70;30;70;140</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>1050</x>
+      <x>1090</x>
       <y>650</y>
       <w>150</w>
       <h>110</h>
@@ -398,7 +394,7 @@ oembed: { JSON }
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>1060</x>
+      <x>1100</x>
       <y>530</y>
       <w>110</w>
       <h>140</h>
@@ -412,16 +408,16 @@ metadata</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>790</x>
+      <x>920</x>
       <y>530</y>
-      <w>254</w>
-      <h>150</h>
+      <w>124</w>
+      <h>140</h>
     </coordinates>
     <panel_attributes>lt=&lt;&lt;&lt;&lt;-
 annotations
 m1=  1
 m2=  *</panel_attributes>
-    <additional_attributes>200;30;200;130;30;130</additional_attributes>
+    <additional_attributes>70;30;70;120</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
@@ -555,5 +551,33 @@ m2=*
 m1=*
 m2=*</panel_attributes>
     <additional_attributes>140;30;110;30;110;160;30;160</additional_attributes>
+  </element>
+  <element>
+    <type>com.umlet.element.Class</type>
+    <coordinates>
+      <x>630</x>
+      <y>650</y>
+      <w>150</w>
+      <h>90</h>
+    </coordinates>
+    <panel_attributes>_WorkAnnotation_
+&lt;&lt;subobject&gt;&gt;
+--
+updated_by: User._id
+updated_at: Date
+score: Integer
+</panel_attributes>
+    <additional_attributes/>
+  </element>
+  <element>
+    <type>com.umlet.element.Relation</type>
+    <coordinates>
+      <x>750</x>
+      <y>670</y>
+      <w>130</w>
+      <h>50</h>
+    </coordinates>
+    <panel_attributes>lt=&lt;&lt;-</panel_attributes>
+    <additional_attributes>110;30;30;30</additional_attributes>
   </element>
 </diagram>

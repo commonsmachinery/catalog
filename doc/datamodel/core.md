@@ -90,8 +90,8 @@ work, this is the ID of the parent.  Omitted if not forked.
 `collabs`: `Collaborators` subdocument listing IDs for `Group` and
 `User` who can access this `Work` and its linked `Media`.
 
-`annotations`: The work metadata (see `Annotation` below).  This is an
-unordered list of embedded `Annotation` documents.
+`annotations`: The work metadata.  This is an unordered list of
+embedded `WorkAnnotation` documents.
 
 `sources`: List of sources as embedded documents.
 
@@ -155,12 +155,19 @@ refined, "curated", information in the corresponding Work objects.
 
 ### Properties
 
+`_id`: Unique ID, assigned via an ObjectID
+
+`added_by`: The `User` who added the `Media`.
+
+`added_at`: The `Date` when the `Media` was added.
+
 `replaces` (optional): If the data for a `Media` instance is
 refreshed, a new instance is created and linked through this property
 to the old version.  Omitted if not a replacement.
 
-`annotations`: The annotations about this Media instance, typically
-derived from the file/page metadata.
+`annotations`: The metadata about this Media instance, typically
+derived from the file/page metadata.  A list of `MediaAnnotation`
+subdocuments.
 
 `metadata`: Raw metadata captured about this object, stored as an
 embedded document. Maps from different types of metadata to the
@@ -175,10 +182,7 @@ string for `xmp`).
 
 A user with read access to a `Work` (which implies all users for
 public works) also have read access to the linked `Media` instances.
-
-Users may also access unlinked `Media` via one-time access keys in the
-auth module.  This is used e.g. for the simplified upload use case
-where only an email address is needed and no prior login.
+To handle this, all accesses go via a `Work`.
 
 
 Collection
@@ -349,7 +353,7 @@ Lists `User` and `Group` who can collaborate on a `Work` or
 `Collection`.
 
 
-Annotation
+MediaAnnotation
 ----------
 
 The W3C Ontology for Media Resources (OMR) provide a core set of metadata
@@ -381,8 +385,22 @@ Some key annotation types will be:
 
 ### Properties
 
-`_id`: ObjectID for the annotation, to make it easier to refer to it
-in the REST API.
+`_id`: ObjectID for the annotation.
+
+`property`: The property itself, as an embedded
+[MediaAnnotation](http://www.w3.org/2008/WebVideo/Annotations/drafts/API10/PR2/#maobject-interface)
+object.  Only the properties with a value are stored (e.g. excluding
+`language` when irrelevant or not known), and `statusCode` is always
+excluded.
+
+
+WorkAnnotation
+--------------
+
+This is a subclass to `MediaAnnotation`, extending it with additional
+properties.
+
+##3 Properties
 
 `updated_by`: May be omitted if the latest update was by the
 `Work.added_by` `User`.
@@ -394,12 +412,6 @@ omitted if the same as `Work.added_at`.
 annotation should be hidden from the users, and is an alternative to
 deleting data outright. How this score is set is not in the scope of
 this document.
-
-`property`: The property itself, as an embedded
-[MediaAnnotation](http://www.w3.org/2008/WebVideo/Annotations/drafts/API10/PR2/#maobject-interface)
-object.  Only the properties with a value are stored (e.g. excluding
-`language` when irrelevant or not known), and `statusCode` is always
-excluded.
 
 
 Source
