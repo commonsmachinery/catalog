@@ -22,7 +22,10 @@ var etag = require('../etag.js');
 exports.createWork = function createWork(req, res, next) {
     core.createWork(req.context, req.body)
         .then(function(work) {
-            res.redirect(uris.buildWorkURI(work.id));
+            etag.set(res, work);
+            uris.setLinks(res, { self: uris.buildWorkURI(work.id) });
+            res.set('Location', uris.buildWorkURI(work.id));
+            res.json(201, work);
         })
         .catch(function(err) {
             next(err);

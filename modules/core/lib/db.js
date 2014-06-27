@@ -104,13 +104,7 @@ exports.Work = conn.model(
             user: { type: ObjectId, ref: 'User' },
             org: { type: ObjectId, ref: 'Organisation' },
         },
-        alias: {
-            type: String,
-            index: {
-                unique: true,
-                sparse: true,
-            }
-        },
+        alias: String,
         description: String,
         forked_from: {
             type: ObjectId,
@@ -127,15 +121,15 @@ exports.Work = conn.model(
         annotations: [annotation],
         sources: [{
             source_work: { type: ObjectId, required: true, ref: 'Work' },
-            added_by: { type: ObjectId, required: true, ref: 'User' },
+            added_by: { type: ObjectId, ref: 'User' },
             added_at: { type: Date, default: Date.now },
         }],
         media: [{ type: ObjectId, ref: 'Media' }],
     }))
 );
 
-exports.Work.schema.index({ 'owner.user': 1, 'alias': -1 }, { unique: true, sparse: true });
-exports.Work.schema.index({ 'owner.org': 1, 'alias': -1 }, { unique: true, sparse: true });
+exports.Work.schema.index({ 'owner.user': 1, 'alias': 1 }, { unique: true, sparse: true });
+exports.Work.schema.index({ 'owner.org': 1, 'alias': 1 }, { unique: true, sparse: true });
 exports.Work.schema.index('owner.user', { sparse: true });
 exports.Work.schema.index('owner.org', { sparse: true });
 exports.Work.schema.index('collabs.users');

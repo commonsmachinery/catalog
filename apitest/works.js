@@ -27,10 +27,12 @@ describe('Works', function() {
     var origEtag; // Will be set to etag before PUT
 
     // Helper stuff for work updates/checks
-    var newWork = {
-        alias: 'new alias',
-        description: 'new description',
-        public: true,
+    var createWork = {
+        // Use unique user ID in alias to avoid hitting duplicate keys
+        alias: 'orig-' + util.testUser,
+        description: 'description',
+        public: false,
+/*
         annotations: [{
             score: 100,
             property: {
@@ -39,18 +41,27 @@ describe('Works', function() {
                 value: 'test',
             },
         }],
+*/
     };
 
-    var checkWork = function(w, asSelf) {
-        expect( w.alias ).to.be( 'new alias' );
-        expect( w.description ).to.be( 'new description' );
-        expect( w.public ).to.be( true );
+    var updateWork = {
+        alias: 'new-' + util.testUser,
+        description: 'new description',
+        public: true,
+    };
+
+    var checkWork = function(w, expected) {
+        expect( w.alias ).to.be( expected.alias );
+        expect( w.description ).to.be( expected.description );
+        expect( w.public ).to.be( expected.public );
+/*
         expect( w ).to.have.property( 'annotations' );
         expect( w.annotations.length ).to.be( 1 );
         expect( w.annotations[0].score ).to.be( 100 );
         expect( w.annotations[0].property.propertyName ).to.be( 'title' );
         expect( w.annotations[0].property.titleLabel ).to.be( 'test' );
         expect( w.annotations[0].property.value ).to.be( 'test' );
+*/
     };
 
     // Actual test cases
@@ -58,20 +69,27 @@ describe('Works', function() {
     describe('POST /works', function() {
         var req = request(config.frontend.baseURL);
 
-        it('should redirect to newly created work', function(done) {
+        it('should create new work', function(done) {
             req.post('/works')
                 .set('Content-Type', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
-                .send({})
-                .expect(302)
-                .expect('location', /\/works\/[^\/]+$/)
-                .end(function(err, res) {
-                    if (res) {
-                        workURI = res.header.location;
-                        debug('using %s: %s', util.testUser, workURI);
-                    }
-                    done(err);
-                });
+                .send(createWork)
+                .expect( 201 )
+                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'location', /\/works\/[^\/]+$/ )
+                .expect( 'link', /rel="self"/ )
+                .expect(function(res) {
+                    workURI = res.header.location;
+                    debug('using %s: %s', util.testUser, workURI);
+
+                    expect( parseLinks(res.header.link).self ).to.be( workURI );
+
+                    debug('work etag: %s', res.header.etag);
+                    expect( res.header.etag ).to.match( /^W\/".*"$/ );
+
+                    checkWork(res.body, createWork);
+                })
+                .end(done);
         });
 
     });
@@ -84,20 +102,19 @@ describe('Works', function() {
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)
+                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
                     debug('work link: %s', res.header.link);
-
-                    expect( res.header.link ).to.not.be( undefined );
                     expect( parseLinks(res.header.link).self ).to.be( workURI );
 
                     debug('work etag: %s', res.header.etag);
-                    expect( res.header.etag ).to.match( /^W\/".*"$/ );
                     origEtag = res.header.etag;
                 })
                 .end(done);
         });
 
-        it('should include write permission for owner', function(done) {
+        it('should include write and admin permission for owner', function(done) {
             req.get(workURI)
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
@@ -105,6 +122,7 @@ describe('Works', function() {
                 .expect(function(res) {
                     var w = res.body;
                     expect( w._perms.write ).to.be.ok();
+                    expect( w._perms.admin ).to.be.ok();
                 })
                 .end(done);
         });
@@ -125,7 +143,7 @@ describe('Works', function() {
         });
     });
 
-    describe('PUT /users/ID', function() {
+    describe('PUT /works/ID', function() {
         var req = request('');
 
         it('should not be possible to update work by other user', function(done) {
@@ -152,10 +170,12 @@ describe('Works', function() {
                 .set('Content-Type', 'application/json')
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
-                .send(newWork)
+                .send(updateWork)
                 .expect(200)
+                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
-                    checkWork(res.body, true);
+                    checkWork(res.body, updateWork);
 
                     expect( res.header.etag ).to.not.be( origEtag );
 
@@ -176,6 +196,25 @@ describe('Works', function() {
         });
     });
 
+    describe('GET /works/ID', function() {
+        var req = request('');
+
+        it('should now allow accessing public work for other users', function(done) {
+            req.get(workURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.otherUser))
+                .expect(200)
+                .end(done);
+        });
+
+        it('should now allow accessing public work for anonymous users', function(done) {
+            req.get(workURI)
+                .set('Accept', 'application/json')
+                .expect(200)
+                .end(done);
+        });
+    });
+
     describe('DELETE /works/ID', function() {
         var req = request('');
 
@@ -192,6 +231,9 @@ describe('Works', function() {
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)
+                .expect(function(res) {
+                    checkWork(res.body, updateWork);
+                })
                 .end(done);
         });
 

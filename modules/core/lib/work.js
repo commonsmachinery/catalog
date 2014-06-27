@@ -10,7 +10,7 @@
 var debug = require('debug')('catalog:core:work'); // jshint ignore:line
 
 // External modules
-
+var util = require('util');
 
 // Common modules
 var command = require('../../../lib/command');
@@ -32,15 +32,17 @@ var setWorkPerms = exports.setWorkPerms = function(context) {
             context.perms = {};
         }
 
-        var perms = context.perms[context.userId];
+        var perms = context.perms[work.id];
         if (!perms) {
-            perms = context.perms[context.userId] = {};
+            perms = context.perms[work.id] = {};
         }
 
         // Only user can modify the object
-        if (context.userId) {
-            perms.read = context.userId.toString() === work.owner.user.toString() || work.public;
-            perms.write = context.userId.toString() === work.owner.user.toString();
+        if (context.userId && context.userId.toString() === work.owner.user.toString()) {
+            perms.read = perms.write = perms.admin = true;
+        }
+        else {
+            perms.read = work.public;
         }
 
         return work;
@@ -67,7 +69,7 @@ var workFilter = function(context) {
         delete obj._id;
 
         // Copy in the permissions
-        obj._perms = context.perms[context.userId] || {};
+        obj._perms = context.perms[work.id] || {};
 
         return obj;
     };
@@ -82,8 +84,7 @@ var WorkNotFoundError = exports.WorkNotFoundError = function WorkNotFoundError(i
     Error.captureStackTrace(this, WorkNotFoundError);
 };
 
-WorkNotFoundError.prototype = Object.create(common.NotFoundError.prototype);
-WorkNotFoundError.prototype.constructor = WorkNotFoundError;
+util.inherits(WorkNotFoundError, common.NotFoundError);
 
 
 /* All command methods return { save: Work(), event: CoreEvent() }
@@ -111,7 +112,7 @@ exports.getWork = function getWork(context, workId) {
         .then(setWorkPerms(context))
         .then(function(work) {
            // Check permissions set with setWorkPerms()
-            if (!(context.perms[context.userId] && context.perms[context.userId].read)) {
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
                 throw new command.PermissionError(context.userId, work.id);
             }
 
@@ -132,7 +133,7 @@ exports.createWork = function createWork(context, src) {
         .then(workFilter(context));
 };
 
-cmd.create = function commandCreateWork(context, src, forkFrom) {
+cmd.create = function commandCreateWork(context, src) {
     var dest = {
         added_by: context.userId,
         updated_by: context.userId,
@@ -141,18 +142,9 @@ cmd.create = function commandCreateWork(context, src, forkFrom) {
         }
     };
 
-    //command.copyIfSet(src, dest, 'forked_from');
-    if (forkFrom) {
-        dest.forked_from = forkFrom;
-    }
-
     command.copyIfSet(src, dest, 'alias');
     command.copyIfSet(src, dest, 'description');
     command.copyIfSet(src, dest, 'public');
-    command.copyIfSet(src, dest, 'collabs');
-    command.copyIfSet(src, dest, 'annotations');
-    command.copyIfSet(src, dest, 'sources');
-    command.copyIfSet(src, dest, 'media');
 
     var work = new db.Work(dest);
     var event = new db.CoreEvent({
@@ -196,7 +188,7 @@ exports.updateWork = function updateWork(context, workId, src) {
 
 cmd.update = function commandUpdateWork(context, work, src) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[context.userId] && context.perms[context.userId].write)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -209,25 +201,14 @@ cmd.update = function commandUpdateWork(context, work, src) {
         user: context.userId,
         type: 'core.Work',
         object: work.id,
-        events: [{
-            type: 'work.updated',
-            param: { work: work.toObject() },
-        }],
+        events: [],
     });
 
-    command.updateProperty(src, work, 'alias',
-        event, 'work.%s.changed');
-    command.updateProperty(src, work, 'description',
-        event, 'work.%s.changed');
-    command.updateProperty(src, work, 'public',
-        event, 'work.%s.changed');
-    command.updateProperty(src, work, 'collabs',
-        event, 'work.%s.changed');
-    command.updateProperty(src, work, 'annotations',
-        event, 'work.%s.changed');
-    command.updateProperty(src, work, 'sources',
-        event, 'work.%s.changed');
-    command.updateProperty(src, work, 'media',
+    work.updated_at = new Date();
+    work.updated_by = context.userId;
+
+    command.updateProperties(
+        src, work, ['alias', 'description', 'public'],
         event, 'work.%s.changed');
 
     return { save: work, event: event };
@@ -259,9 +240,11 @@ exports.deleteWork = function deleteWork(context, workId) {
 
 cmd.delete = function commandDeleteWork(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[context.userId] && context.perms[context.userId].write)) {
+    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
         throw new command.PermissionError(context.userId, work.id);
     }
+
+    command.checkVersionConflict(context, work);
 
     var event = new db.CoreEvent({
         user: context.userId,
