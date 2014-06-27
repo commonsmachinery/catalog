@@ -45,6 +45,8 @@ var profile = {
     gravatar_hash: { type: 'string', required: true },
 };
 
+// If the property could be included in the schema, it would look like
+// this:
 /*var property = {
     propertyName: { type: 'string', required: true },
     value: { type: 'string', required: true },
@@ -52,15 +54,12 @@ var profile = {
     sourceFormat: 'string',
     fragmentIdentifier: 'string',
     mappingType: 'string',
-    extended: ,
 };*/
 
-var annotation = {
-    updated_by: { type: ObjectId, required: true, ref: 'User' },
-    updated_at: { type: Date, default: Date.now },
-    score: 'number',
+var mediaAnnotation = {
     property: {
         type: mongo.Schema.Types.Mixed,
+        required: true,
         validate: [{
             validator: function(property) {
                 return property.hasOwnProperty('propertyName');
@@ -72,6 +71,14 @@ var annotation = {
         }]
     },
 };
+
+/*
+var workAnnotation = _.extend({}, mediaAnnotation, {
+    updated_by: { type: ObjectId, required: true, ref: 'User' },
+    updated_at: { type: Date, required: true, default: Date.now },
+    score: { type: Number, required: true, default: 0 },
+});
+*/
 
 // Core models
 
@@ -102,7 +109,7 @@ exports.Media = conn.model(
                 sparse: true,
             }
         },
-        annotations: [annotation],
+        annotations: [mediaAnnotation],
         metadata: mongo.Schema.Types.Mixed,
     })
 );

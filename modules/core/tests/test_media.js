@@ -51,8 +51,6 @@ describe('Create media', function() {
     it('should use provided annotations', function() {
         var r = media.command.create(context, {
             annotations: [{
-                updated_by: userId,
-                score: 100,
                 property: {
                     propertyName: 'title',
                     titleLabel: 'test',
@@ -65,7 +63,6 @@ describe('Create media', function() {
 
         expect( m ).to.have.property( 'annotations' );
         expect( m.annotations.length ).to.be( 1 );
-        expect( m.annotations[0].score ).to.be( 100 );
         expect( m.annotations[0].property.propertyName ).to.be( 'title' );
         expect( m.annotations[0].property.titleLabel ).to.be( 'test' );
         expect( m.annotations[0].property.value ).to.be( 'test' );
@@ -74,8 +71,6 @@ describe('Create media', function() {
     it('should require property.propertyName and property.value', function() {
         var r = media.command.create(context, {
             annotations: [{
-                updated_by: userId,
-                score: 100,
                 property: { titleLabel: 'test', value: 'test' },
             }],
         });
@@ -90,7 +85,6 @@ describe('Create media', function() {
 
         r = media.command.create(context, {
             annotations: [{
-                updated_by: userId, score: 100,
                 property: { titleLabel: 'test', propertyName: 'title' },
             }],
         });
