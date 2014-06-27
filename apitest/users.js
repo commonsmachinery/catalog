@@ -85,14 +85,13 @@ describe('Users', function() {
             req.get(userURI)
                 .set('Accept', 'application/json')
                 .expect(200)
+                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
                     debug('user link: %s', res.header.link);
-
-                    expect( res.header.link ).to.not.be( undefined );
                     expect( parseLinks(res.header.link).self ).to.be( userURI );
 
                     debug('user etag: %s', res.header.etag);
-                    expect( res.header.etag ).to.match( /^W\/".*"$/ );
                     origEtag = res.header.etag;
                 })
                 .end(done);
@@ -163,12 +162,13 @@ describe('Users', function() {
                 .set('Authorization', util.auth(util.testUser))
                 .send(newProfile)
                 .expect(200)
+                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
                     checkProfile(res.body, true);
 
                     expect( res.header.etag ).to.not.be( origEtag );
 
-                    expect( res.header.link ).to.not.be( undefined );
                     expect( parseLinks(res.header.link).self ).to.be( userURI );
                 })
                 .end(done);

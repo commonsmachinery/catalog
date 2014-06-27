@@ -45,18 +45,8 @@ var profile = {
     gravatar_hash: { type: 'string', required: true },
 };
 
-/*var property = {
-    propertyName: { type: 'string', required: true },
-    value: { type: 'string', required: true },
-    language: 'string',
-    sourceFormat: 'string',
-    fragmentIdentifier: 'string',
-    mappingType: 'string',
-    extended: ,
-};*/
-
 var annotation = {
-    updated_by: { type: ObjectId, required: true, ref: 'User' },
+    updated_by: { type: ObjectId, ref: 'User' },
     updated_at: { type: Date, default: Date.now },
     score: 'number',
     property: {
@@ -106,6 +96,46 @@ exports.Media = conn.model(
         metadata: mongo.Schema.Types.Mixed,
     })
 );
+
+exports.Work = conn.model(
+    'Work',
+    mongo.schema(_.extend({}, entry, {
+        owner: {
+            user: { type: ObjectId, ref: 'User' },
+            org: { type: ObjectId, ref: 'Organisation' },
+        },
+        alias: String,
+        description: String,
+        forked_from: {
+            type: ObjectId,
+            ref: 'Work',
+            index: {
+                sparse: true,
+            }
+        },
+        public: { type: Boolean, default: false },
+        collabs: {
+            users: [{ type: ObjectId, ref: 'Organisation' }],
+            groups: [{ type: ObjectId, ref: 'Group' }],
+        },
+        annotations: [annotation],
+        sources: [{
+            source_work: { type: ObjectId, required: true, ref: 'Work' },
+            added_by: { type: ObjectId, ref: 'User' },
+            added_at: { type: Date, default: Date.now },
+        }],
+        media: [{ type: ObjectId, ref: 'Media' }],
+    }))
+);
+
+exports.Work.schema.index({ 'owner.user': 1, 'alias': 1 }, { unique: true, sparse: true });
+exports.Work.schema.index({ 'owner.org': 1, 'alias': 1 }, { unique: true, sparse: true });
+exports.Work.schema.index('owner.user', { sparse: true });
+exports.Work.schema.index('owner.org', { sparse: true });
+exports.Work.schema.index('collabs.users');
+exports.Work.schema.index('collabs.groups');
+exports.Work.schema.index('sources.source_work');
+exports.Work.schema.index('media');
 
 // Connect, returning a promise that resolve when connected
 

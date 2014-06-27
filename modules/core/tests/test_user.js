@@ -67,17 +67,17 @@ describe('Create user', function() {
 
     it('should use src._id for new object', function() {
         var r = user.command.create(context, { _id: id });
-        expect( r ).to.have.property( 'obj' );
-        var u = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var u = r.save;
 
         expect( u._id ).to.be(id);
     });
 
     it('should generate events', function() {
         var r = user.command.create(context, { _id: id });
-        expect( r ).to.have.property( 'obj' );
+        expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
-        var u = r.obj;
+        var u = r.save;
         var e = r.event;
 
         expect( e.user ).to.eql( id );
@@ -91,8 +91,8 @@ describe('Create user', function() {
 
     it('should set added_by and update_by to new user', function() {
         var r = user.command.create(context, { _id: id });
-        expect( r ).to.have.property( 'obj' );
-        var u = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var u = r.save;
 
         expect( u.added_by ).to.be(id);
         expect( u.updated_by ).to.be(id);
@@ -101,8 +101,8 @@ describe('Create user', function() {
     it('should create empty profile if none is provided', function() {
         var r = user.command.create(context, { _id: id });
 
-        expect( r ).to.have.property( 'obj' );
-        var u = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var u = r.save;
 
         expect( u.alias ).to.be( undefined );
         expect( u ).to.have.property( 'profile' );
@@ -126,8 +126,8 @@ describe('Create user', function() {
             },
         });
 
-        expect( r ).to.have.property( 'obj' );
-        var u = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var u = r.save;
 
         expect( u.alias ).to.be( 'foo' );
         expect( u ).to.have.property( 'profile' );
@@ -147,8 +147,8 @@ describe('Create user', function() {
             }
         });
 
-        expect( r ).to.have.property( 'obj' );
-        var u = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var u = r.save;
 
         expect( u ).to.have.property( 'profile' );
         expect( u.profile.gravatar_email ).to.be( undefined );
@@ -164,8 +164,8 @@ describe('Create user', function() {
             }
         });
 
-        expect( r ).to.have.property( 'obj' );
-        var u = r.obj;
+        expect( r ).to.have.property( 'save' );
+        var u = r.save;
 
         expect( u ).to.have.property( 'profile' );
         expect( u.profile.gravatar_email ).to.be( 'foo-face@example.org' );
@@ -195,7 +195,7 @@ describe('Update user', function() {
                 // website not set
                 gravatar_email: 'old-id@example.org',
             },
-        }).obj;
+        }).save;
     });
 
     afterEach(function() {
@@ -224,6 +224,19 @@ describe('Update user', function() {
             function (e) { expect( e ).to.be.a( command.ConflictError ); });
     });
 
+    it('should change updated_date', function(done) {
+        // Need a small delay from work creation for this to be guaranteed to work
+        setTimeout(function() {
+            var r = user.command.update(context, oldUser, { alias: 'foo' });
+
+            expect( r ).to.have.property( 'save' );
+            var u = r.save;
+
+            expect( u.updated_at.getTime() ).to.not.be( u.added_at.getTime() );
+            done();
+        }, 20);
+    });
+
     it('should update object and generate events', function() {
         var newProps = {
             alias: 'new alias',
@@ -239,9 +252,9 @@ describe('Update user', function() {
 
         var r = user.command.update(context, oldUser, newProps);
 
-        expect( r ).to.have.property( 'obj' );
+        expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
-        var u = r.obj;
+        var u = r.save;
         var e = r.event;
 
         expect( u.id ).to.eql( id.toString() );
@@ -291,9 +304,9 @@ describe('Update user', function() {
 
         var r = user.command.update(context, oldUser, newProps);
 
-        expect( r ).to.have.property( 'obj' );
+        expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
-        var u = r.obj;
+        var u = r.save;
         var e = r.event;
 
         expect( u.id ).to.eql( id.toString() );

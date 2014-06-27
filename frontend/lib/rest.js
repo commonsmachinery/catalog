@@ -21,6 +21,7 @@ var core = require('../../modules/core/core');
 
 // Frontend libs
 var users = require('./api/users');
+var works = require('./api/works');
 var etag = require('./etag');
 
 
@@ -94,3 +95,11 @@ router.route('/users/:userId').all(setContext)
     .get(users.getUser)
     .put(users.updateUser)
     .patch(users.updateUser).all(handleErrors);
+
+router.route('/works').all(setContext)
+    .post(works.createWork).all(handleErrors);
+router.route('/works/:workId').all(setContext)
+    .get(works.getWork)
+    .put(works.updateWork)
+    .patch(works.updateWork)
+    .delete(works.deleteWork).all(handleErrors);

@@ -53,7 +53,8 @@ MediaNotFoundError.prototype = Object.create(Error.prototype);
 MediaNotFoundError.prototype.constructor = MediaNotFoundError;
 
 
-/* All command methods return { obj: Media(), event: CoreEvent() }.
+/* All command methods return { save: Media(), event: CoreEvent() }
+ * or { remove: Media(), event: CoreEvent() }
  *
  * They are exported here just to aid the unit tests.
  */
@@ -113,5 +114,5 @@ cmd.create = function commandCreateMedia(context, src, replaces) {
 
     debug('creating new media: %j', media.toObject());
 
-    return { obj: media, event: event };
+    return { save: media, event: event };
 };
