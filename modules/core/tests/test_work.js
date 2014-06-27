@@ -105,7 +105,7 @@ describe('Create work', function() {
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].type ).to.be( 'work.created' );
         expect( e.events[0].param ).to.have.property( 'work' );
-        expect( e.events[0].param.work._id ).to.eql( m._id );
+        expect( e.events[0].param.work.id.toString() ).to.be( m.id );
     });
 
     it('should set added_by and updated_by to given user', function() {
@@ -334,6 +334,6 @@ describe('Delete work', function() {
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].type ).to.be( 'work.deleted' );
         expect( e.events[0].param ).to.have.property( 'work' );
-        expect( e.events[0].param.work._id ).to.eql( w._id );
+        expect( e.events[0].param.work.id.toString() ).to.be( w.id );
     });
 });

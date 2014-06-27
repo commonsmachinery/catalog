@@ -37,7 +37,7 @@ describe('Create media', function() {
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].type ).to.be( 'media.created' );
         expect( e.events[0].param ).to.have.property( 'media' );
-        expect( e.events[0].param.media._id ).to.eql( m._id );
+        expect( e.events[0].param.media.id.toString() ).to.be( m.id );
     });
 
     it('should set added_by to given user', function() {
@@ -104,7 +104,7 @@ describe('Create media', function() {
         });
     });
 
-    it('replacing should link to old media', function() {
+    it('should link to replaced media', function() {
         var r = media.command.create(context, {});
         expect( r ).to.have.property( 'save' );
         var m1 = r.save;
@@ -113,7 +113,7 @@ describe('Create media', function() {
         expect( r ).to.have.property( 'save' );
         var m2 = r.save;
 
-        expect( m2.replaces ).to.be( m1._id );
+        expect( m2.replaces.toString() ).to.be( m1.id );
     });
 
 });

@@ -10,7 +10,7 @@
 var debug = require('debug')('catalog:core:media'); // jshint ignore:line
 
 // External modules
-
+var util = require('util');
 
 // Common modules
 var command = require('../../../lib/command');
@@ -20,27 +20,6 @@ var command = require('../../../lib/command');
 var db = require('./db');
 var common = require('./common');
 
-/*
- * Return a function that can be put last in a promise chain to turn a
- * Media object into something that can be shared with the rest of the
- * app.
- *
- * TODO: perhaps should use a transform instead, passing the context
- * in the toObject() options?
- * http://mongoosejs.com/docs/api.html#document_Document-toObject
- */
-var mediaFilter = function(context) {
-    return function(media) {
-        var obj = media.toObject();
-
-        obj.id = obj._id;
-        delete obj._id;
-
-        return obj;
-    };
-};
-
-
 /* Error raised when a Media object is not found.
  */
 var MediaNotFoundError = exports.MediaNotFoundError = function MediaNotFoundError(id) {
@@ -49,8 +28,7 @@ var MediaNotFoundError = exports.MediaNotFoundError = function MediaNotFoundErro
     Error.captureStackTrace(this, MediaNotFoundError);
 };
 
-MediaNotFoundError.prototype = Object.create(Error.prototype);
-MediaNotFoundError.prototype.constructor = MediaNotFoundError;
+util.inherits(MediaNotFoundError, common.NotFoundError);
 
 
 /* All command methods return { save: Media(), event: CoreEvent() }
@@ -75,7 +53,7 @@ exports.getMedia = function getMedia(context, mediaId) {
 
             return media;
         })
-        .then(mediaFilter(context));
+        .then(db.Media.objectExporter(context));
 };
 
 
@@ -86,7 +64,7 @@ exports.getMedia = function getMedia(context, mediaId) {
  */
 exports.createMedia = function createMedia(context, src) {
     return command.execute(cmd.create, context, src)
-        .then(mediaFilter(context));
+        .then(db.Media.objectExporter(context));
 };
 
 cmd.create = function commandCreateMedia(context, src, replaces) {
@@ -108,7 +86,7 @@ cmd.create = function commandCreateMedia(context, src, replaces) {
         object: media.id,
         events: [{
             type: 'media.created',
-            param: { media: media.toObject() },
+            param: { media: media.exportObject() },
         }],
     });
 

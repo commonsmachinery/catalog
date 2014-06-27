@@ -47,37 +47,6 @@ var setUserPerms = exports.setUserPerms = function(context) {
     };
 };
 
-/*
- * Return a function that can be put last in a promise chain to turn a
- * User object into something that can be shared with the rest of the
- * app.
- *
- * TODO: perhaps should use a transform instead, passing the context
- * in the toObject() options?
- * http://mongoosejs.com/docs/api.html#document_Document-toObject
- */
-var userFilter = function(context) {
-    return function(user) {
-        var obj = user.toObject();
-
-        delete obj._id;
-        obj.id = user.id;
-
-        delete obj.__v;
-        obj.version = user.__v;
-
-        if (context.userId !== user.id) {
-            // Only user may see the gravatar_email
-            delete obj.profile.gravatar_email;
-        }
-
-        // Copy in the permissions
-        obj._perms = context.perms[user.id] || {};
-
-        return obj;
-    };
-};
-
 
 /* Error raised when a User object is not found.
  */
@@ -115,14 +84,14 @@ exports.getUser = function getUser(context, userId) {
             return user;
         })
         .then(setUserPerms(context))
-        .then(userFilter(context));
+        .then(db.User.objectExporter(context));
 };
 
 
 /* Create a new User object from a source object with the same
  * properties.
  *
- * An _id property must be included in src, to link users to an
+ * An id property must be included in src, to link users to an
  * already created auth.UserAccess object.
  *
  * Returns a promise that resolves to the new user
@@ -130,16 +99,16 @@ exports.getUser = function getUser(context, userId) {
 exports.createUser = function createUser(context, src) {
     return command.execute(cmd.create, context, src)
         .then(setUserPerms(context))
-        .then(userFilter(context));
+        .then(db.User.objectExporter(context));
 };
 
 cmd.create = function commandCreateUser(context, src) {
-    if (!src._id) {
-        throw new command.CommandError('src._id missing');
+    if (!src.id) {
+        throw new command.CommandError('src.id missing');
     }
 
     var dest = {
-        _id: src._id,
+        _id: src.id,
         added_by: context.userId,
         updated_by: context.userId,
         profile: {},
@@ -163,7 +132,7 @@ cmd.create = function commandCreateUser(context, src) {
         object: user.id,
         events: [{
             type: 'user.created',
-            param: { user: user.toObject() },
+            param: { user: user.exportObject() },
         }],
     });
 
@@ -193,7 +162,7 @@ exports.updateUser = function updateUser(context, userId, src) {
         .then(function(user) {
             return command.execute(cmd.update, context, user, src);
         })
-        .then(userFilter(context));
+        .then(db.User.objectExporter(context));
 };
 
 

@@ -60,13 +60,13 @@ describe('Create user', function() {
     var id = new Types.ObjectId();
     var context = { userId: id };
 
-    it('should require src._id', function() {
+    it('should require src.id', function() {
         expect( user.command.create ).withArgs( context, {} ).to.throwException(
             function (e) { expect( e ).to.be.a( command.CommandError ); });
     });
 
-    it('should use src._id for new object', function() {
-        var r = user.command.create(context, { _id: id });
+    it('should use src.id for new object', function() {
+        var r = user.command.create(context, { id: id });
         expect( r ).to.have.property( 'save' );
         var u = r.save;
 
@@ -74,7 +74,7 @@ describe('Create user', function() {
     });
 
     it('should generate events', function() {
-        var r = user.command.create(context, { _id: id });
+        var r = user.command.create(context, { id: id });
         expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
         var u = r.save;
@@ -86,11 +86,11 @@ describe('Create user', function() {
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].type ).to.be( 'user.created' );
         expect( e.events[0].param ).to.have.property( 'user' );
-        expect( e.events[0].param.user._id.toString() ).to.eql( u.id );
+        expect( e.events[0].param.user.id.toString() ).to.eql( u.id );
     });
 
     it('should set added_by and update_by to new user', function() {
-        var r = user.command.create(context, { _id: id });
+        var r = user.command.create(context, { id: id });
         expect( r ).to.have.property( 'save' );
         var u = r.save;
 
@@ -99,7 +99,7 @@ describe('Create user', function() {
     });
 
     it('should create empty profile if none is provided', function() {
-        var r = user.command.create(context, { _id: id });
+        var r = user.command.create(context, { id: id });
 
         expect( r ).to.have.property( 'save' );
         var u = r.save;
@@ -115,7 +115,7 @@ describe('Create user', function() {
 
     it('should use provided alias and profile', function() {
         var r = user.command.create(context, {
-            _id: id,
+            id: id,
             alias: 'foo',
             profile: {
                 name: 'Foo Barson',
@@ -140,7 +140,7 @@ describe('Create user', function() {
 
     it('should set gravatar_hash based on object ID when gravatar_email is null', function() {
         var r = user.command.create(context, {
-            _id: id,
+            id: id,
             profile: {
                 gravatar_email: null,
                 gravtar_hash: 'this will be ignored',
@@ -157,7 +157,7 @@ describe('Create user', function() {
 
     it('should set gravatar_hash based on gravatar_email when provided', function() {
         var r = user.command.create(context, {
-            _id: id,
+            id: id,
             profile: {
                 gravatar_email: 'foo-face@example.org',
                 gravtar_hash: 'this will be ignored',
@@ -186,7 +186,7 @@ describe('Update user', function() {
     /* Create a object to be updated */
     beforeEach(function() {
         oldUser = user.command.create(context, {
-            _id: id,
+            id: id,
             alias: 'old alias',
             profile: {
                 name: 'old name',
@@ -326,3 +326,58 @@ describe('Update user', function() {
     });
 });
 
+
+describe('Export user object', function() {
+    var id = new Types.ObjectId();
+    var context = { userId: id, perms: {} };
+    var userDoc;
+
+    // User has right to update
+    context.perms[id] = { write: true };
+
+    /* Create a object to be updated */
+    beforeEach(function() {
+        userDoc = user.command.create(context, {
+            id: id,
+            alias: 'alias',
+            profile: {
+                name: 'name',
+                email: 'email@example.org',
+                location: 'location',
+                website: 'http://example.org/',
+                gravatar_email: 'id@example.org',
+            },
+        }).save;
+    });
+
+    afterEach(function() {
+        userDoc = null;
+    });
+
+    it('should include gravatar_email and write perms for user', function() {
+        var u = userDoc.exportObject(context);
+
+        expect( u.alias ).to.be( 'alias' );
+        expect( u.profile.name ).to.be( 'name' );
+        expect( u.profile.email ).to.be( 'email@example.org' );
+        expect( u.profile.location ).to.be( 'location' );
+        expect( u.profile.website ).to.be( 'http://example.org/' );
+        expect( u.profile.gravatar_email ).to.be( 'id@example.org' );
+        expect( u.profile.gravatar_hash ).to.be(
+            gravatar.emailHash('id@example.org') );
+
+        expect( u._perms.write ).to.be.ok();
+    });
+
+    it('should not include gravatar_email or any perms for anonymous users', function() {
+        var u = userDoc.exportObject({});
+        expect( u.profile.gravatar_email ).to.be( undefined );
+        expect( u._perms ).to.be.empty();
+    });
+
+    it('should not include gravatar_email or any perms for other users', function() {
+        var u = userDoc.exportObject({ userId: new Types.ObjectId() });
+        expect( u.profile.gravatar_email ).to.be( undefined );
+        expect( u._perms ).to.be.empty();
+    });
+});
