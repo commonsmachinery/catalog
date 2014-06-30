@@ -152,6 +152,12 @@ var WorkAnnotation = mongo.schema(_.extend({}, mediaAnnotationProps, {
 }));
 setExportMethods(WorkAnnotation);
 
+var Source = mongo.schema({
+    source_work: { type: ObjectId, required: true, ref: 'Work' },
+    added_by: { type: ObjectId, ref: 'User' },
+    added_at: { type: Date, default: Date.now },
+});
+setExportMethods(Source);
 
 // Main schemas
 
@@ -215,11 +221,7 @@ var Work = mongo.schema(_.extend({}, entry, {
         groups: [{ type: ObjectId, ref: 'Group' }],
     },
     annotations: [WorkAnnotation],
-    sources: [{
-        source_work: { type: ObjectId, required: true, ref: 'Work' },
-        added_by: { type: ObjectId, ref: 'User' },
-        added_at: { type: Date, default: Date.now },
-    }],
+    sources: [Source],
     media: [{ type: ObjectId, ref: 'Media' }],
 }));
 
