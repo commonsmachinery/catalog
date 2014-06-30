@@ -23,6 +23,7 @@ var util = require('./lib/util');
 
 
 describe('Works', function() {
+    var workID;   // Will be set to the ID for this work
     var workURI;  // Will be set to the URI for this work
     var origEtag; // Will be set to etag before PUT
 
@@ -106,6 +107,8 @@ describe('Works', function() {
 
                     expect( u.id ).to.be.ok();
                     expect( u.href ).to.be( workURI );
+
+                    workID = res.body.id;
                 })
                 .end(done);
         });
@@ -147,8 +150,48 @@ describe('Works', function() {
                 .end(done);
         });
 
+        it('should be possible to request specific fields only', function(done) {
+            req.get(workURI + '?fields=owner,description')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+                    expect( u.id ).to.be( workID );
+                    expect( u.href ).to.be( workURI );
+                    expect( u ).to.have.property( '_perms' );
+
+                    expect( u.owner ).to.have.property( 'user' );
+                    expect( u.alias ).to.be( undefined );
+                    expect( u.description ).to.be( 'description' );
+                    expect( u.added_by ).to.be( undefined );
+                    expect( u.updated_by ).to.be( undefined );
+                })
+                .end(done);
+        });
+
+        it('should be possible to exclude specific fields', function(done) {
+            req.get(workURI + '?fields=-owner,description')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+                    expect( u.id ).to.be( workID );
+                    expect( u.href ).to.be( workURI );
+                    expect( u ).to.have.property( '_perms' );
+
+                    expect( u.owner ).to.be( undefined );
+                    expect( u.alias ).to.be( createWork.alias );
+                    expect( u.description ).to.be( undefined );
+                    expect( u.added_by ).to.have.property( 'id' );
+                    expect( u.updated_by ).to.have.property( 'id' );
+                })
+                .end(done);
+        });
+
         it('should allow including referenced users', function(done) {
-            req.get(workURI + '?include=owner.user,added_by,updated_by')
+            req.get(workURI + '?include=owner,added_by,updated_by')
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)
@@ -166,6 +209,24 @@ describe('Works', function() {
                 })
                 .end(done);
         });
+
+        it('should let fields override include', function(done) {
+            req.get(workURI + '?include=owner,added_by,updated_by&fields=updated_by')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+
+                    expect( u.owner ).to.be( undefined );
+                    expect( u.added_by ).to.be( undefined );
+
+                    expect( u.updated_by ).to.have.property( 'profile' );
+                    expect( u.updated_by.profile ).to.have.property( 'gravatar_hash' );
+                })
+                .end(done);
+        });
+
 
         it('should include write and admin permission for owner', function(done) {
             req.get(workURI)

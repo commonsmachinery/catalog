@@ -25,12 +25,49 @@ var etag = require('../etag');
 /* Change an ID property into a { id: x, href: y } object in place.
  */
 var idToObject = function(object, prop, uriBuilder) {
-    var id = object[prop];
+    var id = object && object[prop];
     if (id) {
         object[prop] = { id: id, href: uriBuilder(id) };
     }
 };
 
+
+/* Filter fields in an object before responding.
+ *
+ * Parameters:
+ *   object: the object to filter
+ *   fields: comma-separated string of field names
+ */
+var filterFields = function(object, fields) {
+    var exclude = false;
+    var newObj;
+
+    if (fields && fields[0] === '-') {
+        exclude = true;
+        fields = fields.slice(1);
+    }
+
+    if (!fields) {
+        return object;
+    }
+
+    fields = fields.split(',');
+
+    if (exclude) {
+        newObj = _.omit(object, fields);
+    }
+    else {
+        newObj = _.pick(object, fields);
+    }
+
+    // Ensure we have core properties always
+    newObj.id = object.id;
+    newObj.href = object.href;
+    newObj.version = object.version;
+    newObj._perms = object._perms;
+
+    return newObj;
+};
 
 /* Populate referenced objects if requested by the caller.  Returns a
  * promise that resolved to the populated object.  Any errors while
@@ -38,7 +75,7 @@ var idToObject = function(object, prop, uriBuilder) {
  *
  * Parameters:
  *   object:     the object to populate
- *   include:    a comma-separated list of fields to populate
+ *   include:    list or a comma-separated list of fields to populate
  *   references: a map of fields to a function that populates that field,
  *               return a promise that resolves when done.
  */
@@ -75,6 +112,11 @@ var populate = function(object, include, references)
 
 /* Helper method to populate a User reference. */
 var populateUser = function(context, referenceObj) {
+    if (!referenceObj) {
+        debug('nothing to populate - this is OK if field was filtered out');
+        return Promise.resolve(null);
+    }
+
     return core.getUser(context, referenceObj.id)
         .then(function(user) {
             _.extend(referenceObj, user);
@@ -104,10 +146,14 @@ exports.transformWork = function(work, context, options) {
 
     work.href = uris.buildWorkURI(work.id);
 
-    // TODO: process options.fields
+    if (opts.fields) {
+        work = filterFields(work, opts.fields);
+    }
 
     // Transform object references
-    idToObject(work.owner, 'user', uris.buildUserURI);
+    if (work.owner) {
+        idToObject(work.owner, 'user', uris.buildUserURI);
+    }
     idToObject(work, 'added_by', uris.buildUserURI);
     idToObject(work, 'updated_by', uris.buildUserURI);
 
@@ -120,7 +166,7 @@ exports.transformWork = function(work, context, options) {
     // Add referenced objects, when requested.
 
     return populate(work, opts.include, {
-        'owner': function() { return populateUser(context, work.owner.user); },
+        'owner': function() { return populateUser(context, work.owner && work.owner.user); },
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
     });
