@@ -114,12 +114,22 @@ var profile = {
     gravatar_hash: { type: 'string', required: true },
 };
 
-var annotationProps = {
-    updated_by: { type: ObjectId, ref: 'User' },
-    updated_at: { type: Date, default: Date.now },
-    score: 'number',
+
+// If the property could be included in the schema, it would look like
+// this:
+/*var property = {
+    propertyName: { type: 'string', required: true },
+    value: { type: 'string', required: true },
+    language: 'string',
+    sourceFormat: 'string',
+    fragmentIdentifier: 'string',
+    mappingType: 'string',
+};*/
+
+var mediaAnnotationProps = {
     property: {
         type: mongo.Schema.Types.Mixed,
+        required: true,
         validate: [{
             validator: function(property) {
                 return property.hasOwnProperty('propertyName');
@@ -132,9 +142,15 @@ var annotationProps = {
     },
 };
 
+var MediaAnnotation = mongo.schema(mediaAnnotationProps);
+setExportMethods(MediaAnnotation);
 
-var Annotation = mongo.schema(annotationProps);
-setExportMethods(Annotation);
+var WorkAnnotation = mongo.schema(_.extend({}, mediaAnnotationProps, {
+    updated_by: { type: ObjectId, required: true, ref: 'User' },
+    updated_at: { type: Date, required: true, default: Date.now },
+    score: { type: Number, required: true, default: 0 },
+}));
+setExportMethods(WorkAnnotation);
 
 
 // Main schemas
@@ -147,7 +163,7 @@ var Media = mongo.schema({
                     sparse: true,
                 }
               },
-    annotations: [Annotation],
+    annotations: [MediaAnnotation],
     metadata: mongo.Schema.Types.Mixed,
 });
 
@@ -198,7 +214,7 @@ var Work = mongo.schema(_.extend({}, entry, {
         users: [{ type: ObjectId, ref: 'Organisation' }],
         groups: [{ type: ObjectId, ref: 'Group' }],
     },
-    annotations: [Annotation],
+    annotations: [WorkAnnotation],
     sources: [{
         source_work: { type: ObjectId, required: true, ref: 'Work' },
         added_by: { type: ObjectId, ref: 'User' },
@@ -209,21 +225,22 @@ var Work = mongo.schema(_.extend({}, entry, {
 
 setExportMethods(Work);
 
+Work.index({ 'owner.user': 1, 'alias': 1 }, { unique: true, sparse: true });
+Work.index({ 'owner.org': 1, 'alias': 1 }, { unique: true, sparse: true });
+Work.index('owner.user', { sparse: true });
+Work.index('owner.org', { sparse: true });
+Work.index('collabs.users');
+Work.index('collabs.groups');
+Work.index('sources.source_work');
+Work.index('media');
+
+
 // Core models
 
 exports.CoreEvent = conn.model('CoreEvent', event.EventBatchSchema);
 exports.User = conn.model('User', User);
 exports.Media = conn.model('Media', Media);
 exports.Work = conn.model('Work', Work);
-
-exports.Work.schema.index({ 'owner.user': 1, 'alias': 1 }, { unique: true, sparse: true });
-exports.Work.schema.index({ 'owner.org': 1, 'alias': 1 }, { unique: true, sparse: true });
-exports.Work.schema.index('owner.user', { sparse: true });
-exports.Work.schema.index('owner.org', { sparse: true });
-exports.Work.schema.index('collabs.users');
-exports.Work.schema.index('collabs.groups');
-exports.Work.schema.index('sources.source_work');
-exports.Work.schema.index('media');
 
 // Connect, returning a promise that resolve when connected
 

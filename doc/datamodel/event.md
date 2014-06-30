@@ -58,8 +58,10 @@ Object events:
     work.created(work)
     work.deleted(work)
     work.PROPERTY.changed(old_value, new_value)
-    work.collaborator.added(collaborator_id)
-    work.collaborator.removed(collaborator_id)
+    work.collabs.users.added(user_id)
+    work.collabs.users.removed(user_id)
+    work.collabs.group.added(group_id)
+    work.collabs.group.removed(group_id)
     work.annotation.added(annotation)
     work.annotation.removed(annotation)
     work.annotation.changed(old_annotation, new_annotation)
@@ -67,16 +69,12 @@ Object events:
     work.source.removed(source)
     work.media.added(media_id)
     work.media.removed(media_id)
-    work.collaborators.replaced(old_collaborator_ids, new_collaborator_ids)
-    work.annotations.replaced(old_annotations, new_annotations)
-    work.medias.replaced(old_media_ids, new_media_ids)
 
 Mirrored from other objects:
 
     work.forked(forked_work_id)
     work.collection.added(collection_id)
     work.collection.removed(collection_id)
-
 
 
 ### Media events
@@ -100,12 +98,12 @@ Object events:
     collection.created(collection)
     collection.deleted(collection)
     collection.PROPERTY.changed(old_value, new_value)
+    collection.collabs.users.added(user_id)
+    collection.collabs.users.removed(user_id)
+    collection.collabs.group.added(group_id)
+    collection.collabs.group.removed(group_id)
     collection.work.added(work_id)
     collection.work.removed(work_id)
-    collection.collaborator.added(collaborator_id)
-    collection.collaborator.removed(collaborator_id)
-    collection.collaborators.replaced(old_collaborator_ids, new_collaborator_ids)
-    collection.works.replaced(old_work_ids, new_work_ids)
     
 
 ### Organisation events
@@ -117,7 +115,6 @@ Object events:
     org.profile.PROPERTY.changed(old_value, new_value)
     org.owner.added(user_id)
     org.owner.removed(user_id)
-    org.owners.replaced(old_user_id, new_user_ids)
 
 Mirrored from other objects:
 
@@ -162,7 +159,6 @@ Object events:
     group.PROPERTY.changed(old_value, new_value)
     group.member.added(user_id)
     group.member.removed(user_id)
-    group.members.replaced(old_user_id, new_user_ids)
 
 Mirrored from other objects:
 

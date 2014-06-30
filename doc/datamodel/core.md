@@ -71,26 +71,27 @@ updated as such.
 
 ### Properties
 
-`alias`: Optional short name that can be used in URLs, omitted if not
+`alias` (optional): Short name that can be used in URLs, omitted if not
 set.
 
-`owner`: User or Organisation owning the Work object (which doesn't
-imply any kind of copyright ownership).  The user owning the object
-or the admins of the organisation are always allowed to edit a work.
+`owner`: `Owner` subdocument indicating the User or Organisation owning
+the Work object (which doesn't imply any kind of copyright ownership).
+The user owning the object or the admins of the organisation are
+always allowed to edit a work.
 
-`description`: Catalog-internal notes about this work, mainly for the
-user's own purposes.  Not considered work metadata.
+`description` (optional): Catalog-internal notes about this work,
+mainly for the user's own purposes.  Not considered work metadata.
 
-`forked_from`: If this work was created by forking another work, this
-is the ID of the parent.  Omitted if not forked.
+`forked_from` (optional): If this work was created by forking another
+work, this is the ID of the parent.  Omitted if not forked.
 
 `public`: `true` if this work is publically visible.
 
-`collaborators`: List of IDs for `Group` and `User` who can access
-this `Work` and its linked `Media`.
+`collabs`: `Collaborators` subdocument listing IDs for `Group` and
+`User` who can access this `Work` and its linked `Media`.
 
-`annotations`: The work metadata (see `Annotation` below).  This is an
-unordered list of embedded `Annotation` documents.
+`annotations`: The work metadata.  This is an unordered list of
+embedded `WorkAnnotation` documents.
 
 `sources`: List of sources as embedded documents.
 
@@ -99,11 +100,17 @@ this work.
 
 ### Index
 
-`owner, alias` (sparse, unique): For prettier URLs.
+`owner.user, alias` (sparse, unique): For prettier URLs.
 
-`owner`: List my/our works.
+`owner.org, alias` (sparse, unique): For prettier URLs.
 
-`collaborators` (multikey): List my/our collaborations.
+`owner.user` (sparse): List my works.
+
+`owner.org` (sparse): List our works.
+
+`collabs.users` (multikey): List user's collaborations.
+
+`collabs.groups` (multikey): List group's collaborations.
 
 `sources.source_work` (multikey): Show work relationships.
 
@@ -116,18 +123,17 @@ this work.
 The following users have full access to read, update and delete the
 `Work`:
 
-- `Work.owner`, if it is a `User`
-- `Organisation.owners`, if `Work.owner` is an `Organisation`
+- `Work.owner.user`, if set
+- `Organisation.owners` for `Work.owner.org`, if set
 - Any `User` in `Work.collaborators`
 
-For `Group.members` in a `Group` in `Work.collaborators`,
-`Group.access` controls access.  Each higher level includes the access
-of the lower level:
+For `Group.members` in `Work.collabs.groups`, `Group.access` controls
+access.  Each higher level includes the access of the lower level:
 
 - `read`: see the information about a non-public `Work`
 - `write`: change any of the information in the `Work` except
-  `Work.collaborators` and `Work.public`
-- `admin`: change `Work.collaborators` and `Work.public`
+  `Work.collabs` and `Work.public`
+- `admin`: change `Work.collabs` and `Work.public`
 
 
 Media
@@ -149,12 +155,19 @@ refined, "curated", information in the corresponding Work objects.
 
 ### Properties
 
-`replaces`: If the data for a `Media` instance is refreshed, a new
-instance is created and linked through this property to the old
-version.  Omitted if not a replacement.
+`_id`: Unique ID, assigned via an ObjectID
 
-`annotations`: The annotations about this Media instance, typically
-derived from the file/page metadata.
+`added_by`: The `User` who added the `Media`.
+
+`added_at`: The `Date` when the `Media` was added.
+
+`replaces` (optional): If the data for a `Media` instance is
+refreshed, a new instance is created and linked through this property
+to the old version.  Omitted if not a replacement.
+
+`annotations`: The metadata about this Media instance, typically
+derived from the file/page metadata.  A list of `MediaAnnotation`
+subdocuments.
 
 `metadata`: Raw metadata captured about this object, stored as an
 embedded document. Maps from different types of metadata to the
@@ -169,10 +182,7 @@ string for `xmp`).
 
 A user with read access to a `Work` (which implies all users for
 public works) also have read access to the linked `Media` instances.
-
-Users may also access unlinked `Media` via one-time access keys in the
-auth module.  This is used e.g. for the simplified upload use case
-where only an email address is needed and no prior login.
+To handle this, all accesses go via a `Work`.
 
 
 Collection
@@ -183,27 +193,37 @@ collection, but it helps organising them.
 
 ### Properties
 
+`owner`: `Owner` subdocument indicating the User or Organisation
+that the collection belongs to.
+
 `name`: Name identifying the collection to users.
 
-`alias`: Optional short name that can be used in URLs, omitted if not
+`alias` (optional): Short name that can be used in URLs, omitted if not
 set.
 
-`description`: More detailed description of the purpose and contents
-of the collection.
+`description` (optional): More detailed description of the purpose and
+contents of the collection.
 
 `works`: List of `Work` objects in the collection, linked by ID.
 
 `public`: `true` if this collection is publically visible.
 
-`collaborators`: List of `User` and `Group` with access to the collection.
+`collabs`: `Collaborators` subdocument listing `User` and `Group` with
+access to the collection.
 
 ### Index
 
-`owner, alias` (sparse, unique): For prettier URLs.
+`owner.user, alias` (sparse, unique): For prettier URLs.
 
-`owner`: List my/our collections.
+`owner.org, alias` (sparse, unique): For prettier URLs.
 
-`collaborators` (multikey): List my/our collaborations
+`owner.user` (sparse): List my collections.
+
+`owner.org` (sparse): List our collections.
+
+`collabs.users` (multikey): List my collaborations.
+
+`collabs.groups` (multikey): List our collaborations.
 
 `works` (multikey): List the collections a work is included in.
 
@@ -212,18 +232,18 @@ of the collection.
 The following users have full access to list, modify and delete the
 `Collection`:
 
-- `Collection.owner`, if it is a `User`
-- `Organisation.owners`, if `Collection.owner` is an `Organisation`
-- Any `User` in `Collection.collaborators`
+- `Collection.owner.user`, if set
+- `Organisation.owners`, if `Collection.owner.org` is set
+- Any `User` in `Collection.collabs.users`
 
-For `Group.members` in a `Group` in `Collection.collaborators`,
-`Group.access` controls access.  Each higher level includes the access
-of the lower level:
+For `Group.members` in `Collection.collabs.groups`, `Group.access`
+controls access.  Each higher level includes the access of the lower
+level:
 
 - `read`: see a non-public `Collection`
 - `write`: change any of the information in the `Collection` except
-  `Collection.collaborators` and `Collection.public`
-- `admin`: change `Collection.collaborators` and `Collection.public`
+  `Collection.collabs` and `Collection.public`
+- `admin`: change `Collection.collabs` and `Collection.public`
 
 Note that even though a user may be allowed to see a collection, they
 may not be allowed to see all `Work` collected in it.
@@ -250,7 +270,9 @@ of the organisation.
 
 ### Access
 
-Anyone can see the information about an `Organisation`.
+Anyone can see the information about an `Organisation`, except for
+`Organisation.profile.gravatar_email` which is only visible to the
+user.
 
 
 User
@@ -264,7 +286,7 @@ module.
 
 ### Properties
 
-`alias`: Short name that can be used in URLs.
+`alias` (optional): Short name that can be used in URLs.
 
 `profile`: Public profile.  TODO: define this, but it will be an
 embedded document with keys like "name", "email", "gravatarEmail",
@@ -272,11 +294,12 @@ etc.
 
 ### Index
 
-`alias` (unique): For prettier URLs.
+`alias` (unique, sparse): For prettier URLs.
 
 ### Access
 
-Anyone can see the information about a `User`.
+Anyone can see the information about a `User`, except for
+`User.profile.gravatar_email` which is only visible to the user.
 
 
 Group
@@ -315,7 +338,22 @@ delete groups.
 Subobjects
 ==========
 
-Annotation
+Owner
+-----
+
+Denotes the owner (of the record, not necessarily of any work
+copyright) of a `Work` or `Collection`.  Exactly one of `user` or
+`org` must be set.
+
+
+Collaborators
+-------------
+
+Lists `User` and `Group` who can collaborate on a `Work` or
+`Collection`.
+
+
+MediaAnnotation
 ----------
 
 The W3C Ontology for Media Resources (OMR) provide a core set of metadata
@@ -347,8 +385,22 @@ Some key annotation types will be:
 
 ### Properties
 
-`_id`: ObjectID for the annotation, to make it easier to refer to it
-in the REST API.
+`_id`: ObjectID for the annotation.
+
+`property`: The property itself, as an embedded
+[MediaAnnotation](http://www.w3.org/2008/WebVideo/Annotations/drafts/API10/PR2/#maobject-interface)
+object.  Only the properties with a value are stored (e.g. excluding
+`language` when irrelevant or not known), and `statusCode` is always
+excluded.
+
+
+WorkAnnotation
+--------------
+
+This is a subclass to `MediaAnnotation`, extending it with additional
+properties.
+
+##3 Properties
 
 `updated_by`: May be omitted if the latest update was by the
 `Work.added_by` `User`.
@@ -360,12 +412,6 @@ omitted if the same as `Work.added_at`.
 annotation should be hidden from the users, and is an alternative to
 deleting data outright. How this score is set is not in the scope of
 this document.
-
-`property`: The property itself, as an embedded
-[MediaAnnotation](http://www.w3.org/2008/WebVideo/Annotations/drafts/API10/PR2/#maobject-interface)
-object.  Only the properties with a value are stored (e.g. excluding
-`language` when irrelevant or not known), and `statusCode` is always
-excluded.
 
 
 Source
@@ -380,6 +426,9 @@ decided later.
 
 ### Properties
 
+`_id`: ObjectID for the `Source`, to make it easier to refer to it in
+the REST API.
+
 `source_work`: The ID of the source `Work`.
 
 `added_by`: The `User` who added the link, may be omitted if the same
@@ -392,22 +441,21 @@ same as `Work.added_at`.
 Profile
 -------
 
-Public information about a `User` or an `Organisaton`.  All
-properties can be unset here, except when indicated.
+Public information about a `User` or an `Organisaton`.
 
 ### Properties
 
-`name`: Full name.
+`name` (optional): Full name.
 
-`email`: Publically visible email address.
+`email` (optional): Publically visible email address.
 
-`location`: Where this person or organisation is located.
+`location` (optional): Where this person or organisation is located.
 
-`website`: Primary website.
+`website` (optional): Primary website.
 
-`gravatar_email`: Email for gravatar icon, if any.
+`gravatar_email` (optional): Email for gravatar icon, if any.
 
-`gravatar_hash`: Hash for gravatar icon.  Always set, if missing based
-on the ObjectID.
+`gravatar_hash`: Hash for gravatar icon.  Always set, if
+`gravatar_email` is missing this is instead based on the ObjectID.
 
 
