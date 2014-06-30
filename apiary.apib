@@ -10,8 +10,18 @@ https://github.com/commonsmachinery/catalog/blob/master/doc/datamodel/core.md
 The API uses many ideas from 
 https://github.com/interagent/http-api-design and https://developer.github.com/v3/
 
+Referenced objects are returned as a map:
 
-## Work [/works/{workID}{?include,annotations}]
+    {
+        "id": "someUserID",
+        "href":  "https://catalog.elog.io/users/someUserID"
+    }
+    
+When referencing another object in a PUT or POST request either property can be used for top-level objects,
+but for e.g. `Media` objects that are referred via a `Work` only `href` is possible.
+
+
+## Work [/works/{workID}{?fields,include,annotations}]
 A work record.
 
 The annotations, media and sources can either be manipulated via the sublist in the document, 
@@ -29,11 +39,24 @@ The keys in this map are the `propertyName`, and the value a list of the Annotat
 that property.  This allows easy access like `annotations.title[0].property.value` to show
 e.g. a title without having to dig through the list.
 
+The fields returned in the response can be selected with the `fields` parameter.
+
+Some referenced objects can be populated in the response with the `include` parameter.  
+(However, `fields` have precedence, so if a field is excluded it will not be populated
+even if `include` says so.)  The fields that can be populated are:
+
+- `owner`: either `owner.user` or `owner.org`
+- `added_by`
+- `updated_by`
+
+TODO: decide if more fields should be allowed to be populated.  The lists can be rather heavy.
+
+
 + Parameters
     + workID (string) ... Work record ID
-    + include (string, optional) ... Which subdocument lists to include in the response objects. 
-        If omitted or empty, all lists are returned in full.  If `none`, all are omitted.
-        Otherwise acomma-separated names: `collaborators`, `annotations`, `sources`.
+    + fields (string, optional) ... Comma-separated list of top-level fields to include
+        (filtering out all other fields), or exclude (if preceeded by `-`)
+    + include (string, optional) ... Comma-separated list of subobjects to populate.
     + annotations (string, optional) ... Select properties to get or update.
 
 + Model
@@ -178,7 +201,7 @@ See `PUT` for details.
 
 
 
-## Work collection [/works{?offset,count,filter,sort,include,annotations}]
+## Work collection [/works{?page,per_page,sort,fields,include,annotations}]
 
 ### List Works [GET]
 List all works visible to the current user, optionally applying paging, filters and sorting.
@@ -189,12 +212,11 @@ Pagination is supported by returning a `Link` header with links according to
 http://tools.ietf.org/html/rfc5005
 
 + Parameters
-    + offset (number, optional) ... Skip this many records in the result. Default: 0
-    + count (number, optional) ... Return this many records. Default and max values are system-dependent.
-    + filter (string, optional) ... Filter responses (see above). Default: no filter.
+    + page (number, optional) ... Page to start showing (first page has index 1)
+    + per_page (number, optional) ... Page should contain these many records. Default and max values are system-dependent.
     + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
-    + include (string, optional) ... Which sublists to include in the response objects.
-        See above for details.
+    + fields (string, optional) ... Fields to include (see above)
+    + include (string, optional) ... References to populate (see above)
     + annotations (string, optional) ... Select properties to get or update.
 
 + Response 200 (application/json)
@@ -279,7 +301,7 @@ and sends a confirmation email when the processing is finished.
 
 
 
-## Media [/works/{workID}/media/{mediaID}{?annotations}]
+## Media [/works/{workID}/media/{mediaID}{?annotations,fields,include}]
 A media instance, which is a read-only record of a particular media instance of a Work
 at the time it was recorded in the catalog.
 
@@ -294,7 +316,19 @@ The keys in this map are the `propertyName`, and the value a list of the Annotat
 that property.  This allows easy access like `annotations.title[0].property.value` to show
 e.g. a title without having to dig through the list.
 
+Some referenced objects can be populated in the response with the `include` parameter.  
+(However, `fields` have precedence, so if a field is excluded it will not be populated
+even if `include` says so.)  The fields that can be populated are:
+
+- `added_by`
+
+TODO: decide if more fields should be populated.
+
+
 + Parameters
+    + fields (string, optional) ... Comma-separated list of top-level fields to include
+        (filtering out all other fields), or exclude (if preceeded by `-`)
+    + include (string, optional) ... Comma-separated list of subobjects to populate.
     + annotations (string, optional) ... Select properties to get or update in map.
 
 + Model
@@ -314,14 +348,13 @@ e.g. a title without having to dig through the list.
                 },
                 "added_at": "2014-04-14T02:15:15Z",
                 
+                "replaces": {
+                    "id": "oldMediaID",
+                    "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/oldMediaID"
+                },
+
                 "annotations": [{
                         "id": "63613d7321ee5396e592d7d1",
-                        "updated_by": {
-                            "id": "anotherUserID",
-                            "href": "https://catalog.elog.io/users/anotherUserID"
-                        },
-                        "updated_at": "2014-04-14T02:15:15Z",
-                        "score": 100,
                         "property": {
                             "propertyName": "title",
                             "value": "Title of the work",
@@ -333,6 +366,7 @@ e.g. a title without having to dig through the list.
                         "oembed": { "url": "http://some/photo.jpg" }
                     }
             }
+
 
 ### Retrieve a Media [GET]
 + Response 200 (application/json)
@@ -347,12 +381,14 @@ If this was the last link to the Media, it will be garbage collected eventually.
     [Media][]
 
 
-## Media collection [/works/{workID}/media{?annotations}]
+## Media collection [/works/{workID}/media{?fields,include,annotations}]
 
 All the Media instances linked to this work.
 
 + Parameters
     + workID (string) ... Work ID whose Media are manipulated
+    + fields (string, optional) ... Fields to include (see above)
+    + include (string, optional) ... References to populate (see above)
     + annotations (string, optional) ... Select properties to get in response.
 
 ### List Work Media [GET]
@@ -372,18 +408,35 @@ Convenience method to unlink all medias, rather than one by one.
         
 
 
-### Create a new Media for an existing Work [POST]
+### Create or link a Media to an existing Work [POST]
 
-Create a new Media instance and link it to the Work.
+If `href` is included, the referenced `Media` instance will be linked to this work.
 
-Only the following properties in the request will be used:
+Otherwise a new Media instance is created and linked to this work, 
+using the following properties in the request:
 
 - annotations (empty list if omitted)
 - metadata (empty object if omitted)
 - replaces (null if omitted)
 
 + Request (application/json)
-    [Media][]
+    
+        {
+            "replaces": {
+                "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/oldMediaID"
+            },
+
+            "annotations": [{
+                    "property": {
+                        "propertyName": "title",
+                        "value": "Title of the work",
+                        "titleLabel": "Title of the work"
+                    }
+                }],
+            "metadata": {
+                "oembed": { "url": "http://some/photo.jpg" }
+            }
+        }
     
 + Response 201 (application/json)
     [Media][]
