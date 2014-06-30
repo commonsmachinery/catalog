@@ -11,57 +11,74 @@
 var debug = require('debug')('catalog:frontend:api:works'); // jshint ignore:line
 
 // External libs
+var _ = require('underscore');
 
 // Components
-var core = require('../../../modules/core/core.js');
+var core = require('../../../modules/core/core');
 
 // Frontend libs
-var uris = require('../uris.js');
-var etag = require('../etag.js');
+var respond = require('./respond');
+
+/* Return promise handler to transform the work object for JSON responses.
+ */
+var transform = function(req) {
+    return function(work) {
+        return respond.transformWork(
+            work, req.context,
+            _.pick(req.query, 'fields', 'include'));
+    };
+};
 
 exports.createWork = function createWork(req, res, next) {
     core.createWork(req.context, req.body)
-        .then(function(work) {
-            etag.set(res, work);
-            uris.setLinks(res, { self: uris.buildWorkURI(work.id) });
-            res.set('Location', uris.buildWorkURI(work.id));
-            res.json(201, work);
-        })
+        .then(transform(req))
+        .then(respond.asJSON(res, { status: 201 }))
         .catch(function(err) {
             next(err);
         });
 };
 
 exports.getWork = function getWork(req, res, next) {
-    core.getWork(req.context, req.params.workId)
-        .then(function(work) {
-            etag.set(res, work);
-            uris.setLinks(res, { self: uris.buildWorkURI(work.id) });
+    var htmlResponse = function() {
+        core.getWork(req.context, req.params.workId)
+            .then(function(work) {
+                // Populate useful fields
+                return respond.transformWork(
+                    work, req.context, {
+                        include: ['owner', 'added_by', 'updated_by']
+                    });
+            })
+            .then(function(work) {
+                respond.setObjectHeaders(res, work);
 
-            res.format({
-                html: function() {
-                    // TODO: work view
-                    throw new Error("Work view not implemented!");
-                },
-
-                json: function() {
-                    res.json(work);
-                }
+                // TODO: render work view
+                throw new Error("Work view not implemented!");
+            })
+            .catch(function(err) {
+                next(err);
             });
-        })
-        .catch(function(err) {
-            next(err);
-        });
+    };
+
+    var jsonResponse = function() {
+        core.getWork(req.context, req.params.workId)
+            .then(transform(req))
+            .then(respond.asJSON(res))
+            .catch(function(err) {
+                next(err);
+            });
+    };
+
+    res.format({
+        html: htmlResponse,
+        default: htmlResponse,
+        json: jsonResponse,
+    });
 };
 
 exports.updateWork = function updateWork(req, res, next) {
     core.updateWork(req.context, req.params.workId, req.body)
-        .then(function(work) {
-            etag.set(res, work);
-            uris.setLinks(res, { self: uris.buildWorkURI(work.id) });
-
-            res.json(work);
-        })
+        .then(transform(req))
+        .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
         });
@@ -69,9 +86,8 @@ exports.updateWork = function updateWork(req, res, next) {
 
 exports.deleteWork = function deleteWork(req, res, next) {
     core.deleteWork(req.context, req.params.workId, req.body)
-        .then(function(work) {
-            res.json(work);
-        })
+        .then(transform(req))
+        .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
         });

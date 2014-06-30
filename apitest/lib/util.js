@@ -17,6 +17,15 @@ exports.testUser = 'apitest-' + Date.now();
 exports.otherUser = 'another';
 
 
+// URL regexps
+exports.urlRE = {
+    user: /\/users\/[0-9a-f]+$/,
+    work: /\/works\/[0-9a-f]+$/,
+};
+
+exports.etagRE = /^W\/".*"$/;
+
+
 /* Make a shallow clone of the object */
 exports.clone = function clone(obj){
     var extend = require('util')._extend;
