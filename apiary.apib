@@ -7,12 +7,30 @@ A REST API for clients and third-party sites to interact with the data in the ca
 The various objects and their properties are documented in much more detail here:
 https://github.com/commonsmachinery/catalog/blob/master/doc/datamodel/core.md
 
-## Media [/media/{mediaID}{?annotations}]
-A media instance, which is a read-only record of a particular media instance of a Work
-at the time it was recorded in the catalog.
+The API uses many ideas from 
+https://github.com/interagent/http-api-design and https://developer.github.com/v3/
 
-Media instances are intended to be the "raw material" of Works, so access to them
-may be restricted in the catalog to require a reference via a Work (see Work Media below).
+Referenced objects are returned as a map:
+
+    {
+        "id": "someUserID",
+        "href":  "https://catalog.elog.io/users/someUserID"
+    }
+    
+When referencing another object in a PUT or POST request either property can be used for top-level objects,
+but for e.g. `Media` objects that are referred via a `Work` only `href` is possible.
+
+
+## Work [/works/{workID}{?fields,include,annotations}]
+A work record.
+
+The annotations, media and sources can either be manipulated via the sublist in the document, 
+or via the separate collection endpoints.
+
+Media instances are always accessed via the context of a Work, to determine visibility, 
+and thus have URIs scoped under the work URI.
+When adding another Work's Media to this Work, add the Work Media endpoint for that other
+work to the `media` list.  It will be rewritten to the Media endpoint for the target Work.
 
 To make the annotations easier to use in web pages the parameter `annotations` can be set
 to a list of property names, e.g. `title,locator`.  This will change the response from a plain list to a map, only
@@ -21,59 +39,185 @@ The keys in this map are the `propertyName`, and the value a list of the Annotat
 that property.  This allows easy access like `annotations.title[0].property.value` to show
 e.g. a title without having to dig through the list.
 
+The fields returned in the response can be selected with the `fields` parameter.
+
+Some referenced objects can be populated in the response with the `include` parameter.  
+(If `fields` has excluded the field, `include` will override and add the field to the response.)
+The fields that can be populated are:
+
+- `owner`: either `owner.user` or `owner.org`
+- `added_by`
+- `updated_by`
+
+TODO: decide if more fields should be allowed to be populated.  The lists can be rather heavy.
+
+
 + Parameters
-    + annotations (string, optional) ... Select properties to get or update in map.
+    + workID (string) ... Work record ID
+    + fields (string, optional) ... Comma-separated list of top-level fields to include
+        (filtering out all other fields), or exclude (if preceeded by `-`)
+    + include (string, optional) ... Comma-separated list of subobjects to populate.
+    + annotations (string, optional) ... Select properties to get or update.
 
 + Model
     + Headers
-    
-            Link: <https://catalog.elog.io/media/6e1ee592539d7d163613d732>;rel="self"
+
+            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee>;rel="self"
 
     + Body
-
+    
             {
-                "id": "6e1ee592539d7d163613d732",
-                "added_by": "https://catalog.elog.io/users/someUserID",
+                "id": "5396e592d7d163613d7321ee",
+                "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee",
+
+                "added_by": {
+                    "id": "someUserID",
+                    "href":  "https://catalog.elog.io/users/someUserID"
+                },
                 "added_at": "2014-04-14T02:15:15Z",
-                "replaces": "https://catalog.elog.io/media/prevMediaID",
+                
+                "updated_by": {
+                    "id": "anotherUserID",
+                    "href": "https://catalog.elog.io/users/anotherUserID"
+                },
+                "updated_at": "2014-04-14T02:15:15Z",
+                
+                "owner": {
+                    "user": {
+                        "id": "someUserID",
+                        "href": "https://catalog.elog.io/users/someUserID"
+                    }
+                },
+                
+                "alias": "short-name",
+                "description": "Description of work to guide catalog users (not part of the metadata)",
+                "public": true,
+
+                "forked_from": {
+                    "id": "parentWorkID",
+                    "href": "https://catalog.elog.io/works/parentWorkID"
+                },
+
+                "collabs": {
+                    "users": [{
+                        "id": "anotherUserID",
+                        "href": "https://catalog.elog.io/users/anotherUserID"
+                    }],
+                    "groups": [{
+                        "id": "someGroupID",
+                        "href": "https://catalog.elog.io/groups/someGroupID"
+                    }]
+                },
+                
                 "annotations": [{
                         "id": "63613d7321ee5396e592d7d1",
-                        "updated_by": "https://catalog.elog.io/users/anotherUserID",
+                        "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/annotations/63613d7321ee5396e592d7d1",
+                        
+                        "updated_by": {
+                            "id": "anotherUserID",
+                            "href": "https://catalog.elog.io/users/anotherUserID"
+                        },
                         "updated_at": "2014-04-14T02:15:15Z",
+                        
                         "score": 100,
                         "property": {
                             "propertyName": "title",
-                            "titleLabel": "Title of the work",
+                            "value": "Title of the work",
+                            "titleLabel": "Title of the work"
                         }
-                    }],
-                "metadata": {
-                        "xmp": "<?xml...",
-                        "oembed": { "url": "http://some/photo.jpg" }
+                }],
+
+                "sources": [{
+                        "id": "6e592d7d63613d7321ee5391",
+                        "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/sources/6e592d7d63613d7321ee5391",
+                        
+                        "source_work": {
+                            "id": "sourceWorkID",
+                            "href": "https://catalog.elog.io/works/sourceWorkID"
+                        },
+                        
+                        "added_by": {
+                            "id": "anotherUserID",
+                            "href": "https://catalog.elog.io/users/anotherUserID"
+                        },
+                        "added_at": "2014-04-14T02:15:15Z"
+                }],
+
+                "media": [
+                    {   "id": "someMediaID",
+                        "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/someMediaID"
+                    },
+                    {   "id": "anotherMediaID",
+                        "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/anotherMediaID"
                     }
+                ]
             }
 
-### Retrieve a Media [GET]
+
+### Retrieve a Work [GET]
++ Response 200
+    [Work][]
+
+
+### Update a Work [PUT]
+The following parameters can be updated, any others are ignored:
+
+- alias
+- description
+- public
+
+This really behaves like `PATCH`, so that any omitted parameters are not changed.
+
++ Request (application/json)
+
+        {
+            "alias": "foo",
+            "description": "The foo movie",
+            "public": true,
+        }
+
+
 + Response 200 (application/json)
-    [Media][]
+    [Work][]
 
 
-## Media collection [/media{?offset,count,filter,sort,annotations}]
-Given the role of Media as mainly internal raw material means that it often makes more sense to use
-the Work Media collection instead of this one (see below).
+### Update a Work [PATCH]
+
+See `PUT` for details.
+
++ Request (application/json)
+
+        {
+            "public": true,
+        }
+
++ Response 200 (application/json)
+    [Work][]
 
 
-### List Media instances [GET]
+### Delete a Work [DELETE]
++ Response 200
+    [Work][]
+
+
+
+## Work collection [/works{?page,per_page,sort,fields,include,annotations}]
+
+### List Works [GET]
+List all works visible to the current user, optionally applying paging, filters and sorting.
+
 TODO: define filters and sorting.
 
 Pagination is supported by returning a `Link` header with links according to 
 http://tools.ietf.org/html/rfc5005
 
 + Parameters
-    + offset (number, optional) ... Skip this many records in the result. Default: 0
-    + count (number, optional) ... Return this many records. Default and max values are system-dependent.
-    + filter (string, optional) ... Filter responses (see above). Default: no filter.
+    + page (number, optional) ... Page to start showing (first page has index 1)
+    + per_page (number, optional) ... Page should contain these many records. Default and max values are system-dependent.
     + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
-    + annotations (string, optional) ... Select properties to get in response.
+    + fields (string, optional) ... Fields to include (see above)
+    + include (string, optional) ... References to populate (see above)
+    + annotations (string, optional) ... Select properties to get or update.
 
 + Response 200 (application/json)
     + Headers
@@ -84,33 +228,40 @@ http://tools.ietf.org/html/rfc5005
     
             []
 
-### Create new Media instances [POST]
-Since creating a Media without a Work may not make much sense in some cases, 
-this endpoint might be disabled in the catalog.
 
-Only the following properties in the request will be used:
+### Create Work [POST]
+Create a new work.  The following parameters are used, all others are included:
 
-    - annotations (empty list if omitted)
-    - metadata (empty object if omitted)
-    - replaces (null if omitted)
+The following parameters are used when creating a Work:
+
+- alias
+- description
+- public
+- collaborators
+- annotations (see below)
+- sources (only source_work)
+- media
+
+If any fields are missing, they are set to empty values or lists.  
+The default for `public` depends on system configuration.
 
 + Request (application/json)
-    [Media][]
+    [Work][]
     
 + Response 201 (application/json)
-    [Media][]
-    
+    [Work][]
 
-## Create Media from an uploaded file [/media/actions/upload{?email}]
 
-Instead of extracting all the metadata from the file locally, the catalog may provide the
-service to clients to upload files for server-side processing instead.  This either requires an 
-active session for a user, or an email address to be provided in the request.  In both cases an email
+## Create Work from an uploaded file [/works/actions/upload{?email}]
+
+Instead of extracting all the metadata from a file locally, the catalog may provide the
+service to clients to upload files for server-side processing instead. This either requires an
+active session for a user, or an email address to be provided in the request. In both cases an email
 will be sent to the user when the file has been processed with a link to confirm the uploaded data.
 
 ### Upload file [POST]
 
-TODO: is this a sane way to upload files, or should multi-part requests be used instead?  
+TODO: is this a sane way to upload files, or should multi-part requests be used instead?
 Or is this really up to the client's discretion and we should accept both?
 
 + Parameters
@@ -125,7 +276,7 @@ Or is this really up to the client's discretion and we should accept both?
         { "confirm_email": "foo@example.org" }
         
 
-## Create Media from an online source [/media/actions/fetch{?url,email}]
+## Create Work from an online source [/works/actions/fetch{?url,email}]
 
 Similar to uploading a file, this fetches information about a work that's available at a URL online
 and sends a confirmation email when the processing is finished.
@@ -149,18 +300,14 @@ and sends a confirmation email when the processing is finished.
         { "confirm_email": "foo@example.org" }
 
 
-## Work [/works/{id}{?include,annotations}]
-A work record.
 
-The annotations can either be manipulated via the sublist in the document, 
-or via the separate Annotation collection endpoint.
+## Media [/works/{workID}/media/{mediaID}{?annotations,fields,include}]
+A media instance, which is a read-only record of a particular media instance of a Work
+at the time it was recorded in the catalog.
 
-The Media instances linked to this work can be (and may be required to be)
-accessed via the Work.  See the Work Media endpoints below.  The list of Media instances
-in the `media` property always use URLs referencing such an endpoint.  
-
-When adding another Work's Media to this Work, add the Work Media endpoint for that other
-work to the `media` list.  It will be rewritten to the Media endpoint for the target Work.
+A given Media instance can be linked to multiple works (e.g. when a Work is forked, or just
+if it is added multiple times by different people from the same media source).  The instances will
+all have the same ID, but must always be accessed via one of the works to determine visibility.
 
 To make the annotations easier to use in web pages the parameter `annotations` can be set
 to a list of property names, e.g. `title,locator`.  This will change the response from a plain list to a map, only
@@ -169,221 +316,138 @@ The keys in this map are the `propertyName`, and the value a list of the Annotat
 that property.  This allows easy access like `annotations.title[0].property.value` to show
 e.g. a title without having to dig through the list.
 
+Some referenced objects can be populated in the response with the `include` parameter.  
+(If `fields` has excluded the field, `include` will override and add the field to the response.)
+The fields that can be populated are:
+
+- `added_by`
+
+TODO: decide if more fields should be populated.
+
+
 + Parameters
-    + id (string) ... Work record ID
-    + include (string, optional) ... Which sublists to include in the response objects. 
-        If omitted or empty, all lists are returned in full.  If `none`, all are omitted.
-        Otherwise acomma-separated names: `collaborators`, `annotations`, `sources`, `media`.
-    + annotations (string, optional) ... Select properties to get or update.
+    + fields (string, optional) ... Comma-separated list of top-level fields to include
+        (filtering out all other fields), or exclude (if preceeded by `-`)
+    + include (string, optional) ... Comma-separated list of subobjects to populate.
+    + annotations (string, optional) ... Select properties to get or update in map.
 
 + Model
     + Headers
-
-            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee>;rel="self"
+    
+            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/6e1ee592539d7d163613d732>;rel="self"
 
     + Body
-    
+
             {
-                "id": "5396e592d7d163613d7321ee",
-                "version": 17,
-                "added_by": "https://catalog.elog.io/users/someUserID",
+                "id": "6e1ee592539d7d163613d732",
+                "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/6e1ee592539d7d163613d732",
+                
+                "added_by": {
+                    "id": "someUserID",
+                    "href":  "https://catalog.elog.io/users/someUserID"
+                },
                 "added_at": "2014-04-14T02:15:15Z",
-                "updated_by": "https://catalog.elog.io/users/anotherUserID",
-                "updated_at": "2014-04-14T02:15:15Z",
-                "uri": "https://catalog.elog.io/works/5396e592d7d163613d7321ee",
-                "alias": "short-name",
-                "owner": "https://catalog.elog.io/users/someUserID",
-                "description": "Description of work to guide catalog users (not part of the metadata)",
-                "forked_from": "https://catalog.elog.io/works/parentworkID",
-                "public": true,
-                "collaborators": [
-                    "https://catalog.elog.io/users/anotherUserID",
-                    "https://catalog.elog.io/groups/someGroupID"
-                    ],
+                
+                "replaces": {
+                    "id": "oldMediaID",
+                    "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/oldMediaID"
+                },
+
                 "annotations": [{
                         "id": "63613d7321ee5396e592d7d1",
-                        "updated_by": "https://catalog.elog.io/users/anotherUserID",
-                        "updated_at": "2014-04-14T02:15:15Z",
-                        "score": 100,
                         "property": {
                             "propertyName": "title",
-                            "titleLabel": "Title of the work",
+                            "value": "Title of the work",
+                            "titleLabel": "Title of the work"
                         }
                     }],
-                "sources": [{
-                        "source_work": "https://catalog.elog.io/works/sourceWorkID",
-                        "added_by": "https://catalog.elog.io/users/anotherUserID",
-                        "added_at": "2014-04-14T02:15:15Z"
-                    }],
-                "media": [
-                    "https://catalog.elog.io/media/someMediaID",
-                    "https://catalog.elog.io/media/anotherMediaID"
-                    ]
+                "metadata": {
+                        "xmp": "<?xml...",
+                        "oembed": { "url": "http://some/photo.jpg" }
+                    }
             }
 
 
-### Retrieve a Work [GET]
+### Retrieve a Media [GET]
++ Response 200 (application/json)
+    [Media][]
+
+
+### Unlink a Media from a Work [DELETE]
+This does not delete the underlying Media instance, just the link to it.
+If this was the last link to the Media, it will be garbage collected eventually.
+
 + Response 200
-    [Work][]
+    [Media][]
 
 
-### Update a Work [PUT]
-The following parameters can be updated, any others are ignored:
+## Media collection [/works/{workID}/media{?fields,include,annotations}]
 
-- alias
-- description
-- public
-- collaborators
-- annotations (see below)
-- sources (only source_work)
-- media
-    
-This really behaves like `PATCH`, so that any omitted parameters are not changed.
-
-`version` can be included, which instructs the server to only perform the update if that is still
-the current version of the object in the database, allowing client-side conflict handling on 
-`409 Conflict`.
-
-If `id` is included the server must check that it is the same as the URL parameter, 
-to catch misaddressed updates.
-
-If the `annotations` list is modified, new items should not include the `id` field.  
-Attempting to update a missing annotation will result in a `409 Conflict`.
-
-
-+ Request (application/json)
-    [Work][]
-
-+ Response 200 (application/json)
-    [Work][]
-
-+ Response 409 (application/json)
-
-        {
-            "message": "annotation does not exist",
-            "property": "annotations",
-            "id": "d7d163613d7321ee5396e592",
-        }
-
-
-### Update a Work [PATCH]
-
-See `PUT` for details.
-
-+ Request (application/json)
-
-        {
-            "version": 16,
-            "public": true,
-        }
-
-+ Response 200 (application/json)
-    [Work][]
-
-+ Response 409 (application/json)
-
-        {
-            "message": "annotation does not exist",
-            "property": "annotations",
-            "id": "d7d163613d7321ee5396e592",
-        }
-
-
-### Delete a Work [DELETE]
-+ Response 204
-
-
-## Work collection [/works{?offset,count,filter,sort,include,annotations}]
-
-### List Works [GET]
-List all works visible to the current user, optionally applying paging, filters and sorting.
-
-TODO: define filters and sorting.
-
-Pagination is supported by returning a `Link` header with links according to 
-http://tools.ietf.org/html/rfc5005
-
-+ Parameters
-    + offset (number, optional) ... Skip this many records in the result. Default: 0
-    + count (number, optional) ... Return this many records. Default and max values are system-dependent.
-    + filter (string, optional) ... Filter responses (see above). Default: no filter.
-    + sort (string, optional) ... Sort response (see above). Default: "natural" sort.
-    + include (string, optional) ... Which sublists to include in the response objects.
-        See above for details.
-    + annotations (string, optional) ... Select properties to get or update.
-
-+ Response 200 (application/json)
-    + Headers
-    
-            Link: <?offset=0&count=N&...>;rel="first", <?offset=Z&count=N&...>;rel="last", <?offset=X&count=N&...>;rel="previous", <?offset=Y&count=N&...>;rel="next"
-
-    + Body
-    
-            []
-
-
-### Create Work [POST]
-Create a new work.  The following parameters are used, all others are included:
-
-The following parameters are used when creating a Work:
-
-    - alias
-    - description
-    - public
-    - collaborators
-    - annotations (see below)
-    - sources (only source_work)
-    - media
-
-If any fields are missing, they are set to empty values or lists.  
-The default for `public` depends on system configuration.
-
-+ Request (application/json)
-    [Work][]
-    
-+ Response 201 (application/json)
-    [Work][]
-
-
-## Work Media collection [/works/{workID}/media]
-Depending on the access model configured for the catalog, Media instances might only 
-be referenced via works they are linked to, and not directly.  This psuedo collection
-provides that access, as well as an easier way to manipulate the list of Work media 
-instances.
+All the Media instances linked to this work.
 
 + Parameters
     + workID (string) ... Work ID whose Media are manipulated
+    + fields (string, optional) ... Fields to include (see above)
+    + include (string, optional) ... References to populate (see above)
+    + annotations (string, optional) ... Select properties to get in response.
 
 ### List Work Media [GET]
 Return all Media instances of the Work.
 
 + Response 200 (application/json)
 
+        [{ "id": "..." }, { "id": "..." }]
+        
+
+### Unlink all Media from a Work [DELETE]
+Convenience method to unlink all medias, rather than one by one.
+
++ Response 200 (application/json)
+
         []
         
 
-### Create a new Media and link it to the work [POST]
-This is a shortcut (which may be mandatory to use if /media is disabled in the catalog)
-that creates a Media instance and links it to an existing work in one operation.
 
-See `POST /media` for details.
+### Create or link a Media to an existing Work [POST]
+
+If `href` is included, the referenced `Media` instance will be linked to this work.
+
+Otherwise a new Media instance is created and linked to this work, 
+using the following properties in the request:
+
+- annotations (empty list if omitted)
+- metadata (empty object if omitted)
+- replaces (null if omitted)
 
 + Request (application/json)
-    [Media][]
+    
+        {
+            "replaces": {
+                "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/media/oldMediaID"
+            },
+
+            "annotations": [{
+                    "property": {
+                        "propertyName": "title",
+                        "value": "Title of the work",
+                        "titleLabel": "Title of the work"
+                    }
+                }],
+            "metadata": {
+                "oembed": { "url": "http://some/photo.jpg" }
+            }
+        }
     
 + Response 201 (application/json)
     [Media][]
         
 
-## Create Work Media from an uploaded file [/works/{workID}/media/actions/upload]
+## Create Media from an uploaded file [/works/{workID}/media/actions/upload]
 
-Similar to creating a loose Media instance by uploading a file (see `POST /media/actions/upload`)
-this uploads a file to create a new Media instance.  The difference is that the user must have a
-session and permission to edit the Work, so there is no `email` parameter.  
+Similar to creating a new Work from an uploaded file (see `POST /works/actions/upload`)
+this creates a new Media instance for the file and links it to the work.
 
-The Media will be linked to the work automatically without the need for a confirmation.
-
-TODO: should an email be sent anyway?
+TODO: should return progress polling URL, or perhaps send an email when done.
 
 ### Upload file [POST]
 
@@ -398,10 +462,13 @@ Or is this really up to the client's discretion and we should accept both?
 
         { }
 
-## Create Work Media from an online source [/works/{workID}/media/actions/fetch{?url}]
 
-Similar to uploading a file, this fetches information about a work that's available at a URL online.
-See upload file to Work Media for details.
+## Create Media from an online source [/works/{workID}/media/actions/fetch{?url}]
+
+Similar to creating a new Work from an online source (see `POST /works/actions/fetch`)
+this creates a new Media instance for the file and links it to the work.
+
+TODO: should return progress polling URL, or perhaps send an email when done.
 
 ### Fetch online source [POST]
 
@@ -421,30 +488,9 @@ See upload file to Work Media for details.
         { }
 
 
-## Work Media [/works/{workID}/media/{mediaID}]
-Accessing a Media may require going via a linked Work, using this endpoint.
-
-+ Parameters
-    + workID (string) ... Work ID linking to the Media
-    + mediaID (string) ... The ID of the linked Media
-
-### Retrieve Work Media [GET]
-+ Response 200 (application/json)
-    [Media][]
-
-
-### Unlink a Media from a Work [DELETE]
-This does not delete the underlying Media instance, just the link to it.
-
-+ Response 204
-
-
 ## Annotation [/works/{workID}/annotations/{annotionID}]
 A Work or Media annotation, based on the [W3C Ontology for media resources](http://www.w3.org/TR/mediaont-10/).
 This maps format-specific metadata into a common set of properties.
-
-This endpoint is provided as an alternative to modifying `Work.annotations` through the
-main Work endpoint.
 
 Media objects also contain Annotations, but since Media are read-only there is no endpoint for manipulating 
 that list.
@@ -452,18 +498,25 @@ that list.
 + Model
     + Headers
 
-            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee>;rel="self"
+            Link: <https://catalog.elog.io/works/5396e592d7d163613d7321ee/annotations/63613d7321ee5396e592d7d1>;rel="self"
 
     + Body
 
             {
                 "id": "63613d7321ee5396e592d7d1",
-                "updated_by": "https://catalog.elog.io/users/anotherUserID",
+                "href": "https://catalog.elog.io/works/5396e592d7d163613d7321ee/annotations/63613d7321ee5396e592d7d1",
+                
+                "updated_by": {
+                    "id": "anotherUserID",
+                    "href": "https://catalog.elog.io/users/anotherUserID"
+                },
                 "updated_at": "2014-04-14T02:15:15Z",
+                
                 "score": 100,
                 "property": {
                     "propertyName": "title",
-                    "titleLabel": "Title of the work",
+                    "value": "Title of the work",
+                    "titleLabel": "Title of the work"
                 }
             }
 
@@ -478,7 +531,13 @@ Only the `score` and `property` Annotation properties may be changed.
 Only properties included in the request are changed.
 
 + Request (application/json)
-    [Annotation][]
+    
+        {
+            "score": 47,
+            "property": {
+                "value": "A better title"
+            }
+        }
 
 + Response 200 (application/json)
     [Annotation][]
@@ -488,24 +547,26 @@ Only properties included in the request are changed.
 Same as `PUT`.
 
 + Request (application/json)
-    [Annotation][]
+
+        { "score": 47 }
 
 + Response 200 (application/json)
     [Annotation][]
 
 
 ### Delete an Annotation [DELETE]
-+ Response 204
++ Response 200
+    [Annotation][]
 
 
 ## Work Annotation collection [/works/{workID}/annotations]
-This endpoint is provided as an alternative to accessing or adding annotations in
-`Work.annotations` through the main Work endpoint.
+Endpoint for accessing all annotations for a Work.  To just read annotations, 
+`Work.annotations` can be used instead.
 
 ### List Work Annotations [GET]
 + Response 200 (application/json)
 
-        []
+        [{ "id": "..." }, { "id": "..." }]
 
 
 ### Add a Work Annotation [POST]
@@ -516,10 +577,22 @@ Only `score` and `property` are used from the request body.
 If `score` is omitted it is calculated from `property`.
 
 + Request (application/json)
-    [Annotation][]
+
+        {
+            "property": {
+                "propertyName": "title",
+                "value": "A title"
+            }
+        }
 
 + Response 201 (application/json)
     [Annotation][]
+
+
+### Delete all annotations for a Work [DELETE]
++ Response 200 (application/json)
+
+        []
 
 
 ## Lookup works by URI [/lookup{?uri,offset,count,include}]
@@ -573,7 +646,8 @@ The other information is public.
 
             {
                 "id": "5396e592d7d163613d7321ee",
-                "uri": "https://catalog.elog.io/users/5396e592d7d163613d7321ee",
+                "href": "https://catalog.elog.io/users/5396e592d7d163613d7321ee",
+                
                 "alias": "foobar",
                 "profile": {
                     "name": "Foo Barson",
@@ -581,7 +655,7 @@ The other information is public.
                     "location": null,
                     "website": "http://this/page",
                     "gravatar_email": "foo@example.org",
-                    "gravatar_hash": "34cd643fb9230abe3",
+                    "gravatar_hash": "34cd643fb9230abe3"
                 }
             }
 
@@ -597,7 +671,13 @@ Only the included properties are changed, as in `PATCH`.
 Set a property to `null` to remove the value.
 
 + Request
-    [User][]
+    
+        {
+            "alias": "new alias",
+            "profile": {
+                "gravatar_email": "other@example.org"
+            }
+        }
 
 + Response 200 (application/json)
     [User][]
@@ -608,7 +688,13 @@ Set a property to `null` to remove the value.
 See `PUT`.
 
 + Request
-    [User][]
+
+
+        {
+            "profile": {
+                "name": "Foo G. Barson"
+            }
+        }
 
 + Response 200 (application/json)
     [User][]
