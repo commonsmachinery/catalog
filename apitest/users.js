@@ -66,7 +66,7 @@ describe('Users', function() {
             req.get('/users/current')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(302)
-                .expect('location', /\/users\/[^\/]+$/)
+                .expect('location', util.urlRE.user)
                 .end(function(err, res) {
                     if (res) {
                         userURI = res.header.location;
@@ -81,11 +81,24 @@ describe('Users', function() {
     describe('GET /users/ID', function() {
         var req = request('');
 
+        it('should get id and href', function(done) {
+            req.get(userURI)
+                .set('Accept', 'application/json')
+                .expect(200)
+                .expect(function(res) {
+                    var u = res.body;
+
+                    expect( u.id ).to.be.ok();
+                    expect( u.href ).to.be( userURI );
+                })
+                .end(done);
+        });
+
         it('should get self link and etag', function(done) {
             req.get(userURI)
                 .set('Accept', 'application/json')
                 .expect(200)
-                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'etag', util.etagRE )
                 .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
                     debug('user link: %s', res.header.link);
@@ -162,7 +175,7 @@ describe('Users', function() {
                 .set('Authorization', util.auth(util.testUser))
                 .send(newProfile)
                 .expect(200)
-                .expect( 'etag', /^W\/".*"$/ )
+                .expect( 'etag', util.etagRE )
                 .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
                     checkProfile(res.body, true);

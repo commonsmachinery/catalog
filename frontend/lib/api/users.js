@@ -13,11 +13,21 @@ var debug = require('debug')('catalog:frontend:api:users'); // jshint ignore:lin
 // External libs
 
 // Components
-var core = require('../../../modules/core/core.js');
+var core = require('../../../modules/core/core');
 
 // Frontend libs
-var uris = require('../uris.js');
-var etag = require('../etag.js');
+var uris = require('../uris');
+
+var respond = require('./respond');
+
+
+/* Return promise handler to transform the work object for JSON responses.
+ */
+var transform = function() {
+    return function(user) {
+        return respond.transformUser(user);
+    };
+};
 
 
 exports.getCurrentUser = function getCurrentUser(req, res) {
@@ -31,36 +41,40 @@ exports.getCurrentUser = function getCurrentUser(req, res) {
 
 
 exports.getUser = function getUser(req, res, next) {
-    core.getUser(req.context, req.params.userId)
-        .then(function(user) {
-            etag.set(res, user);
-            uris.setLinks(res, { self: uris.buildUserURI(user.id) });
-
-            res.format({
-                html: function() {
-                    res.locals.user = user;
-                    res.render('userProfile');
-                },
-
-                json: function() {
-                    res.json(user);
-                }
+    var htmlResponse = function() {
+        core.getUser(req.context, req.params.userId)
+            .then(transform())
+            .then(function(user) {
+                respond.setObjectHeaders(res, user);
+                res.locals.user = user;
+                res.render('userProfile');
+            })
+            .catch(function(err) {
+                next(err);
             });
-        })
-        .catch(function(err) {
-            next(err);
-        });
+    };
+
+    var jsonResponse = function() {
+        core.getUser(req.context, req.params.userId)
+            .then(transform())
+            .then(respond.asJSON(res))
+            .catch(function(err) {
+                next(err);
+            });
+    };
+
+    res.format({
+        html: htmlResponse,
+        default: htmlResponse,
+        json: jsonResponse
+    });
 };
 
 
 exports.updateUser = function updateUser(req, res, next) {
     core.updateUser(req.context, req.params.userId, req.body)
-        .then(function(user) {
-            etag.set(res, user);
-            uris.setLinks(res, { self: uris.buildUserURI(user.id) });
-
-            res.json(user);
-        })
+        .then(transform())
+        .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
         });

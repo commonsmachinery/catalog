@@ -232,7 +232,7 @@ checkUserSession = function checkUserSession(req, res, next) {
                                 debug('creating new core.User for %j', authUser);
                                 return core.createUser(
                                     { userId: authUser.id },
-                                    { _id: authUser.id });
+                                    { id: authUser.id });
                             })
                         .then(function(coreUser) {
                             return [authUser, coreUser];

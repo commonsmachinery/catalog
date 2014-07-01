@@ -49,32 +49,6 @@ var setWorkPerms = exports.setWorkPerms = function(context) {
     };
 };
 
-/*
- * Return a function that can be put last in a promise chain to turn a
- * Work object into something that can be shared with the rest of the
- * app.
- *
- * TODO: perhaps should use a transform instead, passing the context
- * in the toObject() options?
- * http://mongoosejs.com/docs/api.html#document_Document-toObject
- */
-var workFilter = function(context) {
-    return function(work) {
-        var obj = work.toObject();
-
-        delete obj.__v;
-        obj.version = work.__v;
-
-        obj.id = obj._id;
-        delete obj._id;
-
-        // Copy in the permissions
-        obj._perms = context.perms[work.id] || {};
-
-        return obj;
-    };
-};
-
 
 /* Error raised when a Work object is not found.
  */
@@ -118,7 +92,7 @@ exports.getWork = function getWork(context, workId) {
 
             return work;
         })
-        .then(workFilter(context));
+        .then(db.Work.objectExporter(context));
 };
 
 
@@ -130,7 +104,7 @@ exports.getWork = function getWork(context, workId) {
 exports.createWork = function createWork(context, src) {
     return command.execute(cmd.create, context, src)
         .then(setWorkPerms(context))
-        .then(workFilter(context));
+        .then(db.Work.objectExporter(context));
 };
 
 cmd.create = function commandCreateWork(context, src) {
@@ -153,7 +127,7 @@ cmd.create = function commandCreateWork(context, src) {
         object: work.id,
         events: [{
             type: 'work.created',
-            param: { work: work.toObject() },
+            param: { work: work.exportObject() },
         }],
     });
 
@@ -182,7 +156,7 @@ exports.updateWork = function updateWork(context, workId, src) {
         .then(function(work) {
             return command.execute(cmd.update, context, work, src);
         })
-        .then(workFilter(context));
+        .then(db.Work.objectExporter(context));
 };
 
 
@@ -234,7 +208,7 @@ exports.deleteWork = function deleteWork(context, workId) {
         .then(function(work) {
             return command.execute(cmd.delete, context, work);
         })
-        .then(workFilter(context));
+        .then(db.Work.objectExporter(context));
 };
 
 
@@ -252,7 +226,7 @@ cmd.delete = function commandDeleteWork(context, work) {
         object: work.id,
         events: [{
             type: 'work.deleted',
-            param: { work: work.toObject() },
+            param: { work: work.exportObject() },
         }],
     });
 
