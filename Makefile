@@ -1,6 +1,8 @@
 
 top := $(CURDIR)
 
+build = $(top)/build
+
 # List all modules that participate in the build
 modules := . lib frontend apitest
 modules += modules/core
@@ -15,7 +17,7 @@ mocha-files =
 
 # Modules should add files and dirs to be cleaned away
 clean-files =
-clean-dirs =
+clean-dirs = build
 
 
 # Tools etc
@@ -34,15 +36,10 @@ endif
 SET_DEBUG =
 DO_MOCHA = NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development $(SET_DEBUG) $(MOCHA) $(MOCHA_COLORS) --reporter spec
 
-
-
 # The submodules can add dependencies to these to do specific stuff.
 # But do not add commands directly to these top-level targets!
 
 all: lint
-
-lint: $(jshint-files)
-	$(JSHINT) $(JSHINT_REPORTER) $(jshint-files)
 
 test: $(mocha-files)
 	$(DO_MOCHA) $(mocha-files)
@@ -57,3 +54,12 @@ clean:
 
 # Include module-specific stuff to populate the variables
 include $(modules:%=%/include.mk)
+
+# Lint file-by-file to get better feedback.  Slower on a fresh checkout, but
+# faster when working.
+lint: $(patsubst $(top)/%.js,$(build)/jshint/%.hint,$(wildcard $(jshint-files)))
+
+$(build)/jshint/%.hint: $(top)/%.js
+	@echo '[jshint] $(patsubst $(top)/%,%,$<)'
+	@mkdir -p $(dir $@) && $(JSHINT) $(JSHINT_REPORTER) $< && touch $@
+
