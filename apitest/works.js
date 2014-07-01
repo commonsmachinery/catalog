@@ -210,8 +210,8 @@ describe('Works', function() {
                 .end(done);
         });
 
-        it('should let fields override include', function(done) {
-            req.get(workURI + '?include=owner,added_by,updated_by&fields=updated_by')
+        it('should let include override fields', function(done) {
+            req.get(workURI + '?include=added_by,updated_by&fields=updated_by')
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)
@@ -219,7 +219,9 @@ describe('Works', function() {
                     var u = res.body;
 
                     expect( u.owner ).to.be( undefined );
-                    expect( u.added_by ).to.be( undefined );
+
+                    expect( u.added_by ).to.have.property( 'profile' );
+                    expect( u.added_by.profile ).to.have.property( 'gravatar_hash' );
 
                     expect( u.updated_by ).to.have.property( 'profile' );
                     expect( u.updated_by.profile ).to.have.property( 'gravatar_hash' );

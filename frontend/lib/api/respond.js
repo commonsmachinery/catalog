@@ -36,9 +36,17 @@ var idToObject = function(object, prop, uriBuilder) {
  *
  * Parameters:
  *   object: the object to filter
- *   fields: comma-separated string of field names
+ *   options.fields: comma-separated string of fields to
+ *       include or exclude (if preceeded with -)
+ *   options.include: list or comma-separated string of fields
+ *       to populate (will override fields)
  */
-var filterFields = function(object, fields) {
+var filterFields = function(object, options) {
+    if (!options) {
+        return object;
+    }
+
+    var fields = options.fields;
     var exclude = false;
     var newObj;
 
@@ -65,6 +73,14 @@ var filterFields = function(object, fields) {
     newObj.href = object.href;
     newObj.version = object.version;
     newObj._perms = object._perms;
+
+    // And that all populated objects are included too
+    if (options.include) {
+        var include = (typeof options.include === 'string' ?
+                       options.include.split(',') : options.include);
+
+        _.extend(newObj, _.pick(object, include));
+    }
 
     return newObj;
 };
@@ -142,13 +158,9 @@ exports.transformUser = function(user) {
  * require additional objects to be fetched from the core DB.
  */
 exports.transformWork = function(work, context, options) {
-    var opts = options || {};
-
     work.href = uris.buildWorkURI(work.id);
 
-    if (opts.fields) {
-        work = filterFields(work, opts.fields);
-    }
+    work = filterFields(work, options);
 
     // Transform object references
     if (work.owner) {
@@ -159,13 +171,13 @@ exports.transformWork = function(work, context, options) {
 
     // Add other fields here as those parts are supported by the API
 
-    if (!opts.include) {
+    if (!options || !options.include) {
         return Promise.resolve(work);
     }
 
     // Add referenced objects, when requested.
 
-    return populate(work, opts.include, {
+    return populate(work, options.include, {
         'owner': function() { return populateUser(context, work.owner && work.owner.user); },
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
