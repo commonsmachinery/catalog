@@ -42,8 +42,8 @@ e.g. a title without having to dig through the list.
 The fields returned in the response can be selected with the `fields` parameter.
 
 Some referenced objects can be populated in the response with the `include` parameter.  
-(However, `fields` have precedence, so if a field is excluded it will not be populated
-even if `include` says so.)  The fields that can be populated are:
+(If `fields` has excluded the field, `include` will override and add the field to the response.)
+The fields that can be populated are:
 
 - `owner`: either `owner.user` or `owner.org`
 - `added_by`
@@ -317,8 +317,8 @@ that property.  This allows easy access like `annotations.title[0].property.valu
 e.g. a title without having to dig through the list.
 
 Some referenced objects can be populated in the response with the `include` parameter.  
-(However, `fields` have precedence, so if a field is excluded it will not be populated
-even if `include` says so.)  The fields that can be populated are:
+(If `fields` has excluded the field, `include` will override and add the field to the response.)
+The fields that can be populated are:
 
 - `added_by`
 
