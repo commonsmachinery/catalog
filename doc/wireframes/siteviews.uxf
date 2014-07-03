@@ -27,56 +27,75 @@ fontsize=11
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>900</x>
+      <x>910</x>
       <y>110</y>
       <w>160</w>
-      <h>120</h>
+      <h>200</h>
     </coordinates>
     <panel_attributes>User profile
+/static, scripted/
 --
-_Default_
-static only
+UserView
+  - UserProfileView
+  + EditUserProfileView
+  + EditUserAccountView
+
 --
-_Edit_
-UserEditView
+UserRelationsView
+  - PagedView
+    + WorkOverView
+  - CollectionOverView
+  - OrganisationOverView
+  
 --
-_Events_
-EventView</panel_attributes>
+EventView
+</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>480</x>
+      <x>460</x>
       <y>310</y>
-      <w>180</w>
-      <h>290</h>
+      <w>190</w>
+      <h>470</h>
     </coordinates>
     <panel_attributes>Work
+/static, scripted/
 --
-_Default_
-WorkFullView
-  - AnnotationsSimpleView
-  + AnnotationsFullView
+WorkView
+  + WorkOverView (fork parent)
+ 
+  - WorkDetailsView
+  + EditWorkDetailsView
+  
+  - CollaboratorsView
+    + SelectUserView
+    + SelectGroupView
+  
+  - AnnotationListView
+    - AnnotationView
+    + EditAnnotationView
+    + AddAnnotationView
+  
+  + WorkOverView (sources)
+  + AddSourceView
+    - WorkFromURLView
+    + UploadWorkView
+    + ManualCreateWorkView
+  
   + MediaOverView
-  + WorkOverView
   + AddMediaView
-  + CreateMediaView
-    - ManualCreateMediaView
+    - AddMediaURLView
     + UploadMediaView
-    + FetchMediaView
+  
+--
 WorkRelationsView
-  + WorkOverView
+  + WorkOverView (remixes)
   + CollectionOverView
-  + AddCollectionView
+  + AddToCollectionView
+  
 --
-_Edit_
-WorkEditView
-  - AnnotationSimpleEditView
-  + AnnotationsFullEditView
-  + CollaboratorEditView
---
-_Events_
 EventView
 </panel_attributes>
     <additional_attributes/>
@@ -84,7 +103,7 @@ EventView
   <element>
     <type>com.umlet.element.Note</type>
     <coordinates>
-      <x>20</x>
+      <x>0</x>
       <y>490</y>
       <w>180</w>
       <h>100</h>
@@ -103,21 +122,23 @@ Notation:
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>720</x>
+      <x>730</x>
       <y>350</y>
       <w>160</w>
-      <h>130</h>
+      <h>150</h>
     </coordinates>
     <panel_attributes>Media
+/static, scripted/
 --
-_Default_
-MediaFullView
-  - AnnotationsSimpleView
-  + AnnotationsFullView 
+MediaView
+  - AnnotationListView
+    - AnnotationView
+  
+--
 MediaRelationsView
-  + WorkOverView  
+  + WorkOverView
+  
 --
-_Events_
 EventView
 </panel_attributes>
     <additional_attributes/>
@@ -125,18 +146,19 @@ EventView
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>480</x>
+      <x>470</x>
       <y>110</y>
       <w>170</w>
       <h>100</h>
     </coordinates>
     <panel_attributes>Create work
+/scripted/
 --
-_Default_
 CreateWorkView
-  - ManualCreateWorkView
+  - WorkFromURLView
+  + ManualCreateWorkView
   + UploadWorkView
-  + FetchWorkView
+
 
 </panel_attributes>
     <additional_attributes/>
@@ -144,26 +166,28 @@ CreateWorkView
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>710</x>
+      <x>690</x>
       <y>110</y>
-      <w>130</w>
-      <h>100</h>
+      <w>170</w>
+      <h>120</h>
     </coordinates>
     <panel_attributes>Browse works
+/static, scripted/
 --
-_Default_
-WorkFilterView
-PagedView
-  - WorkOverView
+BrowseWorksView
+  - WorkFilterView
+  - PagedView
+    - WorkOverView
+  - WorkBatchCommandView
 </panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>50</x>
+      <x>10</x>
       <y>30</y>
-      <w>1010</w>
+      <w>1060</w>
       <h>20</h>
     </coordinates>
     <panel_attributes>Navbar</panel_attributes>
@@ -183,7 +207,7 @@ PagedView
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>540</x>
+      <x>530</x>
       <y>20</y>
       <w>50</w>
       <h>110</h>
@@ -196,17 +220,18 @@ PagedView
     <coordinates>
       <x>920</x>
       <y>20</y>
-      <w>112</w>
+      <w>128</w>
       <h>110</h>
     </coordinates>
     <panel_attributes>lt=&lt;-
-Logged in</panel_attributes>
-    <additional_attributes>60;90;60;30</additional_attributes>
+Current user
+</panel_attributes>
+    <additional_attributes>70;90;70;30</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>540</x>
+      <x>530</x>
       <y>180</y>
       <w>50</w>
       <h>150</h>
@@ -217,46 +242,48 @@ Logged in</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>630</x>
-      <y>180</y>
-      <w>180</w>
-      <h>180</h>
+      <x>620</x>
+      <y>200</y>
+      <w>160</w>
+      <h>160</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>30;160;160;30</additional_attributes>
+    <additional_attributes>30;140;140;30</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>630</x>
+      <x>620</x>
       <y>380</y>
-      <w>110</w>
+      <w>130</w>
       <h>50</h>
     </coordinates>
     <panel_attributes>lt=&lt;-&gt;</panel_attributes>
-    <additional_attributes>90;30;30;30</additional_attributes>
+    <additional_attributes>110;30;30;30</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>260</x>
+      <x>200</x>
       <y>110</y>
-      <w>150</w>
-      <h>100</h>
+      <w>200</w>
+      <h>120</h>
     </coordinates>
     <panel_attributes>Browse collections
+/static, scripted/
 --
-_Default_
-CollectionFilterView
-PagedView
-  - CollectionOverView
+BrowseCollectionsView
+  - CollectionFilterView
+  - PagedView
+    - CollectionOverView
+  - CollectionBatchCommandView
 </panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>300</x>
+      <x>270</x>
       <y>20</y>
       <w>50</w>
       <h>110</h>
@@ -267,33 +294,37 @@ PagedView
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>250</x>
+      <x>210</x>
       <y>310</y>
-      <w>160</w>
-      <h>220</h>
+      <w>180</w>
+      <h>260</h>
     </coordinates>
     <panel_attributes>Collection
+/static, scripted/
 --
-_Default_
-CollectionFullView
+CollectionView
+  - CollectionDetailsView
+  + EditCollectionDetailsView
+  
+  - CollaboratorsView
+    + SelectUserView
+    + SelectGroupView
+  
   - WorkFilterView
   - PagedView
     + WorkOverView
-  - AddWorkView
-  - WorkBatchView
+  - WorkBatchCommandView
+  
+  - SelectWorkView
+  
 --
-_Edit_
-CollectionEditView
-  + CollaboratorEditView
---
-_Events_
 EventView</panel_attributes>
     <additional_attributes/>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>380</x>
+      <x>360</x>
       <y>340</y>
       <w>120</w>
       <h>50</h>
@@ -304,38 +335,38 @@ EventView</panel_attributes>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>300</x>
-      <y>180</y>
+      <x>270</x>
+      <y>200</y>
       <w>50</w>
-      <h>150</h>
+      <h>130</h>
     </coordinates>
     <panel_attributes>lt=&lt;-</panel_attributes>
-    <additional_attributes>30;130;30;30</additional_attributes>
+    <additional_attributes>30;110;30;30</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>380</x>
+      <x>360</x>
       <y>180</y>
-      <w>140</w>
+      <w>150</w>
       <h>170</h>
     </coordinates>
     <panel_attributes>lt=&lt;-
 Create work
 in collection</panel_attributes>
-    <additional_attributes>120;30;30;150</additional_attributes>
+    <additional_attributes>130;30;30;150</additional_attributes>
   </element>
   <element>
     <type>com.umlet.element.Class</type>
     <coordinates>
-      <x>50</x>
+      <x>10</x>
       <y>110</y>
       <w>140</w>
       <h>70</h>
     </coordinates>
     <panel_attributes>Create collection
+/scripted/
 --
-_Default_
 CreateCollectionView
 </panel_attributes>
     <additional_attributes/>
@@ -343,7 +374,7 @@ CreateCollectionView
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>100</x>
+      <x>60</x>
       <y>20</y>
       <w>50</w>
       <h>110</h>
@@ -354,7 +385,7 @@ CreateCollectionView
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>100</x>
+      <x>60</x>
       <y>150</y>
       <w>170</w>
       <h>200</h>
@@ -365,14 +396,14 @@ CreateCollectionView
   <element>
     <type>com.umlet.element.Relation</type>
     <coordinates>
-      <x>860</x>
-      <y>200</y>
-      <w>140</w>
-      <h>100</h>
+      <x>780</x>
+      <y>230</y>
+      <w>150</w>
+      <h>86</h>
     </coordinates>
     <panel_attributes>lt=&lt;.
 any user link
 in other views</panel_attributes>
-    <additional_attributes>120;30;30;80</additional_attributes>
+    <additional_attributes>130;30;30;60</additional_attributes>
   </element>
 </diagram>
