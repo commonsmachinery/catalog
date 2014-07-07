@@ -11,7 +11,7 @@ mixin workListItemView(work, idPrefix)
     div.entries(class="grid-25 tablet-grid-50 mobile-grid-100")
         div.entry(id=(idPrefix ? idPrefix + '-' + work.id : ''))
             div
-                if user
+                if userId
                     input.batchSelectItem(type='checkbox', disabled=true)
                 h2: a(data-bind-href="resource", href=work.resource || '#')
                     span(data-bind="id") #{work.id || ''}
@@ -33,7 +33,7 @@ mixin workListItemView(work, idPrefix)
 
 include includes/top
     if works
-        if user
+        if userId
             div#actions
                 button(id="add-work") +Add work
                 button(id="batch-update") Batch update:

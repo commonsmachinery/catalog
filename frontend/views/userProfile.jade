@@ -6,16 +6,27 @@
 //- TODO: this page is hardcoded for now, as there's nothing
 //- interestingly dynamic to do yet.
 
-- var profile = data
+- var profile = user.profile;
+
+mixin defTerm(term, caption)
+    if term
+        dt(class=caption.toLowerCase())
+            dd: | #{term}    
 
 include includes/top
+    | #{JSON.stringify(userData, true, true)}
     div.userProfile
-        img.gravatar(src=gravatarHashURL(profile.gravatarHash, 40), width='40', height='40')
-        span.email= profile.email
-
-    if profile.id == user
-        div
-            a(href=user + '/sources') My stock sources
+        img.gravatar(src=gravatarHashURL(profile.gravatar_hash, 237))
+        dl
+            defTerm(profile.name || user.alias, 'User')
+            defTerm(profile.email, 'Email')
+            defterm(profile.location, 'Location')
+            defTerm(profile.website, 'Website')
+    if userId == user.id
+        div 
+            a(href='#{user}/sources'): My stock sources
+    if user._perms.write === true
+        input(type='button' value='edit profile')
 
     include includes/bottom
 
