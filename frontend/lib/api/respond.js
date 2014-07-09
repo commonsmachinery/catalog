@@ -210,7 +210,7 @@ exports.transformMedia = function(workId, media, context, options) {
     media = filterFields(media, options);
 
     idToObject(media, 'added_by', uris.buildUserURI);
-    media['replaces'] = { id: media['replaces'], href: uris.buildWorkMediaURI(workId, media.id) };
+    media.replaces = { id: media.replaces, href: uris.buildWorkMediaURI(workId, media.id) };
 
     // Add other fields here as those parts are supported by the API
 

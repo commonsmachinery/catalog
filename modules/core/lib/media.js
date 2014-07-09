@@ -13,7 +13,7 @@ var debug = require('debug')('catalog:core:media'); // jshint ignore:line
 var util = require('util');
 
 // Common modules
-var command = require('../../../lib/command');
+var command = require('../../../lib/command'); // jshint ignore:line
 
 
 // Core modules
@@ -36,7 +36,7 @@ util.inherits(MediaNotFoundError, common.NotFoundError);
  *
  * They are exported here just to aid the unit tests.
  */
-var cmd = exports.command = {};
+var cmd = exports.command = {}; // jshint ignore:line
 
 
 /* Get a Media object.
