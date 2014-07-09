@@ -239,7 +239,7 @@ Work.index('media');
 
 // Core models
 
-exports.CoreEvent = conn.model('CoreEvent', event.EventBatchSchema);
+exports.CoreEvent = conn.model('CoreEvent', event.EventStagingSchema);
 exports.User = conn.model('User', User);
 exports.Media = conn.model('Media', Media);
 exports.Work = conn.model('Work', Work);

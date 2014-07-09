@@ -15,5 +15,9 @@ module.exports = {
         core: {
             db: 'core-dev',
         },
+
+        event: {
+            db: 'event-dev',
+        },
     },
 };

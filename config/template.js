@@ -34,5 +34,13 @@ module.exports = {
         core: {
             db: 'core',
         },
+
+        event: {
+            db: 'event',
+
+            // Size of staging collections, in bytes.  This number
+            // need to be tuned for a particular instance.
+            stagingSize: 1024 * 1024,
+        }
     },
 };
