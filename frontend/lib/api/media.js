@@ -77,3 +77,12 @@ exports.deleteWorkMedia = function deleteWorkMedia(req, res, next) {
             next(err);
         });
 };
+
+exports.unlinkAllMedia = function unlinkAllMedia(req, res, next) {
+    core.unlinkAllMedia(req.context, req.params.workId)
+        .then(transform(req))
+        .then(respond.asJSON(res))
+        .catch(function(err) {
+            next(err);
+        });
+};

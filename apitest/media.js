@@ -306,5 +306,25 @@ describe('Media', function() {
                 .expect(404)
                 .end(done);
         });
+
+        it('should return empty list when unlinking all media', function(done) {
+            req.delete(workURI + "/media")
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var m = res.body;
+                    expect( JSON.stringify(m) ).to.be( '[]' );
+                })
+                .end(done);
+        });
+
+        it('remaining media should not be found', function(done) {
+            req.get(replacementMediaURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(404)
+                .end(done);
+        });
     });
 });

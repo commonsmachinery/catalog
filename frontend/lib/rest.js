@@ -106,7 +106,8 @@ router.route('/works/:workId').all(setContext)
     .delete(works.deleteWork).all(handleErrors);
 
 router.route('/works/:workId/media').all(setContext)
-    .post(media.createWorkMedia).all(handleErrors);
+    .post(media.createWorkMedia)
+    .delete(media.unlinkAllMedia).all(handleErrors);
 router.route('/works/:workId/media/:mediaId').all(setContext)
     .get(media.getWorkMedia)
     .delete(media.deleteWorkMedia).all(handleErrors);

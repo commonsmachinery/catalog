@@ -255,7 +255,7 @@ exports.getWorkMedia = function getWorkMedia(context, workId, mediaId) {
         })
         .then(setWorkPerms(context))
         .then(function(work) {
-           // Check permissions set with setWorkPerms()
+            // Check permissions set with setWorkPerms()
             if (!(context.perms[work.id] && context.perms[work.id].read)) {
                 throw new command.PermissionError(context.userId, work.id);
             }
@@ -434,4 +434,45 @@ cmd.deleteMedia = function commandDeleteMedia(context, work, media) {
     });
 
     return { save: work, event: event };
+};
+
+/* Unlink all work media
+ *
+ * Returns an empty list on success.
+ */
+exports.unlinkAllMedia = function unlinkAllMedia(context, workId) {
+    var tempWork;
+
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            tempWork = work;
+
+            var medias = [];
+            for (var i = 0; i < work.media.length; ++i) {
+                medias.push(db.Media.findByIdAsync(work.media[i]));
+            }
+            return Promise.all(medias);
+        })
+        .then(function(medias) {
+            for (var i = 0; i < medias.length; ++i) {
+                command.execute(cmd.deleteMedia, context, tempWork, medias[i]);
+            }
+            return [];
+        });
 };
