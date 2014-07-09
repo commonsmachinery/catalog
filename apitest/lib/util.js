@@ -21,6 +21,7 @@ exports.otherUser = 'another';
 exports.urlRE = {
     user: /\/users\/[0-9a-f]+$/,
     work: /\/works\/[0-9a-f]+$/,
+    media: /\/works\/[0-9a-f]+\/media\/[0-9a-f]+$/
 };
 
 exports.etagRE = /^W\/".*"$/;
