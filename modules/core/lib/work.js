@@ -277,7 +277,7 @@ exports.getWorkMedia = function getWorkMedia(context, workId, mediaId) {
  *
  * Returns a promise that resolves to the new media
  */
-exports.createWorkMedia = function createWorkMedia(context, workId, src, replaces) {
+exports.createWorkMedia = function createWorkMedia(context, workId, src) {
     var tempMedia;
 
     common.checkId(workId, WorkNotFoundError);
@@ -295,7 +295,7 @@ exports.createWorkMedia = function createWorkMedia(context, workId, src, replace
         .then(function(work) {
             return Promise.props({
                 work: work,
-                media: command.execute(cmd.createMedia, context, work, src, replaces)
+                media: command.execute(cmd.createMedia, context, work, src)
             });
         })
         .then(function(result) {
@@ -308,7 +308,7 @@ exports.createWorkMedia = function createWorkMedia(context, workId, src, replace
         .then(db.Media.objectExporter(context));
 };
 
-cmd.createMedia = function commandCreateMedia(context, work, src, replaces) {
+cmd.createMedia = function commandCreateMedia(context, work, src) {
     // Check permissions set with setWorkPerms()
     if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
@@ -317,10 +317,6 @@ cmd.createMedia = function commandCreateMedia(context, work, src, replaces) {
     var dest = {
         added_by: context.userId,
     };
-
-    if (replaces) {
-        dest.replaces = replaces;
-    }
 
     command.copyIfSet(src, dest, 'annotations');
     command.copyIfSet(src, dest, 'metadata');
