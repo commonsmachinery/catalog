@@ -84,7 +84,7 @@ describe('Create user', function() {
         expect( e.type ).to.be( 'core.User' );
         expect( e.object ).to.eql( id );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'user.created' );
+        expect( e.events[0].event ).to.be( 'core.user.created' );
         expect( e.events[0].param ).to.have.property( 'user' );
         expect( e.events[0].param.user.id.toString() ).to.eql( u.id );
     });
@@ -273,23 +273,28 @@ describe('Update user', function() {
 
         expect( e.events ).to.have.length( 5 );
 
-        expect( e.events[0].type ).to.be( 'user.alias.changed' );
+        expect( e.events[0].event ).to.be( 'core.user.changed' );
+        expect( e.events[0].param.property ).to.be( 'alias' );
         expect( e.events[0].param.old_value ).to.be( 'old alias' );
         expect( e.events[0].param.new_value ).to.be( 'new alias' );
 
-        expect( e.events[1].type ).to.be( 'user.profile.name.changed' );
+        expect( e.events[1].event ).to.be( 'core.user.changed.profile' );
+        expect( e.events[1].param.property ).to.be( 'name' );
         expect( e.events[1].param.old_value ).to.be( 'old name' );
         expect( e.events[1].param.new_value ).to.be( 'new name' );
 
-        expect( e.events[2].type ).to.be( 'user.profile.email.changed' );
+        expect( e.events[2].event ).to.be( 'core.user.changed.profile' );
+        expect( e.events[2].param.property ).to.be( 'email' );
         expect( e.events[2].param.old_value ).to.be( 'old@example.org' );
         expect( e.events[2].param.new_value ).to.be( 'new@example.org' );
 
-        expect( e.events[3].type ).to.be( 'user.profile.location.changed' );
+        expect( e.events[3].event ).to.be( 'core.user.changed.profile' );
+        expect( e.events[3].param.property ).to.be( 'location' );
         expect( e.events[3].param.old_value ).to.be( 'old location' );
         expect( e.events[3].param.new_value ).to.be( null );
 
-        expect( e.events[4].type ).to.be( 'user.profile.website.changed' );
+        expect( e.events[4].event ).to.be( 'core.user.changed.profile' );
+        expect( e.events[4].param.property ).to.be( 'website' );
         expect( e.events[4].param.old_value ).to.be( null );
         expect( e.events[4].param.new_value ).to.be( 'http://example.org/new' );
     });
@@ -320,7 +325,8 @@ describe('Update user', function() {
 
         expect( e.events ).to.have.length( 1 );
 
-        expect( e.events[0].type ).to.be( 'user.profile.gravatar_email.changed' );
+        expect( e.events[0].event ).to.be( 'core.user.changed.profile' );
+        expect( e.events[0].param.property ).to.be( 'gravatar_email' );
         expect( e.events[0].param.old_value ).to.be( 'old-id@example.org' );
         expect( e.events[0].param.new_value ).to.be( 'new-id@example.org' );
     });

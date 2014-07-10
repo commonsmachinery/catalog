@@ -131,7 +131,7 @@ cmd.create = function commandCreateUser(context, src) {
         type: 'core.User',
         object: user.id,
         events: [{
-            type: 'user.created',
+            event: 'core.user.created',
             param: { user: user.exportObject() },
         }],
     });
@@ -187,16 +187,16 @@ cmd.update = function commandUpdateUser(context, user, src) {
     user.updated_at = new Date();
     user.updated_by = context.userId;
 
-    command.updateProperty(src, user, 'alias', event, 'user.%s.changed');
+    command.updateProperty(src, user, 'alias', event, 'core.user.changed');
 
     if (typeof src.profile === 'object') {
         command.updateProperties(
             src.profile, user.profile,
             [ 'name', 'email', 'location', 'website' ],
-            event, 'user.profile.%s.changed');
+            event, 'core.user.changed.profile');
 
         if (command.updateProperty(src.profile, user.profile, 'gravatar_email',
-                                   event, 'user.profile.%s.changed')) {
+                                   event, 'core.user.changed.profile')) {
 
             // Update the gravatar hash on email changes
             user.profile.gravatar_hash = gravatar.emailHash(

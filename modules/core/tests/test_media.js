@@ -53,7 +53,7 @@ describe('Create media', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Media' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'media.created' );
+        expect( e.events[0].event ).to.be( 'core.media.created' );
         expect( e.events[0].param ).to.have.property( 'media' );
         expect( e.events[0].param.media.id.toString() ).to.be( m.id );
     });
@@ -144,7 +144,7 @@ describe('Link media', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'work.media.added' );
+        expect( e.events[0].event ).to.be( 'core.work.media.added' );
         expect( e.events[0].param ).to.have.property( 'media' );
         expect( e.events[0].param.media ).to.be( m.id );
         expect( e.events[0].param.work ).to.be( testWork.id );
@@ -210,7 +210,7 @@ describe('Delete media', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'work.media.removed' );
+        expect( e.events[0].event ).to.be( 'core.work.media.removed' );
         expect( e.events[0].param ).to.have.property( 'media' );
         expect( e.events[0].param.media ).to.be( m.id );
         expect( e.events[0].param.work ).to.be( testWork.id );

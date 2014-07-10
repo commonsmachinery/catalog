@@ -14,4 +14,3 @@ var db = require('./lib/db');
 
 
 exports.EventStagingSchema = db.EventStagingSchema;
-

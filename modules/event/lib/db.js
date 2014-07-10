@@ -19,7 +19,7 @@ var ObjectId = mongo.Schema.Types.ObjectId;
 /* Common event schema format for staging and log */
 var Event = mongo.schema(
     {
-        type: { type: String, required: true },
+        event: { type: String, required: true },
         param: mongo.Schema.Types.Mixed,
     }
 );
@@ -29,7 +29,7 @@ var eventBatchProps = {
     date:    { type: Date, required: true, default: Date.now },
     type:    { type: String, required: true },
     object:  { type: ObjectId, required: true },
-    version: { type: Number, required: true },
+    version: { type: Number },
     events:  { type: [Event], required: true }
 };
 
