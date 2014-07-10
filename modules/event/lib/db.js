@@ -66,7 +66,7 @@ var EventBatch = mongo.schema(
 
 EventBatch.index({ user: 1, date: -1 }, { sparse: true });
 EventBatch.index({ object: 1, date: -1 });
-EventBatch.index({ object: 1, version: -1 });
+EventBatch.index({ object: 1, version: -1 }, { sparse: true });
 
 // Define the event log model
 var conn = mongo.connection();

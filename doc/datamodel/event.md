@@ -29,7 +29,10 @@ for system-generated events.
 
 `object`: Affected object `ObjectId`.
 
-`version`: Object version generating the events.
+`version`: Object version generating the events, if known.  This is
+always set for events generated as part of an object update, but may
+be omitted for events whose primary purpose is to improve the audit
+log (e.g. mirrored events).
 
 `events`: List of `Event` subdocuments, all affecting `object`.
 
@@ -37,7 +40,10 @@ for system-generated events.
 
 `user, date` (sparse): Enable user audit log.
 
-`object_id, date`: Enable object audit log.
+`object, date`: Enable object audit log.
+
+`object, event` (sparse): Allow strict event processing to find all events in
+correct order.
 
 
 Event
