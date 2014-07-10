@@ -145,9 +145,8 @@ describe('Link media', function() {
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].event ).to.be( 'core.work.media.added' );
-        expect( e.events[0].param ).to.have.property( 'media' );
-        expect( e.events[0].param.media ).to.be( m.id );
-        expect( e.events[0].param.work ).to.be( testWork.id );
+        expect( e.events[0].param ).to.have.property( 'media_id' );
+        expect( e.events[0].param.media_id ).to.be( m.id );
     });
 });
 
@@ -211,8 +210,7 @@ describe('Delete media', function() {
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].event ).to.be( 'core.work.media.removed' );
-        expect( e.events[0].param ).to.have.property( 'media' );
-        expect( e.events[0].param.media ).to.be( m.id );
-        expect( e.events[0].param.work ).to.be( testWork.id );
+        expect( e.events[0].param ).to.have.property( 'media_id' );
+        expect( e.events[0].param.media_id ).to.be( m.id );
     });
 });

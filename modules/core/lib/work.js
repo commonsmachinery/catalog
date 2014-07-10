@@ -357,7 +357,7 @@ cmd.linkMedia = function commandLinkMedia(context, work, media) {
         object: media.id,
         events: [{
             event: 'core.work.media.added',
-            param: { work: work.id, media: media.id },
+            param: { media_id: media.id },
         }],
     });
 
@@ -425,7 +425,7 @@ cmd.deleteMedia = function commandDeleteMedia(context, work, media) {
         object: work.id,
         events: [{
             event: 'core.work.media.removed',
-            param: { work: work.id, media: media.id },
+            param: { media_id: media.id },
         }],
     });
 
