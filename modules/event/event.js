@@ -11,6 +11,8 @@ var debug = require('debug')('catalog:event'); // jshint ignore:line
 
 // Event libs
 var db = require('./lib/db');
+var subscriber = require('./lib/subscriber');
 
 
 exports.EventStagingSchema = db.EventStagingSchema;
+exports.Subscriber = subscriber.Subscriber;

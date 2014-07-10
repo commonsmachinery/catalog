@@ -1,5 +1,5 @@
 /*
-  Catalog event hub - main script
+  Catalog event - transfer and publishing
 
   Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
@@ -14,6 +14,8 @@ var debug = require('debug')('catalog:event:transfer'); // jshint ignore:line
 var util = require('util');
 var EventEmitter = require('events').EventEmitter;
 var Promise = require('bluebird');
+var zmq = require('zmq');
+var _ = require('underscore');
 
 // Common libs
 var config = require('../../../lib/config');
@@ -80,6 +82,7 @@ Transfer.prototype._openCursor = function() {
         tailable: true,
         awaitdata: true,
         numberOfRetries: 0, // Hack: disable tailable cursor timeouts
+        hint: { $natural: 1 },
 
         // TODO: set readPreference
     });
@@ -148,21 +151,55 @@ Transfer.prototype._handleEvent = function(sourceEvent) {
 };
 
 
+var Publisher = function() {
+    this._socket = null;
+};
+
+/*! Open socket, returning a promise that resolves when done.
+ */
+Publisher.prototype.open = function() {
+    this._socket = zmq.socket('pub');
+
+    console.log('publishing events at %s', config.event.pubAddress);
+
+    var bindAsync = Promise.promisify(this._socket.bind, this._socket);
+    return bindAsync(config.event.pubAddress);
+};
+
+/*! Publish an event batch */
+Publisher.prototype.publish = function(batch) {
+    var scope = JSON.stringify(_.pick(
+        batch, 'user', 'date', 'type', 'object', 'version'));
+
+    var i;
+    for (i = 0; i < batch.events.length; i++) {
+        var ev = batch.events[i];
+        var msg = [ev.event, scope, JSON.stringify(ev.param)];
+
+        debug('publishing: %s', msg);
+        this._socket.send(msg);
+    }
+};
+
 exports.start = function() {
+    var pub = new Publisher();
+
     // We need connections to all the staging databases, as well as
     // our normal database connection.
 
-    Promise.all([
-        mongo.createConnection(config.core.db),
-        db.connect()])
-    .spread(function(coreConn, eventOK) {
+    Promise.props({
+        core: mongo.createConnection(config.core.db),
+        event: db.connect(),
+        pub: pub.open(),
+    })
+    .then(function(conns) {
         console.log('event transfer starting');
 
-        var coreTransfer = new Transfer(coreConn.collection('coreevents'));
+        var coreTransfer = new Transfer(conns.core.collection('coreevents'));
         coreTransfer.start();
 
-        coreTransfer.on('event', function(ev) {
-            debug('transferred: %j', ev);
+        coreTransfer.on('event', function(batch) {
+            pub.publish(batch);
         });
     })
     .catch(function(err) {

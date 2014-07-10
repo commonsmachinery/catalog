@@ -7,5 +7,9 @@
 */
 
 var frontend = require('./frontend/main');
+var core = require('./modules/core/main');
+var event = require('./modules/event/main');
 
 frontend();
+core();
+event();
