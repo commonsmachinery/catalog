@@ -22,6 +22,7 @@ var core = require('../../modules/core/core');
 // Frontend libs
 var users = require('./api/users');
 var works = require('./api/works');
+var media = require('./api/media');
 var etag = require('./etag');
 
 
@@ -103,3 +104,10 @@ router.route('/works/:workId').all(setContext)
     .put(works.updateWork)
     .patch(works.updateWork)
     .delete(works.deleteWork).all(handleErrors);
+
+router.route('/works/:workId/media').all(setContext)
+    .post(media.createWorkMedia)
+    .delete(media.unlinkAllMedia).all(handleErrors);
+router.route('/works/:workId/media/:mediaId').all(setContext)
+    .get(media.getWorkMedia)
+    .delete(media.deleteWorkMedia).all(handleErrors);

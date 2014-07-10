@@ -5,28 +5,46 @@
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
-/* global describe, it */
+/* global describe, it, before */
 
 'use strict';
 
 var debug = require('debug')('catalog:core:test:media'); // jshint ignore:line
 
 // External modules
+var _ = require('underscore'); // jshint ignore:line
 var expect = require('expect.js');
-var Types = require('mongoose').Types;
+var ObjectId = require('mongoose').Types.ObjectId;
 
 // Catalog modules
-var command = require('../../../lib/command'); // jshint ignore:line
+var command = require('../../../lib/command');
 
 // Core modules
-var media = require('../lib/media.js');
+var work = require('../lib/work.js');
 
 describe('Create media', function() {
-    var userId = new Types.ObjectId();
-    var context = { userId: userId };
+    var userId = new ObjectId();
+    var testWork;
+    var testContext;
 
-    it('should generate events', function() {
-        var r = media.command.create(context, {});
+    before(function() {
+        testWork = work.command.create({ userId: new ObjectId() }, {
+            alias: 'alias',
+            description: 'description',
+            public: false,
+        }).save;
+
+        testContext = { userId: userId, perms: {} };
+
+        testContext.perms[testWork.id] = {
+            read: true,
+            write: true,
+            admin: true
+        };
+    });
+
+    it('should generate event', function() {
+        var r = work.command.createMedia(testContext, testWork, {});
         expect( r ).to.have.property( 'save' );
         expect( r ).to.have.property( 'event' );
         var m = r.save;
@@ -40,74 +58,161 @@ describe('Create media', function() {
         expect( e.events[0].param.media.id.toString() ).to.be( m.id );
     });
 
-    it('should set added_by to given user', function() {
-        var r = media.command.create(context, {});
+    it('should set added_by and updated_by to given user', function() {
+        var r = work.command.createMedia(testContext, testWork, {});
         expect( r ).to.have.property( 'save' );
         var m = r.save;
 
         expect( m.added_by ).to.be( userId );
     });
 
-    it('should use provided annotations', function() {
-        var r = media.command.create(context, {
-            annotations: [{
-                property: {
-                    propertyName: 'title',
-                    titleLabel: 'test',
-                    value: 'test',
-                },
-            }],
-        });
+    it('should use provided metadata', function() {
+        var r = work.command.createMedia(testContext, testWork, {metadata: {src: 'test'}});
+
         expect( r ).to.have.property( 'save' );
         var m = r.save;
 
-        expect( m ).to.have.property( 'annotations' );
-        expect( m.annotations.length ).to.be( 1 );
-        expect( m.annotations[0].property.propertyName ).to.be( 'title' );
-        expect( m.annotations[0].property.titleLabel ).to.be( 'test' );
-        expect( m.annotations[0].property.value ).to.be( 'test' );
+        expect( m.metadata ).to.eql( {src: 'test'} );
     });
 
-    it('should require property.propertyName and property.value', function() {
-        var r = media.command.create(context, {
-            annotations: [{
-                property: { titleLabel: 'test', value: 'test' },
-            }],
-        });
-        expect( r ).to.have.property( 'save' );
-        var m = r.save;
+    it('should use provided replaces value', function() {
+        var r, m;
 
-        m.validate(function(err) {
-            if (!err) {
-                expect().fail("Annotation shouldn't have passed validation");
-            }
-        });
-
-        r = media.command.create(context, {
-            annotations: [{
-                property: { titleLabel: 'test', propertyName: 'title' },
-            }],
-        });
+        r = work.command.createMedia(testContext, testWork, {metadata: {src: 'test'}});
         expect( r ).to.have.property( 'save' );
         m = r.save;
 
-        m.validate(function(err) {
-            if (!err) {
-                expect().fail("Annotation shouldn't have passed validation");
-            }
-        });
+        var origId = m.id;
+
+        r = work.command.createMedia(testContext, testWork, {replaces: origId});
+        expect( r ).to.have.property( 'save' );
+        m = r.save;
+
+        expect( m.replaces.toString() ).to.be( origId );
     });
 
-    it('should link to replaced media', function() {
-        var r = media.command.create(context, {});
-        expect( r ).to.have.property( 'save' );
-        var m1 = r.save;
+    it('should require write to create or link media', function() {
+        var otherUserContext = {
+            userId: new ObjectId(),
+            perms: {}
+        };
 
-        r = media.command.create(context, {}, m1);
-        expect( r ).to.have.property( 'save' );
-        var m2 = r.save;
+        expect( work.command.createMedia ).withArgs(
+            otherUserContext, testWork, {}
+        ).to.throwException(
+            function (e) { expect( e ).to.be.a( command.PermissionError ); });
 
-        expect( m2.replaces.toString() ).to.be( m1.id );
+        expect( work.command.linkMedia ).withArgs(
+            otherUserContext, testWork, {}
+        ).to.throwException(
+            function (e) { expect( e ).to.be.a( command.PermissionError ); });
+    });
+});
+
+describe('Link media', function() {
+    var userId = new ObjectId();
+    var testWork;
+    var testContext;
+
+    before(function() {
+        testWork = work.command.create({ userId: new ObjectId() }, {
+            alias: 'alias',
+            description: 'description',
+            public: false,
+        }).save;
+
+        testContext = { userId: userId, perms: {} };
+
+        testContext.perms[testWork.id] = {
+            read: true,
+            write: true,
+            admin: true
+        };
     });
 
+    it('should generate event', function() {
+        var r, m, e;
+
+        r = work.command.createMedia(testContext, testWork, {});
+        expect( r ).to.have.property( 'save' );
+        m = r.save;
+
+        r = work.command.linkMedia(testContext, testWork, m);
+        expect( r ).to.have.property( 'save' );
+        e = r.event;
+
+        expect( e.user ).to.eql( userId );
+        expect( e.type ).to.be( 'core.Work' );
+        expect( e.events ).to.have.length( 1 );
+        expect( e.events[0].type ).to.be( 'work.media.added' );
+        expect( e.events[0].param ).to.have.property( 'media' );
+        expect( e.events[0].param.media ).to.be( m.id );
+        expect( e.events[0].param.work ).to.be( testWork.id );
+    });
+});
+
+describe('Delete media', function() {
+    var userId = new ObjectId();
+    var testWork;
+    var testContext;
+
+    before(function() {
+        testWork = work.command.create({ userId: new ObjectId() }, {
+            alias: 'alias',
+            description: 'description',
+            public: false,
+        }).save;
+
+        testContext = { userId: userId, perms: {} };
+
+        testContext.perms[testWork.id] = {
+            read: true,
+            write: true,
+            admin: true
+        };
+    });
+
+    it('should require admin to delete', function() {
+        var r, m;
+
+        var otherUserContext = {
+            userId: new ObjectId(),
+            perms: {}
+        };
+
+        r = work.command.createMedia(testContext, testWork, {});
+        expect( r ).to.have.property( 'save' );
+        m = r.save;
+
+        r = work.command.linkMedia(testContext, testWork, m);
+        expect( r ).to.have.property( 'save' );
+
+        expect( work.command.deleteMedia ).withArgs(
+            otherUserContext, testWork, m
+        ).to.throwException(
+            function (e) { expect( e ).to.be.a( command.PermissionError ); });
+    });
+
+    it('should generate event', function() {
+        var r, m, e;
+
+        r = work.command.createMedia(testContext, testWork, {});
+        expect( r ).to.have.property( 'save' );
+        m = r.save;
+
+        r = work.command.linkMedia(testContext, testWork, m);
+        expect( r ).to.have.property( 'save' );
+
+        r = work.command.deleteMedia(testContext, testWork, m);
+        expect( r ).to.have.property( 'save' );
+        e = r.event;
+
+        expect( e.user ).to.eql( userId );
+        expect( e.type ).to.be( 'core.Work' );
+        expect( e.events ).to.have.length( 1 );
+        expect( e.events[0].type ).to.be( 'work.media.removed' );
+        expect( e.events[0].param ).to.have.property( 'media' );
+        expect( e.events[0].param.media ).to.be( m.id );
+        expect( e.events[0].param.work ).to.be( testWork.id );
+    });
 });

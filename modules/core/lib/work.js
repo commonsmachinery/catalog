@@ -11,6 +11,7 @@ var debug = require('debug')('catalog:core:work'); // jshint ignore:line
 
 // External modules
 var util = require('util');
+var Promise = require('bluebird');
 
 // Common modules
 var command = require('../../../lib/command');
@@ -19,6 +20,7 @@ var command = require('../../../lib/command');
 // Core modules
 var db = require('./db');
 var common = require('./common');
+var media = require('./media');
 
 /* Return a function that sets the permissions for this Work object in
  * the context.  It can be put in a promise chain after reading the
@@ -60,6 +62,7 @@ var WorkNotFoundError = exports.WorkNotFoundError = function WorkNotFoundError(i
 
 util.inherits(WorkNotFoundError, common.NotFoundError);
 
+var MediaNotFoundError = media.MediaNotFoundError;
 
 /* All command methods return { save: Work(), event: CoreEvent() }
  * or { remove: Work(), event: CoreEvent() }
@@ -231,4 +234,241 @@ cmd.delete = function commandDeleteWork(context, work) {
     });
 
     return { remove: work, event: event };
+};
+
+/* Get a Media object for a given Work.
+ *
+ * Returns a promise that resolves to the media or null if not found.
+ */
+exports.getWorkMedia = function getWorkMedia(context, workId, mediaId) {
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(mediaId, MediaNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            if (work.media.indexOf(mediaId) === -1) {
+                throw new MediaNotFoundError(mediaId);
+            }
+
+            return mediaId;
+        })
+        .then(function() {
+            return db.Media.findByIdAsync(mediaId);
+        })
+        .then(db.Media.objectExporter(context));
+};
+
+/* Create a new Media object from a source object with the same
+ * properties.
+ *
+ * Returns a promise that resolves to the new media
+ */
+exports.createWorkMedia = function createWorkMedia(context, workId, src) {
+    var tempMedia;
+
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return Promise.props({
+                work: work,
+                media: command.execute(cmd.createMedia, context, work, src)
+            });
+        })
+        .then(function(result) {
+            tempMedia = result.media;
+            return command.execute(cmd.linkMedia, context, result.work, result.media);
+        })
+        .then(function() {
+            return tempMedia;
+        })
+        .then(db.Media.objectExporter(context));
+};
+
+cmd.createMedia = function commandCreateMedia(context, work, src) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    var dest = {
+        added_by: context.userId,
+    };
+
+    command.copyIfSet(src, dest, 'annotations');
+    command.copyIfSet(src, dest, 'metadata');
+    command.copyIfSet(src, dest, 'replaces');
+
+    var media = new db.Media(dest);
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Media',
+        object: media.id,
+        events: [{
+            type: 'media.created',
+            param: { media: media.exportObject() },
+        }],
+    });
+
+    debug('creating new media: %j', media.toObject());
+
+    return { save: media, event: event };
+};
+
+cmd.linkMedia = function commandLinkMedia(context, work, media) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    work.media.addToSet(media.id);
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: media.id,
+        events: [{
+            type: 'work.media.added',
+            param: { work: work.id, media: media.id },
+        }],
+    });
+
+    return { save: work, event: event };
+};
+
+/* Delete a work media reference
+ *
+ * Returns a promise that resolves to the deleted media.
+ */
+exports.deleteWorkMedia = function deleteWorkMedia(context, workId, mediaId) {
+    var tempMedia;
+
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(mediaId, MediaNotFoundError);
+
+    return Promise.props({
+            work: db.Work.findByIdAsync(workId),
+            media: db.Media.findByIdAsync(mediaId)
+        })
+        .then(function(result) {
+            if (!result.work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+            if (!result.media) {
+                debug('core.Media not found: %s', mediaId);
+                throw new MediaNotFoundError(mediaId);
+            }
+
+            tempMedia = result.media;
+            return result.work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return command.execute(cmd.deleteMedia, context, work, tempMedia);
+        })
+        .then(function() {
+            return tempMedia;
+        })
+        .then(db.Media.objectExporter(context));
+};
+
+
+cmd.deleteMedia = function commandDeleteMedia(context, work, media) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    if (work.media.indexOf(media.id) === -1) {
+        throw new MediaNotFoundError(media.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    work.media.pull(media.id);
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [{
+            type: 'work.media.removed',
+            param: { work: work.id, media: media.id },
+        }],
+    });
+
+    return { save: work, event: event };
+};
+
+/* Unlink all work media
+ *
+ * Returns an empty list on success.
+ */
+exports.unlinkAllMedia = function unlinkAllMedia(context, workId) {
+    var tempWork;
+
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            tempWork = work;
+
+            var medias = [];
+            for (var i = 0; i < work.media.length; ++i) {
+                medias.push(db.Media.findByIdAsync(work.media[i]));
+            }
+            return Promise.all(medias);
+        })
+        .then(function(medias) {
+            for (var i = 0; i < medias.length; ++i) {
+                command.execute(cmd.deleteMedia, context, tempWork, medias[i]);
+            }
+            return [];
+        });
 };

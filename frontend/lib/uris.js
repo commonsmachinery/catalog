@@ -33,10 +33,10 @@ function buildWorkSourceURI(workID, sourceID) {
 }
 exports.buildWorkSourceURI = buildWorkSourceURI;
 
-function buildWorkPostURI(workID, postID) {
-    return buildURI('works', workID, 'posts', postID);
+function buildWorkMediaURI(workID, mediaID) {
+    return buildURI('works', workID, 'media', mediaID);
 }
-exports.buildWorkPostURI = buildWorkPostURI;
+exports.buildWorkMediaURI = buildWorkMediaURI;
 
 function buildStockSourceURI(userID, sourceID) {
     return buildURI('users', userID, 'sources', sourceID);
@@ -61,14 +61,14 @@ function workSourceURIFromReq(req) {
 }
 exports.workSourceURIFromReq = workSourceURIFromReq;
 
-function workPostURIFromReq(req) {
-    if (req.params.workID && req.params.postID) {
-        return buildWorkPostURI(req.params.workID, req.params.postID);
+function workMediaURIFromReq(req) {
+    if (req.params.workID && req.params.mediaID) {
+        return buildWorkMediaURI(req.params.workID, req.params.mediaID);
     }
 
-    throw new Error('missing workID or postID param');
+    throw new Error('missing workID or mediaID param');
 }
-exports.workPostURIFromReq = workPostURIFromReq;
+exports.workMediaURIFromReq = workMediaURIFromReq;
 
 function stockSourceURIFromReq(req) {
     // Ugly, but this should anyway be changed into collections

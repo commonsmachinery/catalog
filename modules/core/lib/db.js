@@ -89,7 +89,6 @@ var setExportMethods = function(schema, transform) {
     schema.method('exportObject', exportObject);
 };
 
-
 //
 // Data model definitions
 //
