@@ -17,6 +17,7 @@ var request = require('supertest');
 var expect = require('expect.js');
 var parseLinks = require('parse-links');
 var _ = require('underscore');
+var ObjectId = require('mongoose').Types.ObjectId;
 
 // Common libs
 var config = require('../lib/config');
@@ -29,7 +30,14 @@ describe('Media', function() {
     var workURI;  // Will be set to the URI for the work
     var mediaURI;  // Will be set to the URI for the media
     var mediaID;  // Will be set to the ID for the media
-    var replacementMediaURI; // Will be set to the ID for the replacement media
+
+    var newWorkURI; // Additional work for linking media
+    var newMediaURI; // Will be set to the URI for new media
+    var newMediaID;  // Will be set to the ID for new media
+
+    var otherUsersWorkURI; // for permission checking
+
+    var replacementMediaURI; // Will be set to the URI for replacement media
 
     // Helper stuff for work updates/checks
     var createWork = {
@@ -65,6 +73,38 @@ describe('Media', function() {
         });
     });
 
+    // create work for linking media
+    before(function(done){
+        var req = request(config.frontend.baseURL);
+
+        req.post('/works')
+        .set('Content-Type', 'application/json')
+        .set('Authorization', util.auth(util.testUser))
+        .send({})
+        .end(function(err, res) {
+            if (res) {
+                newWorkURI = res.header.location;
+            }
+            return done(err);
+        });
+    });
+
+    // create work for linking media
+    before(function(done){
+        var req = request(config.frontend.baseURL);
+
+        req.post('/works')
+        .set('Content-Type', 'application/json')
+        .set('Authorization', util.auth(util.otherUser))
+        .send({})
+        .end(function(err, res) {
+            if (res) {
+                otherUsersWorkURI = res.header.location;
+            }
+            return done(err);
+        });
+    });
+
     describe('POST /works/{workID}/media', function() {
         it('should create new media', function(done) {
             var req = request(workURI);
@@ -77,14 +117,88 @@ describe('Media', function() {
                 .expect( 'location', util.urlRE.media )
                 .expect( 'link', /rel="self"/ )
                 .expect(function(res) {
-                    mediaURI = res.header.location;
-                    debug('using %s: %s', util.testUser, mediaURI);
+                    debug('using %s: %s', util.testUser, res.header.location);
 
+                    mediaURI = res.header.location;
                     expect( parseLinks(res.header.link).self ).to.be( mediaURI );
 
                     debug('media etag: %s', res.header.etag);
+                })
+                .end(done);
+        });
 
-                    //checkWork(res.body, createWork);*/
+        it('should link existing media to works', function(done) {
+            var req = request(newWorkURI);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .send({
+                    href: mediaURI
+                })
+                .expect( 201 )
+                .expect( 'etag', util.etagRE )
+                .expect( 'location', util.urlRE.media )
+                .expect( 'link', /rel="self"/ )
+                .expect(function(res) {
+                    debug('using %s: %s', util.testUser, res.header.location);
+
+                    var media = res.body;
+                    newMediaURI = res.header.location;
+                    newMediaID = media.id;
+
+                    expect( newMediaURI ).to.be( newWorkURI + '/media/' + media.id);
+                    expect( parseLinks(res.header.link).self ).to.be( newMediaURI );
+
+                    debug('media etag: %s', res.header.etag);
+                })
+                .end(done);
+        });
+
+        it('should fail to link non-existing media', function(done) {
+            var req = request(newWorkURI);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .send({
+                    href: workURI + "/media/" + new ObjectId().toString()
+                })
+                .expect(404)
+                .end(done);
+        });
+
+        it('should fail to link bogus URLs', function(done) {
+            var req = request(newWorkURI);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .send({
+                    href: "urn:none"
+                })
+                .expect(400)
+                .end(done);
+        });
+
+        it('should fail to link media from other users private work', function(done) {
+            var req = request(otherUsersWorkURI);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.otherUser))
+                .send({
+                    href: mediaURI
+                })
+                .expect(403)
+                .end(done);
+        });
+
+        it('linked media should be found in updated work', function(done) {
+            var req = request('');
+            req.get(newWorkURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var work = res.body;
+                    expect(work.media).to.contain(newMediaID);
                 })
                 .end(done);
         });
@@ -135,7 +249,6 @@ describe('Media', function() {
                     expect( parseLinks(res.header.link).self ).to.be( mediaURI );
 
                     debug('media etag: %s', res.header.etag);
-                    //origEtag = res.header.etag;
                 })
                 .end(done);
         });
@@ -256,6 +369,7 @@ describe('Media', function() {
                 .set('Content-Type', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .send(_.extend(createReplacementMedia, {replaces: mediaID}))
+                .expect(201)
                 .end(function(err, res) {
                     if (res) {
                         replacementMediaURI = res.header.location;
@@ -314,7 +428,7 @@ describe('Media', function() {
                 .expect(200)
                 .expect(function(res) {
                     var m = res.body;
-                    expect( JSON.stringify(m) ).to.be( '[]' );
+                    expect( m ).to.be.empty();
                 })
                 .end(done);
         });

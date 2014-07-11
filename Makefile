@@ -34,7 +34,7 @@ MOCHA_COLORS = --no-colors
 endif
 
 SET_DEBUG =
-DO_MOCHA = NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development $(SET_DEBUG) $(MOCHA) $(MOCHA_COLORS) --reporter spec
+DO_MOCHA = NODE_TLS_REJECT_UNAUTHORIZED=0 NODE_ENV=development $(SET_DEBUG) $(MOCHA) $(MOCHA_COLORS) --reporter spec $(MOCHA_FLAGS)
 
 # The submodules can add dependencies to these to do specific stuff.
 # But do not add commands directly to these top-level targets!

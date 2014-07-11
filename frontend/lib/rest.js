@@ -110,4 +110,4 @@ router.route('/works/:workId/media').all(setContext)
     .delete(media.unlinkAllMedia).all(handleErrors);
 router.route('/works/:workId/media/:mediaId').all(setContext)
     .get(media.getWorkMedia)
-    .delete(media.deleteWorkMedia).all(handleErrors);
+    .delete(media.removeMediaFromWork).all(handleErrors);
