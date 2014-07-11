@@ -35,6 +35,8 @@ describe('Media', function() {
     var newMediaURI; // Will be set to the URI for new media
     var newMediaID;  // Will be set to the ID for new media
 
+    var otherUsersWorkURI; // for permission checking
+
     var replacementMediaURI; // Will be set to the URI for replacement media
 
     // Helper stuff for work updates/checks
@@ -82,6 +84,22 @@ describe('Media', function() {
         .end(function(err, res) {
             if (res) {
                 newWorkURI = res.header.location;
+            }
+            return done(err);
+        });
+    });
+
+    // create work for linking media
+    before(function(done){
+        var req = request(config.frontend.baseURL);
+
+        req.post('/works')
+        .set('Content-Type', 'application/json')
+        .set('Authorization', util.auth(util.otherUser))
+        .send({})
+        .end(function(err, res) {
+            if (res) {
+                otherUsersWorkURI = res.header.location;
             }
             return done(err);
         });
@@ -141,7 +159,9 @@ describe('Media', function() {
             req.post('/media')
                 .set('Content-Type', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
-                .send({href: workURI + "/media/" + new ObjectId().toString()})
+                .send({
+                    href: workURI + "/media/" + new ObjectId().toString()
+                })
                 .expect(404)
                 .end(done);
         });
@@ -151,8 +171,22 @@ describe('Media', function() {
             req.post('/media')
                 .set('Content-Type', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
-                .send({href: "urn:none"})
+                .send({
+                    href: "urn:none"
+                })
                 .expect(400)
+                .end(done);
+        });
+
+        it('should fail to link media from other users private work', function(done) {
+            var req = request(otherUsersWorkURI);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.otherUser))
+                .send({
+                    href: mediaURI
+                })
+                .expect(403)
                 .end(done);
         });
 

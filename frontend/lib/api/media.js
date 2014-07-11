@@ -33,12 +33,15 @@ var transform = function(req) {
 
 exports.createWorkMedia = function createWorkMedia(req, res, next) {
     var path;
+    var origWorkId;
+    var origMediaId;
 
     if (req.body.hasOwnProperty('href')) {
-        if (req.body.href.indexOf(config.frontend.baseURL) == 0 && (path = url.parse(req.body.href).path)) {
-            var origMediaId = path.split('/')[4];
-
-            core.addMediaToWork(req.context, req.params.workId, origMediaId)
+        if ( (req.body.href.indexOf(config.frontend.baseURL) === 0) &&
+             (path = url.parse(req.body.href).path.split('/')) && (path[0] === '') &&
+             (path[1] === 'works') && (origWorkId = path[2]) &&
+             (path[3] === 'media') && (origMediaId = path[4]) ) {
+            core.addMediaToWork(req.context, req.params.workId, origWorkId, origMediaId)
                 .then(transform(req))
                 .then(respond.asJSON(res, { status: 201 }))
                 .catch(function(err) {

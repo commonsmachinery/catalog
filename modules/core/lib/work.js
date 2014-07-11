@@ -12,10 +12,10 @@ var debug = require('debug')('catalog:core:work'); // jshint ignore:line
 // External modules
 var util = require('util');
 var Promise = require('bluebird');
+var _ = require('underscore');
 
 // Common modules
 var command = require('../../../lib/command');
-
 
 // Core modules
 var db = require('./db');
@@ -88,7 +88,7 @@ exports.getWork = function getWork(context, workId) {
         })
         .then(setWorkPerms(context))
         .then(function(work) {
-           // Check permissions set with setWorkPerms()
+            // Check permissions set with setWorkPerms()
             if (!(context.perms[work.id] && context.perms[work.id].read)) {
                 throw new command.PermissionError(context.userId, work.id);
             }
@@ -351,7 +351,7 @@ cmd.linkMedia = function commandLinkMedia(context, work, media) {
         object: work.id,
         events: [{
             type: 'work.media.added',
-            param: { media: media.id },
+            param: { media_id: media.id },
         }],
     });
 
@@ -418,7 +418,7 @@ cmd.removeMedia = function commandRemoveMedia(context, work, media) {
         object: work.id,
         events: [{
             type: 'work.media.removed',
-            param: { media: media.id },
+            param: { media_id: media.id },
         }],
     });
 
@@ -468,7 +468,7 @@ cmd.unlinkAllMedia = function commandUnlinkAllMedia(context, work) {
     for (var i = 0; i < work.media.length; ++i) {
         event.events.push({
             type: 'work.media.removed',
-            param: { media: work.media[i] },
+            param: { media_id: work.media[i] },
         });
     }
 
@@ -481,27 +481,42 @@ cmd.unlinkAllMedia = function commandUnlinkAllMedia(context, work) {
  *
  * Returns a promise that resolves to the media.
  */
-exports.addMediaToWork = function addMediaToWork(context, workId, origMediaId) {
+exports.addMediaToWork = function addMediaToWork(context, workId, origWorkId, origMediaId) {
     var tempMedia;
+    var origContext;
 
     common.checkId(workId, WorkNotFoundError);
     common.checkId(origMediaId, MediaNotFoundError);
 
     return Promise.props({
             work: db.Work.findByIdAsync(workId),
-            media: db.Media.findByIdAsync(origMediaId)
+            origWork: db.Work.findByIdAsync(origWorkId),
+            origMedia: db.Media.findByIdAsync(origMediaId)
         })
         .then(function(result) {
             if (!result.work) {
                 debug('core.Work not found: %s', workId);
                 throw new WorkNotFoundError(workId);
             }
-            if (!result.media) {
+            if (!result.origWork) {
+                debug('core.Work not found: %s', origWorkId);
+                throw new WorkNotFoundError(origWorkId);
+            }
+            if (!result.origMedia) {
                 debug('core.Media not found: %s', origMediaId);
                 throw new MediaNotFoundError(origMediaId);
             }
 
-            tempMedia = result.media;
+            // check if we have read permission for origWork
+            origContext = _.clone(context);
+            setWorkPerms(origContext)(result.origWork);
+
+            // Check permissions set with setWorkPerms()
+            if (!(origContext.perms[result.origWork.id] && origContext.perms[result.origWork.id].read)) {
+                throw new command.PermissionError(origContext.userId, result.origWork.id);
+            }
+
+            tempMedia = result.origMedia;
             return result.work;
         })
         .then(setWorkPerms(context))

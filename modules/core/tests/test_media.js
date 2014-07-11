@@ -147,8 +147,8 @@ describe('Link media', function() {
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].type ).to.be( 'work.media.added' );
-        expect( e.events[0].param ).to.have.property( 'media' );
-        expect( e.events[0].param.media ).to.be( m.id );
+        expect( e.events[0].param ).to.have.property( 'media_id' );
+        expect( e.events[0].param.media_id ).to.be( m.id );
 
         expect( w.media ).to.have.length( 1 );
         expect( w.media[0].toString() ).to.be( m.id );
@@ -215,8 +215,8 @@ describe('Remove media', function() {
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
         expect( e.events[0].type ).to.be( 'work.media.removed' );
-        expect( e.events[0].param ).to.have.property( 'media' );
-        expect( e.events[0].param.media ).to.be( m.id );
+        expect( e.events[0].param ).to.have.property( 'media_id' );
+        expect( e.events[0].param.media_id ).to.be( m.id );
     });
 });
 
@@ -273,11 +273,11 @@ describe('Unlink all media', function() {
         expect( e.events ).to.have.length( 2 );
 
         expect( e.events[0].type ).to.be( 'work.media.removed' );
-        expect( e.events[0].param ).to.have.property( 'media' );
-        expect( e.events[0].param.media.toString() ).to.be( m1.id );
+        expect( e.events[0].param ).to.have.property( 'media_id' );
+        expect( e.events[0].param.media_id.toString() ).to.be( m1.id );
 
         expect( e.events[1].type ).to.be( 'work.media.removed' );
-        expect( e.events[1].param ).to.have.property( 'media' );
-        expect( e.events[1].param.media.toString() ).to.be( m2.id );
+        expect( e.events[1].param ).to.have.property( 'media_id' );
+        expect( e.events[1].param.media_id.toString() ).to.be( m2.id );
     });
 });
