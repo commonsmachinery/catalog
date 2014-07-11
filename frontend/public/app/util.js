@@ -140,5 +140,13 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         }
 	};
 
+	exports.emptyViewElement = function emptyViewElement(view, parent){
+		var id = parent.$el.attr('id');
+		parent.$el.wrap('<div id="' + id + '">');
+		parent._profileView.remove();
+		parent.stopListening(view);
+		parent.$el = $('#' + id);
+	}
+
 	return exports;
 });

@@ -10,25 +10,41 @@
 
 mixin defTerm(term, caption)
     if term
-        dt(class=caption.toLowerCase())
-            dd: | #{term}    
+        dt(class=caption.toLowerCase()) #{caption}
+            dd #{term}    
 
 include includes/top
-    | #{JSON.stringify(userData, true, true)}
-    div.userProfile
+    div#userProfile
         img.gravatar(src=gravatarHashURL(profile.gravatar_hash, 237))
         dl
-            defTerm(profile.name || user.alias, 'User')
-            defTerm(profile.email, 'Email')
-            defterm(profile.location, 'Location')
-            defTerm(profile.website, 'Website')
-    if userId == user.id
-        div 
-            a(href='#{user}/sources'): My stock sources
-    if user._perms.write === true
-        input(type='button' value='edit profile')
+            - var displayName = user.alias || user.id
+            +defTerm(displayName, 'User')
+            +defTerm(profile.email, 'Email')
+            +defTerm(profile.location, 'Location')
+            +defTerm(profile.website, 'Website')
+        if userId == user.id
+            div 
+                a(href='#{user}/sources') My stock sources
+        if user._perms.write === true
+            div.actions
+                button.edit(data-action="edit-profile") Edit Profile
 
     include includes/bottom
 
+    script#editUserProfileTemplate(type="text/template")
+        form
+            fieldset#fields
+                span
+                    label(for="input-alias") User alias: 
+                    input#input-alias(type="text")
+                span
+                    label(for="input-email") Email: 
+                    input#input-email(type="email")
+                span
+                    label(for="input-website") Website: 
+                    input#input-website(type="url")
+            fieldset.actions
+                button.save(data-action="save") Save
+                button.cancel(data-action="cancel") Cancel
     script.bootstrapData(type='application/json')
-        != bootstrapData({ "data": profile })
+        != bootstrapData({ "data": user })
