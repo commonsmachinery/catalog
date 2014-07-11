@@ -67,8 +67,8 @@ Object events:
     work.annotation.changed(old_annotation, new_annotation)
     work.source.added(source)
     work.source.removed(source)
-    work.media.added(work_id, media_id)
-    work.media.removed(work_id, media_id)
+    work.media.added(media_id)
+    work.media.removed(media_id)
 
 Mirrored from other objects:
 

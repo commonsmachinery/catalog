@@ -12,12 +12,14 @@ var debug = require('debug')('catalog:frontend:api:media'); // jshint ignore:lin
 
 // External libs
 var _ = require('underscore');
+var url = require('url');
 
 // Components
 var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
+var config = require('../../../lib/config');
 
 /* Return promise handler to transform the media object for JSON responses.
  */
@@ -30,12 +32,29 @@ var transform = function(req) {
 };
 
 exports.createWorkMedia = function createWorkMedia(req, res, next) {
-    core.createWorkMedia(req.context, req.params.workId, req.body)
-        .then(transform(req))
-        .then(respond.asJSON(res, { status: 201 }))
-        .catch(function(err) {
-            next(err);
-        });
+    var path;
+
+    if (req.body.hasOwnProperty('href')) {
+        if (req.body.href.indexOf(config.frontend.baseURL) == 0 && (path = url.parse(req.body.href).path)) {
+            var origMediaId = path.split('/')[4];
+
+            core.addMediaToWork(req.context, req.params.workId, origMediaId)
+                .then(transform(req))
+                .then(respond.asJSON(res, { status: 201 }))
+                .catch(function(err) {
+                    next(err);
+                });
+        } else {
+            res.send(400, { error: 'Invalid media URL' });
+        }
+    } else {
+        core.createWorkMedia(req.context, req.params.workId, req.body)
+            .then(transform(req))
+            .then(respond.asJSON(res, { status: 201 }))
+            .catch(function(err) {
+                next(err);
+            });
+    }
 };
 
 exports.getWorkMedia = function getWorkMedia(req, res, next) {
@@ -69,8 +88,8 @@ exports.getWorkMedia = function getWorkMedia(req, res, next) {
     });
 };
 
-exports.deleteWorkMedia = function deleteWorkMedia(req, res, next) {
-    core.deleteWorkMedia(req.context, req.params.workId, req.params.mediaId)
+exports.removeMediaFromWork = function removeMediaFromWork(req, res, next) {
+    core.removeMediaFromWork(req.context, req.params.workId, req.params.mediaId)
         .then(transform(req))
         .then(respond.asJSON(res))
         .catch(function(err) {
