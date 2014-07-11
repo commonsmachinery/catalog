@@ -184,6 +184,47 @@ exports.transformWork = function(work, context, options) {
     });
 };
 
+/* Helper method to populate a Media reference. */
+var populateMedia = function(context, referenceObj) {
+    if (!referenceObj) {
+        debug('nothing to populate - this is OK if field was filtered out');
+        return Promise.resolve(null);
+    }
+
+    return core.getMedia(context, referenceObj.id)
+        .then(function(media) {
+            _.extend(referenceObj, media);
+        })
+        .catch(function(err) {
+            console.error('error populating Media %s: %s', referenceObj.id, err);
+        });
+};
+
+/* Transform a media object for a response, using fields and include
+ * from option.  This always return a promise, since include may
+ * require additional objects to be fetched from the core DB.
+ */
+exports.transformMedia = function(workId, media, context, options) {
+    media.href = uris.buildWorkMediaURI(workId, media.id);
+
+    media = filterFields(media, options);
+
+    idToObject(media, 'added_by', uris.buildUserURI);
+    media.replaces = { id: media.replaces, href: uris.buildWorkMediaURI(workId, media.id) };
+
+    // Add other fields here as those parts are supported by the API
+
+    if (!options || !options.include) {
+        return Promise.resolve(media);
+    }
+
+    // Add referenced objects, when requested.
+
+    return populate(media, options.include, {
+        'added_by': function() { return populateUser(context, media.added_by); },
+        'replaces': function() { return populateMedia(context, media.replaces); },
+    });
+};
 
 /* Set all relevant response headers for an object.
  */

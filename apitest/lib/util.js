@@ -14,13 +14,14 @@
 exports.testUser = 'apitest-' + Date.now();
 
 // Standard test name when doing access tests as another user
-exports.otherUser = 'another';
+exports.otherUser = 'another' + Date.now();
 
 
 // URL regexps
 exports.urlRE = {
     user: /\/users\/[0-9a-f]+$/,
     work: /\/works\/[0-9a-f]+$/,
+    media: /\/works\/[0-9a-f]+\/media\/[0-9a-f]+$/
 };
 
 exports.etagRE = /^W\/".*"$/;

@@ -13,8 +13,6 @@ var debug = require('debug')('catalog:core:media'); // jshint ignore:line
 var util = require('util');
 
 // Common modules
-var command = require('../../../lib/command');
-
 
 // Core modules
 var db = require('./db');
@@ -29,14 +27,6 @@ var MediaNotFoundError = exports.MediaNotFoundError = function MediaNotFoundErro
 };
 
 util.inherits(MediaNotFoundError, common.NotFoundError);
-
-
-/* All command methods return { save: Media(), event: CoreEvent() }
- * or { remove: Media(), event: CoreEvent() }
- *
- * They are exported here just to aid the unit tests.
- */
-var cmd = exports.command = {};
 
 
 /* Get a Media object.
@@ -54,43 +44,4 @@ exports.getMedia = function getMedia(context, mediaId) {
             return media;
         })
         .then(db.Media.objectExporter(context));
-};
-
-
-/* Create a new Media object from a source object with the same
- * properties.
- *
- * Returns a promise that resolves to the new media
- */
-exports.createMedia = function createMedia(context, src) {
-    return command.execute(cmd.create, context, src)
-        .then(db.Media.objectExporter(context));
-};
-
-cmd.create = function commandCreateMedia(context, src, replaces) {
-    var dest = {
-        added_by: context.userId,
-    };
-
-    if (replaces) {
-        dest.replaces = replaces;
-    }
-
-    command.copyIfSet(src, dest, 'annotations');
-    command.copyIfSet(src, dest, 'metadata');
-
-    var media = new db.Media(dest);
-    var event = new db.CoreEvent({
-        user: context.userId,
-        type: 'core.Media',
-        object: media.id,
-        events: [{
-            type: 'media.created',
-            param: { media: media.exportObject() },
-        }],
-    });
-
-    debug('creating new media: %j', media.toObject());
-
-    return { save: media, event: event };
 };
