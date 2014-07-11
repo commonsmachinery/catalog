@@ -14,7 +14,7 @@
 exports.testUser = 'apitest-' + Date.now();
 
 // Standard test name when doing access tests as another user
-exports.otherUser = 'another';
+exports.otherUser = 'another' + Date.now();
 
 
 // URL regexps

@@ -486,6 +486,7 @@ exports.addMediaToWork = function addMediaToWork(context, workId, origWorkId, or
     var origContext;
 
     common.checkId(workId, WorkNotFoundError);
+    common.checkId(origWorkId, WorkNotFoundError);
     common.checkId(origMediaId, MediaNotFoundError);
 
     return Promise.props({
