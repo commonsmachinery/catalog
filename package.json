@@ -53,7 +53,7 @@
       "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
       "underscore": "github:amdjs/underscore/1.5.2",
       "backbone": "github:jashkenas/backbone/1.1.2",
-      "Backbone.ModelBinder": "https://raw.github.com/theironcook/Backbone.ModelBinder/master/Backbone.ModelBinder.js"
+      "backbone.stickit": "https://raw.githubusercontent.com/NYTimes/backbone.stickit/master/backbone.stickit.js"
     }
   }
 }

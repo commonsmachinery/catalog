@@ -14,11 +14,15 @@ define(['jquery', 'underscore', 'util'],
         events: {
             'click [data-action="save"]': 'onEditSave',
             'click [data-action="cancel"]': 'onEditCancel',
+            'click button': 'preventSubmit'
         },
 
-        initialize: function () {
+        initialize: function (opts) {
             this._editStartAttrs = _.clone(this.model.attributes);
 
+            if(opts.template){
+                this.$el.html($(opts.template).html());
+            }
             // Disable Save until a change is made, and ensure it has
             // the right text.
             this.$('[data-action="save"]')
@@ -28,6 +32,12 @@ define(['jquery', 'underscore', 'util'],
             this.$('[data-action="cancel"]').prop('disabled', false);
 
             this.listenToOnce(this.model, 'change', this.onEditModelChange);
+            console.log(this.model);
+        },
+
+        preventSubmit: function preventSubmit(ev){
+            ev.preventDefault();
+            return false;
         },
 
         onEditSave: function onEditSave() {
@@ -35,9 +45,8 @@ define(['jquery', 'underscore', 'util'],
 
             console.debug('start saving');
 
-            this.listenTo(this.model, 'invalid', function(err){
+            this.listenToOnce(this.model, 'invalid', function(err){
                 util.working('stop', this.el);
-                this.stopListening(this.model, 'invalid');
                 this.$('[data-action="save"]').text('Save');
                 this.$('.actions').prop('disabled', false);
             });
@@ -46,7 +55,6 @@ define(['jquery', 'underscore', 'util'],
             this.$('.actions').attr('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
             util.working('start', this.el);
-
             this.model.save(null, {
                 success: function(model, response, options) {
                     console.debug('start success');

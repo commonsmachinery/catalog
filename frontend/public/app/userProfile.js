@@ -29,6 +29,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         render: function() {
             this.stickit();
+            return this;
         },
 
         onEditProfile: function onEditProfile(){
@@ -43,7 +44,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 model: userModel
             });
 
-            this.listenTo(this._profileView, 'edit:start', this.onEditProfile);
+            this.listenToOnce(this._profileView, 'edit:start', this.onEditProfile);
         },
 
         onEditProfile: function onEditProfile(){
@@ -52,21 +53,23 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             util.emptyViewElement(this._profileView, this);
 
             this._editProfileView = new EditUserProfileView({
-                el: this.$el.html($('#editUserProfileTemplate').html()),
-                model: userModel.profile
-            });
-            this.$el.append(this._editProfileView.render().el);
+                el: this.$el,
+                model: userModel.profile,
+                template: '#editUserProfileTemplate'
+            }).render();
 
-            this.listenTo(this._editProfileView, 'edit:save:success edit:save:error edit:cancel', this.onEditFinish);
+            this.listenToOnce(this._editProfileView, 'edit:save:success edit:save:error edit:cancel', this.onEditFinish);
         },
 
         onEditFinish: function onEditFinish(view){
             util.emptyViewElement(this._editProfileView, this);
-
             this._profileView = new UserProfileView({
                 el: this.$el,
                 model: userModel
             });
+            this.$el.append(this._profileView.render().el);
+
+            this.listenToOnce(this._profileView, 'edit:start', this.onEditProfile);
         },
     });
 

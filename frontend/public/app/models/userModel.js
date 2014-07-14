@@ -7,12 +7,11 @@ define(['lib/backbone'], function(Backbone) {
     'use strict'; 
 
     var Profile = Backbone.Model.extend({
-        //will not execute before Profile.save, called from User.save.
-        validation: function validation(){ 
+        validate: function(){ 
             var attrs = this.attributes;
             var invalid = [];
             var alias = attrs.alias;
-            if (alias && /[^\w-]*$/.test(alias)){
+            if (alias && !/^[\w-]*$/.test(alias)){
                 invalid.push('Invalid alias: valid characters are A-Z, a-z, 0-0, -_.');
             }
 
@@ -27,14 +26,17 @@ define(['lib/backbone'], function(Backbone) {
             }
 
             if (invalid.length){
-                console.log(invalid);
                 this.trigger('invalid', invalid);
                 return invalid;
             }
         },
-        save: function(){
-            this.trigger('save');
+
+        save: function(attrs, callback){
+            if(this.isValid()){
+                this.parent.save(attrs, callback);
+            }
         }
+
     });
 
     var User = Backbone.Model.extend({
@@ -42,20 +44,8 @@ define(['lib/backbone'], function(Backbone) {
 
         initialize: function() {
             var self = this;
-
-            this.profile = new Profile(this.profile);
-
-            this.listenTo(this.profile, 'change', function(){
-                this.trigger('change');
-            });
-            this.listenTo(this.profile, 'save', this.save);
-        },
-
-        validate: function(){
-            var invalidProfile = this.profile.validation();
-            if(invalidProfile){
-                return invalidProfile;
-            }
+            this.profile = this.attributes.profile = new Profile(this.attributes.profile);
+            this.profile.parent = this;
         }
 
     });
