@@ -10,10 +10,6 @@ define(['lib/backbone'], function(Backbone) {
         validate: function(){ 
             var attrs = this.attributes;
             var invalid = [];
-            var alias = attrs.alias;
-            if (alias && !/^[\w-]*$/.test(alias)){
-                invalid.push('Invalid alias: valid characters are A-Z, a-z, 0-0, -_.');
-            }
 
             var email = attrs.email;
             if (email && !/^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(email)){
@@ -46,6 +42,20 @@ define(['lib/backbone'], function(Backbone) {
             var self = this;
             this.profile = this.attributes.profile = new Profile(this.attributes.profile);
             this.profile.parent = this;
+        },
+
+        validate: function(){
+            var attrs = this.attributes;
+            var invalid = [];
+
+            var alias = attrs.alias;
+            if (alias && !/^[\w-]*$/.test(alias)){
+                invalid.push('Invalid alias: valid characters are A-Z, a-z, 0-0, -_.');
+            }
+            if(invalid.length){
+                this.trigger('invalid', invalid);
+                return invalid;
+            }
         }
 
     });

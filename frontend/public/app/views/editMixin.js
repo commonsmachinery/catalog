@@ -32,7 +32,6 @@ define(['jquery', 'underscore', 'util'],
             this.$('[data-action="cancel"]').prop('disabled', false);
 
             this.listenToOnce(this.model, 'change', this.onEditModelChange);
-            console.log(this.model);
         },
 
         preventSubmit: function preventSubmit(ev){
