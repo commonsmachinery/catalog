@@ -63,8 +63,5 @@ frontend/public/lib/*
 # Catalog-specific directories
 data
 
-# nodemon configuration
-frontend/.config
-
 *~
 *.orig
