@@ -34,5 +34,16 @@ module.exports = {
         core: {
             db: 'core',
         },
+
+        event: {
+            db: 'event',
+
+            // ZeroMQ PUB/SUB address
+            pubAddress: 'tcp://127.0.0.1:9044',
+
+            // Size of staging collections, in bytes.  This number
+            // need to be tuned for a particular instance.
+            stagingSize: 1024 * 1024,
+        }
     },
 };

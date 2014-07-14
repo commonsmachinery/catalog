@@ -11,6 +11,7 @@ Directories
 * `frontend/public/app`: browser-side code
 * `frontend/views`: Jade page templates
 * `modules/core`: Core data model
+* `modules/event`: Event processing
 * `modules/auth`: Auth module
 * `apitest`: REST endpoint test script
 * `docker`: Dockerfiles for catalog images ([more info](docker.md))
@@ -36,3 +37,10 @@ for that purpose.
 
 The top-level `main.js` will run all modules in a single Node process,
 which is useful for development.
+
+Current entrypoints:
+
+* `frontend`: The web server providing the REST API and the
+  user-facing web pages.
+* `modules/core`: Core backend tasks.
+* `modules/event`: Event transfer backend task.

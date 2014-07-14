@@ -29,21 +29,27 @@ for system-generated events.
 
 `object`: Affected object `ObjectId`.
 
-`version`: Object version generating the events.
+`version`: Object version generating the events, if known.  This is
+always set for events generated as part of an object update, but may
+be omitted for events whose primary purpose is to improve the audit
+log (e.g. mirrored events).
 
-`events`: List of `Event` subdocuments, all affecting `object_id`.
+`events`: List of `Event` subdocuments, all affecting `object`.
 
 ### Index
 
 `user, date` (sparse): Enable user audit log.
 
-`object_id, date`: Enable object audit log.
+`object, date`: Enable object audit log.
+
+`object, event` (sparse): Allow strict event processing to find all events in
+correct order.
 
 
 Event
 -----
 
-`type`: Event name (see below for lists).
+`event`: Event name (see below for lists).
 
 `param`: Event-specific parameters as a map.
 
@@ -55,117 +61,114 @@ Core Events
 
 Object events:
 
-    work.created(work)
-    work.deleted(work)
-    work.PROPERTY.changed(old_value, new_value)
-    work.collabs.users.added(user_id)
-    work.collabs.users.removed(user_id)
-    work.collabs.group.added(group_id)
-    work.collabs.group.removed(group_id)
-    work.annotation.added(annotation)
-    work.annotation.removed(annotation)
-    work.annotation.changed(old_annotation, new_annotation)
-    work.source.added(source)
-    work.source.removed(source)
-    work.media.added(media_id)
-    work.media.removed(media_id)
+    core.work.created(work)
+    core.work.deleted(work)
+    core.work.changed(property, old_value, new_value)
+    core.work.collabs.users.added(user_id)
+    core.work.collabs.users.removed(user_id)
+    core.work.collabs.group.added(group_id)
+    core.work.collabs.group.removed(group_id)
+    core.work.annotation.added(annotation)
+    core.work.annotation.removed(annotation)
+    core.work.annotation.changed(old_annotation, new_annotation)
+    core.work.source.added(source)
+    core.work.source.removed(source)
+    core.work.media.added(media_id)
+    core.work.media.removed(media_id)
 
 Mirrored from other objects:
 
-    work.forked(forked_work_id)
-    work.collection.added(collection_id)
-    work.collection.removed(collection_id)
+    core.work.forked(forked_work_id)
+    core.work.collection.added(collection_id)
+    core.work.collection.removed(collection_id)
 
 
 ### Media events
 
 Object events:
 
-    media.created(media)
-    media.deleted(media)
+    core.media.created(media)
+    core.media.deleted(media)
 
 Mirrored from other objects:
 
-    media.replaced(new_media_id)
-    media.work.added(work_id)
-    media.work.removed(work_id)
+    core.media.replaced(new_media_id)
+    core.media.work.added(work_id)
+    core.media.work.removed(work_id)
 
 
 ### Collection events
 
 Object events:
 
-    collection.created(collection)
-    collection.deleted(collection)
-    collection.PROPERTY.changed(old_value, new_value)
-    collection.collabs.users.added(user_id)
-    collection.collabs.users.removed(user_id)
-    collection.collabs.group.added(group_id)
-    collection.collabs.group.removed(group_id)
-    collection.work.added(work_id)
-    collection.work.removed(work_id)
+    core.collection.created(collection)
+    core.collection.deleted(collection)
+    core.collection.changed(property, old_value, new_value)
+    core.collection.collabs.users.added(user_id)
+    core.collection.collabs.users.removed(user_id)
+    core.collection.collabs.group.added(group_id)
+    core.collection.collabs.group.removed(group_id)
+    core.collection.work.added(work_id)
+    core.collection.work.removed(work_id)
     
 
 ### Organisation events
 
 Object events:
 
-    org.created(organisation)
-    org.PROPERTY.changed(old_value, new_value)
-    org.profile.PROPERTY.changed(old_value, new_value)
-    org.owner.added(user_id)
-    org.owner.removed(user_id)
+    core.org.created(organisation)
+    core.org.changed(property, old_value, new_value)
+    core.org.owner.added(user_id)
+    core.org.owner.removed(user_id)
 
 Mirrored from other objects:
 
-    org.group.created(group_id)
-    org.group.deleted(group_id)
-    org.work.created(work_id)
-    org.work.deleted(work_id)
-    org.collection.created(collection_id)
-    org.collection.deleted(collection_id)
+    core.org.group.created(group_id)
+    core.org.group.deleted(group_id)
+    core.org.work.created(work_id)
+    core.org.work.deleted(work_id)
+    core.org.collection.created(collection_id)
+    core.org.collection.deleted(collection_id)
     
 
 ### User events
 
 Object events:
 
-    user.created(user)
-    user.PROPERTY.changed(old, new)
-    user.profile.PROPERTY.changed(old, new)
+    core.user.created(user)
+    core.user.changed(property, old, new)
+    core.user.changed.profile(property, old, new)
 
 Mirrored from other objects:
 
-    user.org.owner.added(org_id)
-    user.org.owner.removed(org_id)
-    user.group.member.added(org_id)
-    user.group.member.removed(org_id)
-    user.work.created(work_id)
-    user.work.deleted(work_id)
-    user.collection.created(collection_id)
-    user.collection.deleted(collection_id)
-    user.work.collaborator.added(work_id)
-    user.work.collaborator.removed(work_id)
-    user.collection.collaborator.added(work_id)
-    user.collection.collaborator.removed(work_id)
+    core.user.org.owner.added(org_id)
+    core.user.org.owner.removed(org_id)
+    core.user.group.member.added(org_id)
+    core.user.group.member.removed(org_id)
+    core.user.collection.created(collection_id)
+    core.user.collection.deleted(collection_id)
+    core.user.work.collaborator.added(work_id)
+    core.user.work.collaborator.removed(work_id)
+    core.user.collection.collaborator.added(work_id)
+    core.user.collection.collaborator.removed(work_id)
 
 
 ### Group events
 
 Object events:
 
-    group.created(group)
-    group.deleted(group)
-    group.PROPERTY.changed(old_value, new_value)
-    group.member.added(user_id)
-    group.member.removed(user_id)
+    core.group.created(group)
+    core.group.deleted(group)
+    core.group.changed(property, old_value, new_value)
+    core.group.member.added(user_id)
+    core.group.member.removed(user_id)
 
 Mirrored from other objects:
 
-    group.work.collaborator.added(work_id)
-    group.work.collaborator.removed(work_id)
-    group.collection.collaborator.added(work_id)
-    group.collection.collaborator.removed(work_id)
+    core.group.work.collaborator.added(work_id)
+    core.group.work.collaborator.removed(work_id)
+    core.group.collection.collaborator.added(work_id)
+    core.group.collection.collaborator.removed(work_id)
 
 
 Security events

@@ -103,7 +103,7 @@ describe('Create work', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'work.created' );
+        expect( e.events[0].event ).to.be( 'core.work.created' );
         expect( e.events[0].param ).to.have.property( 'work' );
         expect( e.events[0].param.work.id.toString() ).to.be( m.id );
     });
@@ -258,15 +258,18 @@ describe('Update work', function() {
 
         expect( e.events ).to.have.length( 3 );
 
-        expect( e.events[0].type ).to.be( 'work.alias.changed' );
+        expect( e.events[0].event ).to.be( 'core.work.changed' );
+        expect( e.events[0].param.property ).to.be( 'alias' );
         expect( e.events[0].param.old_value ).to.be( 'old alias' );
         expect( e.events[0].param.new_value ).to.be( 'new alias' );
 
-        expect( e.events[1].type ).to.be( 'work.description.changed' );
+        expect( e.events[1].event ).to.be( 'core.work.changed' );
+        expect( e.events[1].param.property ).to.be( 'description' );
         expect( e.events[1].param.old_value ).to.be( 'old description' );
         expect( e.events[1].param.new_value ).to.be( null );
 
-        expect( e.events[2].type ).to.be( 'work.public.changed' );
+        expect( e.events[2].event ).to.be( 'core.work.changed' );
+        expect( e.events[2].param.property ).to.be( 'public' );
         expect( e.events[2].param.old_value ).to.be( false );
         expect( e.events[2].param.new_value ).to.be( true );
     });
@@ -332,7 +335,7 @@ describe('Delete work', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'work.deleted' );
+        expect( e.events[0].event ).to.be( 'core.work.deleted' );
         expect( e.events[0].param ).to.have.property( 'work' );
         expect( e.events[0].param.work.id.toString() ).to.be( w.id );
     });

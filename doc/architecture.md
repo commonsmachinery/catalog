@@ -164,34 +164,39 @@ Event
 -----
 
 The event module handles the details around event processing to let
-the other modules emit and consume events, providing code libraries
-that handle all the details described below.
+the other modules easily generate and consume events.
 
-The provisional design is that each emitting module has its own event
-log collection in the same MongoDB instance as the corresponding data.
-This means that it is very unlikely that writing the events should
-fail if the immediately preceding object write succeeded.  This level
-of reliability should be sufficient for this application.  If a write
+Events are generated either as part of a command execution (with
+`command.execute`) or as standalone events (with `command.logEvent`).
+Publishing these events is a three-step process.
+
+These events are first written to a capped collection with no indices
+in the same database as the generating module
+(e.g. `core-dev/coreevents` for the core module).  This means that it
+is very unlikely that writing the events should fail if the
+immediately preceding object write succeeded.  This level of
+reliability should be sufficient for this application.  If a write
 anyway fails, the events are logged to a file instead and an alarm
-raised.  This may even trigger a lock on the entire system to prevent
-further modifications.
+raised.  This should trigger a lock on the entire system to prevent
+further modifications to the module data.
 
-The events are published in the background to the subscribers via
-ZeroMQ.  (An alternative is to use a MongoDB capped collection with
-tailing cursors.  The benefit is that the MongoDB instance becomes the
-single synchronisation point between producers and consumers, avoiding
-the need for an event broker component in more complex setups.  The
-support for this in various languages and the performance must be
-evaluated, though.)
+A backend process in the event module is responsible for following
+these capped collections with MongoDB tailable cursors, copying the
+event batches into an event log collection.  If this job should stop
+or not catch up, a watchdog function will stop further data
+modifications until the job is up to speed again.
 
-The events are periodically transferred by tasks in the event module
-into an archival log.  This archive aggregate events into time
-period-specific collections, e.g. for a full a year or a month.
+After an event batch is written to the collection, each event in the
+batch is published on a ZeroMQ PUB socket.  Other backend tasks can
+use `event.Subscriber` to listen to these events and trigger code.
+For best-effort processing this is sufficent, but it is by its nature
+not a reliable transport.  Tasks that must process all events in the
+correct order can only use this as a trigger mechanism, but must query
+the event log to be sure to recieve all events in the right order.
+This will be handled by `event.Subscriber` too.
 
-Event publishing is not required to be reliable.  Consumers who must
-rely on correct event order and on not missing any events must keep
-track of the received events and when necessary get the missing ones
-from the event log.
+The event log is considered an archival log, partitioned on years or
+even months to avoid building up too big collections.
 
 
 Technology

@@ -53,7 +53,7 @@ describe('Create media', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Media' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'media.created' );
+        expect( e.events[0].event ).to.be( 'core.media.created' );
         expect( e.events[0].param ).to.have.property( 'media' );
         expect( e.events[0].param.media.id.toString() ).to.be( m.id );
     });
@@ -146,7 +146,7 @@ describe('Link media', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'work.media.added' );
+        expect( e.events[0].event ).to.be( 'core.work.media.added' );
         expect( e.events[0].param ).to.have.property( 'media_id' );
         expect( e.events[0].param.media_id ).to.be( m.id );
 
@@ -214,7 +214,7 @@ describe('Remove media', function() {
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 1 );
-        expect( e.events[0].type ).to.be( 'work.media.removed' );
+        expect( e.events[0].event ).to.be( 'core.work.media.removed' );
         expect( e.events[0].param ).to.have.property( 'media_id' );
         expect( e.events[0].param.media_id ).to.be( m.id );
     });
@@ -272,11 +272,11 @@ describe('Unlink all media', function() {
         expect( e.type ).to.be( 'core.Work' );
         expect( e.events ).to.have.length( 2 );
 
-        expect( e.events[0].type ).to.be( 'work.media.removed' );
+        expect( e.events[0].event ).to.be( 'core.work.media.removed' );
         expect( e.events[0].param ).to.have.property( 'media_id' );
         expect( e.events[0].param.media_id.toString() ).to.be( m1.id );
 
-        expect( e.events[1].type ).to.be( 'work.media.removed' );
+        expect( e.events[1].event ).to.be( 'core.work.media.removed' );
         expect( e.events[1].param ).to.have.property( 'media_id' );
         expect( e.events[1].param.media_id.toString() ).to.be( m2.id );
     });

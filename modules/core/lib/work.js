@@ -129,7 +129,7 @@ cmd.create = function commandCreateWork(context, src) {
         type: 'core.Work',
         object: work.id,
         events: [{
-            type: 'work.created',
+            event: 'core.work.created',
             param: { work: work.exportObject() },
         }],
     });
@@ -186,7 +186,7 @@ cmd.update = function commandUpdateWork(context, work, src) {
 
     command.updateProperties(
         src, work, ['alias', 'description', 'public'],
-        event, 'work.%s.changed');
+        event, 'core.work.changed');
 
     return { save: work, event: event };
 };
@@ -228,7 +228,7 @@ cmd.delete = function commandDeleteWork(context, work) {
         type: 'core.Work',
         object: work.id,
         events: [{
-            type: 'work.deleted',
+            event: 'core.work.deleted',
             param: { work: work.exportObject() },
         }],
     });
@@ -322,7 +322,7 @@ cmd.createMedia = function commandCreateMedia(context, work, src) {
         type: 'core.Media',
         object: media.id,
         events: [{
-            type: 'media.created',
+            event: 'core.media.created',
             param: { media: media.exportObject() },
         }],
     });
@@ -350,7 +350,7 @@ cmd.linkMedia = function commandLinkMedia(context, work, media) {
         type: 'core.Work',
         object: work.id,
         events: [{
-            type: 'work.media.added',
+            event: 'core.work.media.added',
             param: { media_id: media.id },
         }],
     });
@@ -417,7 +417,7 @@ cmd.removeMedia = function commandRemoveMedia(context, work, media) {
         type: 'core.Work',
         object: work.id,
         events: [{
-            type: 'work.media.removed',
+            event: 'core.work.media.removed',
             param: { media_id: media.id },
         }],
     });
@@ -467,7 +467,7 @@ cmd.unlinkAllMedia = function commandUnlinkAllMedia(context, work) {
 
     for (var i = 0; i < work.media.length; ++i) {
         event.events.push({
-            type: 'work.media.removed',
+            event: 'core.work.media.removed',
             param: { media_id: work.media[i] },
         });
     }
