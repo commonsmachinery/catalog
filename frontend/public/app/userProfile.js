@@ -5,42 +5,23 @@
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
-        'lib/Backbone.stickit',
         'models/userModel',
-        'views/EditUserProfileView'],
+        'views/editUserProfileView',
+        'views/userProfileView'],
        function($, _, Backbone, util,
-                stickit,
                 User,
-                EditUserProfileView)
+                EditUserProfileView,
+                UserProfileView)
 {
     'use strict';
 
     var hub = _.extend({}, Backbone.Events);
     var userModel = null;
 
-    var UserProfileView = Backbone.View.extend({
-        events: {
-            'click [data-action="edit-profile"]': "onEditProfile" 
-        },
-
-        initialize: function() {
-            this.delegateEvents();
-        },
-
-        render: function() {
-            this.stickit();
-            return this;
-        },
-
-        onEditProfile: function onEditProfile(){
-            this.trigger('edit:start');
-        }
-    });
-
     var UserView = Backbone.View.extend({
         initialize: function(){
             this._profileView = new UserProfileView({
-                el: this.el,
+                el: this.$el,
                 model: userModel
             });
 
@@ -65,9 +46,11 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             util.emptyViewElement(this._editProfileView, this);
             this._profileView = new UserProfileView({
                 el: this.$el,
-                model: userModel
+                model: userModel.profile,
+                template: '#userProfileTemplate'
             });
-            this.$el.append(this._profileView.render().el);
+
+            this.$el.html(this._profileView.render().$el.html());
 
             this.listenToOnce(this._profileView, 'edit:start', this.onEditProfile);
         },

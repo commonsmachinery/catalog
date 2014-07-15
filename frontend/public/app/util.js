@@ -129,7 +129,40 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return mergeBindings(content, href);
 	};
 
-	exports.working = function working(status, el){
+
+	exports.emptyViewElement = function emptyViewElement(view, parent){
+		var id = parent.$el.attr('id');
+		parent.$el.wrap('<div id="' + id + '">');
+		view.remove();
+		parent.stopListening(view);
+		parent.$el = $('#' + id);
+	};
+
+    exports.isInvalid = function isInvalid(format, val){
+        if(format === 'email'){
+            if (!/^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(val)){
+                
+                return 'Please check your email format';
+            }
+        }
+        else if (format === 'url'){
+            if(!/^(?:http|https)\:\/\/(?:www\.)?(?:\w[\w-]*[\w]\.)+[\w]+[\/#?]?(\x00-\x80)*/.test(val)){
+
+                return 'Please check your url format';
+            }
+        }
+        else if (format === 'alphanum'){
+            if(!/^[\w-]*$/.test(val)){
+
+                return 'Valid characters are A-Z, a-z, 0-0, -_';
+            }
+        }
+        else{
+            return 'Unknown format string';
+        }
+};      
+
+    exports.working = function working(status, el){
         if(status === 'start'){
             $(el).addClass('working');
             $(el).prepend('<div class="overlay"><div class="loading"></div></div>');
@@ -138,15 +171,7 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
             $(el).removeClass('working');
             $(el).find('.overlay').remove();
         }
-	};
+    };
 
-	exports.emptyViewElement = function emptyViewElement(view, parent){
-		var id = parent.$el.attr('id');
-		parent.$el.wrap('<div id="' + id + '">');
-		view.remove();
-		parent.stopListening(view);
-		parent.$el = $('#' + id);
-	}
-
-	return exports;
-});
+    return exports;
+    });
