@@ -15,7 +15,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 {
     'use strict';
 
-    var hub = _.extend({}, Backbone.Events);
     var userModel = null;
 
     var UserView = Backbone.View.extend({
@@ -39,7 +38,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 template: '#editUserProfileTemplate'
             }).render();
 
-            this.listenToOnce(this._editProfileView, 'edit:save:success edit:save:error edit:cancel', this.onEditFinish);
+            this.listenToOnce(this._editProfileView, 'edit:save:success edit:cancel', this.onEditFinish);
         },
 
         onEditFinish: function onEditFinish(view){
@@ -56,14 +55,14 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
     });
 
-    return function browseWorks(router) {
+    return function userProfile(router) {
 
         var data = util.bootstrapData();
 
         // userModel is used to populate edit views and update the resulting view
         userModel = new User(data);
 
-        var userView = new UserView({ 
+        var userView = new UserView({  // jshint ignore:line
             el: '#userProfile',
             model: userModel
         });

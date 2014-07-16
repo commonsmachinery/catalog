@@ -7,6 +7,7 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
     'use strict'; 
 
     var Profile = Backbone.Model.extend({
+
         validate: function(){ 
             var attrs = this.attributes;
             var invalid = [];
@@ -32,15 +33,12 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
             }
 
             if (invalid.length){
-                this.trigger('invalid', invalid);
                 return invalid;
             }
         },
 
         save: function(attrs, callback){
-            if(this.isValid()){
-                this.parent.save(attrs, callback);
-            }
+            this.parent.save(attrs, callback);
         }
 
     });
@@ -49,9 +47,11 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
         urlRoot: '/users',
 
         initialize: function() {
-            var self = this;
             this.profile = this.attributes.profile = new Profile(this.attributes.profile);
             this.profile.parent = this;
+
+            //share errors 
+            this.profile.stopListening(this.profile, 'invalid');
         },
 
         validate: function(){
@@ -61,12 +61,18 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
             var err;
 
             val = attrs.alias;
-            err = util.isInvalid('alphanum');
+            err = util.isInvalid('alphanum', val);
             if (val && err){
                 invalid.push('Invalid alias: ' + err);
             }
+
+            err = this.profile.validate();
+            if(err){
+                invalid = invalid.concat(this.profile.validate());
+            }
+
             if(invalid.length){
-                this.trigger('invalid', invalid);
+                this.profile.trigger('invalid', invalid);
                 return invalid;
             }
         }

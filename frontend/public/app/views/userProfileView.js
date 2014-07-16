@@ -29,27 +29,23 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             },
             '.name': {
                 observe: 'name',
-                update: function($el, val){
-                    this.renderOrNot($el.find('dd'), val, $el);
-                }
+                update: 'profileItem'
             },
             '.email': {
                 observe: 'email',
-                update: function($el, val){
-                    this.renderOrNot($el.find('dd'), val, $el);
-                }
+                update: 'profileItem'
             },
             '.location': {
                 observe: 'location',
-                update: function($el, val){
-                    this.renderOrNot($el.find('dd'), val, $el);
-                }
+                update: 'profileItem'
             },
             '.website': {
                 observe: 'website',
-                update: function($el, val){
-                    this.renderOrNot($el.find('dd'), val, $el);
-                }
+                update: 'profileItem'
+            },
+            '.gravatar_email': {
+                observe: 'gravatar_email',
+                update: 'profileItem'
             }
         },
 
@@ -78,6 +74,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             else{
                 $rm.remove();
             }
+        },
+
+        profileItem: function($el, val){
+            this.renderOrNot($el.find('dd'), val, $el);
         },
 
         onEditProfile: function onEditProfile(){

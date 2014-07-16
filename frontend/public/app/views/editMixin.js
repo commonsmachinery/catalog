@@ -44,20 +44,17 @@ define(['jquery', 'underscore', 'util'],
 
             console.debug('start saving');
 
-            this.listenToOnce(this.model, 'invalid', function(err){
-                util.working('stop', this.el);
-                this.$('[data-action="save"]').text('Save');
-                this.$('.actions').prop('disabled', false);
-            });
-
             // Indicate that we're working
             this.$('.actions').attr('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
             util.working('start', this.el);
+
+            this.listenToOnce(this.model, 'invalid', this.onError);
             this.model.save(null, {
                 success: function(model, response, options) {
                     console.debug('start success');
                     self.trigger('edit:save:success', self);
+                    self.stopListening(self.model, 'invalid');
 
                     // Go back to Edit button
                     self.$('[data-action="edit"]').show();
@@ -70,6 +67,7 @@ define(['jquery', 'underscore', 'util'],
 
                 error: function(model, response) {
                     self.trigger('edit:save:error', self, response);
+                    self.stopListening(self.model, 'invalid');
 
                     // TODO: proper error message handling
                     console.error('error saving %s: %s %s %s',
@@ -78,9 +76,7 @@ define(['jquery', 'underscore', 'util'],
 
                     self.$('[data-action="save"]').text('Retry saving');
                     
-                    // Re-enable buttons
-                    self.$('.actions').prop('disabled', false);
-                    util.working('stop', self.el);
+                    this.onError('error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
                 },
             });
         },
@@ -101,6 +97,29 @@ define(['jquery', 'underscore', 'util'],
             // starting editing
             this.$('[data-action="save"]').prop('disabled', false);
         },
+
+        onError: function onError(err){
+            util.working('stop', this.el);
+            self.$('.actions').prop('disabled', false);
+
+            var $el = this.$el;
+            var $ul;
+
+            $el.find('.errorMsg').remove();
+
+            if(Array.isArray(err)){
+                $el.append('<ul class="errorMsg"></ul>');
+                $ul = $el.find('.errorMsg');
+                for (var i in err){
+                    $ul.append('<li>' + err[i] + '</li>');
+                }
+            }
+            else{
+                $el.append('<div class="errorMsg">' + err + '</div>');
+            }
+            this.$('[data-action="save"]').text('Try again');
+            this.$('.actions').prop('disabled', false);
+        }
     };
 
     return EditMixin;
