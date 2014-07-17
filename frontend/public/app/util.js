@@ -84,20 +84,22 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return bindings;
 	};
 
-    var cloneDeep = exports.cloneDeep = function cloneDeep(src){
+    var deepClone = exports.deepClone = function deepClone(src){ // jshint ignore: line
         var curr;
         var obj = {};
         for(var i in src){
-            curr = src[i];
-            if(typeof curr == 'object'){
-                obj[i] = _.clone(cloneDeep(curr));
-            }
-            else{
-                obj[i] = curr;
+            if(src.hasOwnProperty(i)){
+                curr = src[i];
+                if(typeof curr === 'object'){
+                    obj[i] = _.clone(deepClone(curr));
+                }
+                else{
+                    obj[i] = curr;
+                }
             }
         }
         return obj;
-    }
+    };
 
 	/* Create default bindings for a view, setting up standard converters etc.
 	   * The returned object can be passed to ModelBinder.bind().
@@ -149,7 +151,8 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         return function(path, val){
             path = path.split('.');
             var attr = model.attributes;
-            for(var i in path){
+            var len = path.length;
+            for(var i; i < len; i++){
                 attr = attr[path[i]];
             }
             return attr;
@@ -160,19 +163,22 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         return function(obj){
             var attr;
             var path;
+            var len;
             for(var i in obj){
-                path = i.split('.');
-                attr = model.attributes;
-                var len = path.length;
-                for(var j=0; j < len-1; j++){
-                   attr = attr[path[j]];
+                if(obj.hasOwnProperty(i)){
+                    path = i.split('.');
+                    attr = model.attributes;
+                    len = path.length;
+                    for(var j=0; j < len-1; j++){
+                       attr = attr[path[j]];
+                    }
+                    attr[path[j]] = obj[i];
+                    model.trigger('change:' + i, model, obj[i], options);
                 }
-                attr[path[j]] = obj[i];
-                model.trigger('change:' + i, model, obj[i], options);
             }
             model.trigger('change');
             return true;
-        }
+        };
     };
 
     exports.emptyViewElement = function emptyViewElement(view, parent){

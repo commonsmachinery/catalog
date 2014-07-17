@@ -18,7 +18,7 @@ define(['jquery', 'underscore', 'util'],
         },
 
         initialize: function (opts) {
-            this._editStartAttrs = util.cloneDeep(this.model.attributes);
+            this._editStartAttrs = util.deepClone(this.model.attributes);
 
             if(opts.template){
                 this.$el.html($(opts.template).html());
@@ -92,7 +92,7 @@ define(['jquery', 'underscore', 'util'],
             this.listenToOnce(this.model, 'change', function(){
                 this._editStartAttrs = null;
                 self.trigger('edit:cancel', this);
-            })
+            });
             this.model.set(this._editStartAttrs);
         },
 
@@ -104,7 +104,7 @@ define(['jquery', 'underscore', 'util'],
 
         onError: function onError(err){
             util.working('stop', this.el);
-            self.$('.actions').prop('disabled', false);
+            this.$('.actions').prop('disabled', false);
 
             var $el = this.$el;
             var $ul;
@@ -114,7 +114,8 @@ define(['jquery', 'underscore', 'util'],
             if(Array.isArray(err)){
                 $el.append('<ul class="errorMsg"></ul>');
                 $ul = $el.find('.errorMsg');
-                for (var i in err){
+                var len = err.length;
+                for (var i; i < len; i++){
                     $ul.append('<li>' + err[i] + '</li>');
                 }
             }
