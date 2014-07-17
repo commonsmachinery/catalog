@@ -97,7 +97,7 @@ require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
 			require(['home'], function(view) { view(router); });
 		},
 		login: function(){
-			// require(['login'], function(view) { view(router); });
+			 require(['login'], function(view) { view(router); });
 		},
 		posts: function(id){
 			require(['posts'], function(view) { view(router); });

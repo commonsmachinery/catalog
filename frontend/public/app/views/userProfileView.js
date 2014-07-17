@@ -17,35 +17,27 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         bindings:{
             '.user': {
                 observe: 'alias',
-                update: function($el, val, model){
-                    model = model.parent.attributes;
-                    if(model.alias){
-                        $el.find('dd').html(model.alias);
-                    }
-                    else{
-                        $el.find('dd').html(model.id);
-                    }
-                },
+                update: 'renderOrNot',
             },
             '.name': {
-                observe: 'name',
-                update: 'profileItem'
+                observe: 'profile.name',
+                update: 'renderOrNot'
             },
             '.email': {
-                observe: 'email',
-                update: 'profileItem'
+                observe: 'profile.email',
+                update: 'renderOrNot'
             },
             '.location': {
-                observe: 'location',
-                update: 'profileItem'
+                observe: 'profile.location',
+                update: 'renderOrNot'
             },
             '.website': {
-                observe: 'website',
-                update: 'profileItem'
+                observe: 'profile.website',
+                update: 'renderOrNot'
             },
             '.gravatar_email': {
-                observe: 'gravatar_email',
-                update: 'profileItem'
+                observe: 'profile.gravatar_email',
+                update: 'renderOrNot'
             }
         },
 
@@ -64,20 +56,13 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             return this;
         },
 
-        renderOrNot: function($el, val, $rm){
-            if (!$rm){
-                $rm = $el;
-            }
+        renderOrNot: function($el, val, model){
             if(val){
-                $el.html(val);
+                $el.find('dd').html(val);
             }
             else{
-                $rm.remove();
+                $el.remove();
             }
-        },
-
-        profileItem: function($el, val){
-            this.renderOrNot($el.find('dd'), val, $el);
         },
 
         onEditProfile: function onEditProfile(){

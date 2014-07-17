@@ -4,6 +4,7 @@
 
    Authors:
         Peter Liljenberg <peter@commonsmachinery.se>
+        Elsa Balderrama <elsa@commonsmachinery.se>
 
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
@@ -83,6 +84,21 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return bindings;
 	};
 
+    var cloneDeep = exports.cloneDeep = function cloneDeep(src){
+        var curr;
+        var obj = {};
+        for(var i in src){
+            curr = src[i];
+            if(typeof curr == 'object'){
+                obj[i] = _.clone(cloneDeep(curr));
+            }
+            else{
+                obj[i] = curr;
+            }
+        }
+        return obj;
+    }
+
 	/* Create default bindings for a view, setting up standard converters etc.
 	   * The returned object can be passed to ModelBinder.bind().
 	  */
@@ -129,14 +145,42 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return mergeBindings(content, href);
 	};
 
+    exports.getNested = function getNested(model){
+        return function(path, val){
+            path = path.split('.');
+            var attr = model.attributes;
+            for(var i in path){
+                attr = attr[path[i]];
+            }
+            return attr;
+        };
+    };
 
-	exports.emptyViewElement = function emptyViewElement(view, parent){
-		var id = parent.$el.attr('id');
-		parent.$el.wrap('<div id="' + id + '">');
-		view.remove();
-		parent.stopListening(view);
-		parent.$el = $('#' + id);
-	};
+    exports.setNested = function setNested(model, options){
+        return function(obj){
+            var attr;
+            var path;
+            for(var i in obj){
+                path = i.split('.');
+                attr = model.attributes;
+                var len = path.length;
+                for(var j=0; j < len-1; j++){
+                   attr = attr[path[j]];
+                }
+                attr[path[j]] = obj[i];
+                model.trigger('change:' + i, model, obj[i], options);
+            }
+            model.trigger('change');
+            return true;
+        }
+    };
+
+    exports.emptyViewElement = function emptyViewElement(view, parent){
+        view.stopListening();
+        parent.stopListening(view);
+        view.$el.empty();
+        view.$el.unbind();
+    };
 
     exports.isInvalid = function isInvalid(format, val){
         if(format === 'email'){

@@ -34,7 +34,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
             this._editProfileView = new EditUserProfileView({
                 el: this.$el,
-                model: userModel.profile,
+                model: userModel,
                 template: '#editUserProfileTemplate'
             }).render();
 
@@ -43,12 +43,13 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         onEditFinish: function onEditFinish(view){
             util.emptyViewElement(this._editProfileView, this);
+
             this._profileView = new UserProfileView({
                 el: this.$el,
-                model: userModel.profile,
+                model: userModel,
                 template: '#userProfileTemplate'
             });
-
+            
             this.$el.html(this._profileView.render().$el.html());
 
             this.listenToOnce(this._profileView, 'edit:start', this.onEditProfile);

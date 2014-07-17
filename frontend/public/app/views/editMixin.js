@@ -18,7 +18,7 @@ define(['jquery', 'underscore', 'util'],
         },
 
         initialize: function (opts) {
-            this._editStartAttrs = _.clone(this.model.attributes);
+            this._editStartAttrs = util.cloneDeep(this.model.attributes);
 
             if(opts.template){
                 this.$el.html($(opts.template).html());
@@ -49,7 +49,9 @@ define(['jquery', 'underscore', 'util'],
             this.$('[data-action="save"]').text('Saving...');
             util.working('start', this.el);
 
-            this.listenToOnce(this.model, 'invalid', this.onError);
+            this.listenToOnce(this.model, 'invalid', function(){
+                this.onError(this.model.validationError);
+            });
             this.model.save(null, {
                 success: function(model, response, options) {
                     console.debug('start success');
@@ -85,11 +87,13 @@ define(['jquery', 'underscore', 'util'],
             console.debug('cancel editing');
             this.stopListening(this.model, 'change', this.onEditModelChange);
 
-            this.trigger('edit:cancel', this);
-
             // Reset to original state
+            var self = this;
+            this.listenToOnce(this.model, 'change', function(){
+                this._editStartAttrs = null;
+                self.trigger('edit:cancel', this);
+            })
             this.model.set(this._editStartAttrs);
-            this._editStartAttrs = null;
         },
 
         onEditModelChange: function onEditModelChange() {
