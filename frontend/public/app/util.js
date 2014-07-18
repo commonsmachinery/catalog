@@ -182,6 +182,7 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
     };
 
     exports.emptyViewElement = function emptyViewElement(view, parent){
+        // don't want to remove the container and do want to stop listening to this view
         view.stopListening();
         parent.stopListening(view);
         view.$el.empty();
@@ -190,12 +191,14 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 
     exports.isInvalid = function isInvalid(format, val){
         if(format === 'email'){
+            //almost every RFC 5322 email
             if (!/^[a-z0-9!#$%&'*+\/=?^_`{|}~-]+(?:\.[a-z0-9!#$%&'*+\/=?^_`{|}~-]+)*@(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/.test(val)){
                 
                 return 'Please check your email format';
             }
         }
         else if (format === 'url'){
+            //supports TLDs
             if(!/^(?:http|https)\:\/\/(?:www\.)?(?:\w[\w-]*[\w]\.)+[\w]+[\/#?]?(\x00-\x80)*/.test(val)){
 
                 return 'Please check your url format';

@@ -35,6 +35,7 @@ define(['jquery', 'underscore', 'util'],
         },
 
         preventSubmit: function preventSubmit(ev){
+            // remove the undesired behavior of submiting the form on button click
             ev.preventDefault();
             return false;
         },
@@ -103,6 +104,7 @@ define(['jquery', 'underscore', 'util'],
         },
 
         onError: function onError(err){
+            //user feedback, something went wrong
             util.working('stop', this.el);
             this.$('.actions').prop('disabled', false);
 

@@ -18,6 +18,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
     var userModel = null;
 
     var UserView = Backbone.View.extend({
+        // just bind action events, but not render yet
         initialize: function(){
             this._profileView = new UserProfileView({
                 el: this.$el,
@@ -30,6 +31,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         onEditProfile: function onEditProfile(){
             console.log('editing profile');
 
+            // remove listeners from/to this view and empty container
             util.emptyViewElement(this._profileView, this);
 
             this._editProfileView = new EditUserProfileView({
@@ -48,9 +50,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 el: this.$el,
                 model: userModel,
                 template: '#userProfileTemplate'
-            });
-            
-            this.$el.html(this._profileView.render().$el.html());
+            }).render();
 
             this.listenToOnce(this._profileView, 'edit:start', this.onEditProfile);
         },

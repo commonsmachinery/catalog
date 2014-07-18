@@ -10,6 +10,7 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
         urlRoot: '/users',
 
         initialize: function(){
+            // replace getter and setter with a function to access nested objects and trigger an appropiate event
             this.get = util.getNested(this);
             this.set = util.setNested(this);
         },
