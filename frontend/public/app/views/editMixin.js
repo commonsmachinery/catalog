@@ -115,7 +115,7 @@ define(['jquery', 'underscore', 'util'],
                 $el.append('<ul class="errorMsg"></ul>');
                 $ul = $el.find('.errorMsg');
                 var len = err.length;
-                for (var i; i < len; i++){
+                for (var i=0; i < len; i++){
                     $ul.append('<li>' + err[i] + '</li>');
                 }
             }

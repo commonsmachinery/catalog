@@ -148,11 +148,11 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 	};
 
     exports.getNested = function getNested(model){
-        return function(path, val){
+        return function(path){
             path = path.split('.');
             var attr = model.attributes;
             var len = path.length;
-            for(var i; i < len; i++){
+            for(var i=0; i < len; i++){
                 attr = attr[path[i]];
             }
             return attr;

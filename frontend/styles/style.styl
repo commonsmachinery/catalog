@@ -22,22 +22,9 @@ else
     link-v-color = tint(link-color, detail)
     link-v-color = link-v-color + gamut
 
-if !nav-color
-    if nav-tone == 'dark'
-        nav-color = shade(background, contrast)
-    else
-        nav-color = tint(background, contrast)
-
-if nav-tone == 'dark'
-    nav-button-color = shade(nav-color, detail)
-else
-    nav-button-color = tint(nav-color, detail)
-
 if !secondary-font-color
     secondary-font-color = content-color + gamut/2
-if !nav-hover
-    nav-hover = nav-button-color + gamut/5
-if lightness(nav-hover) >= lightness(nav-color)
+if lightness(nav-hover) - lightness(nav-color) <= 0.5
     nav-click = tint(nav-hover, contrast * 0.5)
     s-link-ha-color = shade(secondary-font-color, contrast * 1.5%)
 else
@@ -59,10 +46,29 @@ a
 
 body
     background background
+    color content-color
     font-family main-font
     font-size font-scale
     margin 0
     padding 0
+
+button, input[type="button"]
+    background-color neutral-bg-color
+    border solid 1px neutral-fg-color
+    border-radius round-factor * 0.15em
+    color neutral-fg-color
+    margin 0.3em 1em 0.3em 0
+    min-height 2em
+    min-width 7em
+    text-shadow none
+button, input, textarea
+    &:disabled
+        background-color disabled-bg-color !important
+        border solid 1px disabled-fg-color !important
+        color disabled-fg-color !important
+
+dl
+    display inline-block
 
 h1
     font-family h1-font || main-font
@@ -93,17 +99,16 @@ header
     nav#header
         background-color nav-color
         border-radius 0  0 (round-factor * 0.3em) (round-factor * 0.3em)
-        float left
         height nav-height
-        margin 0 1em
+        min-height nav-height
         text-align left
         vertical-align top
         width 100%
         a, a:link, a:visited
-            color secondary-font-color
+            color nav-button-text
             transition all 0.2s
         a:hover, a:focus, a:active
-            color s-link-ha-color
+            color nav-hover-text
         > ul#pages
             border-radius 0  0  0 (round-factor * 0.3em)
             height nav-height
@@ -113,7 +118,8 @@ header
             > li
                 background-color nav-button-color
                 border-right solid 1px nav-color
-                height 100%
+                display inline-block
+                height nav-height
                 line-height nav-height
                 margin-right 0.1em
                 padding 0 0.5em
@@ -127,15 +133,14 @@ header
                     height 1.5em
                     line-height 1.5em
                     vertical-align middle
-                img
-                    max-height 100%
-                    max-width 100%
+            .home a
+                icon('home', 1.5em)
 
         > ul#user 
             clear none
             float right
-            height nav-height
-            margin 0.2em 1em
+            min-height nav-height
+            margin 0.1em 1em
             text-align right
             > li
                 font main-font
@@ -143,18 +148,13 @@ header
                 line-height nav-height
                 margin 0.1em
                 vertical-align top
-                &.persona:before
-                    background url('/media/persona-glyph.png') 0 0 / contain no-repeat
-                    content ""
-                    float left
-                    height nav-height
-                    margin-right 0.5em
-                    position relative
-                    width nav-height
             > li:not(:last-child):after
                 content " | "
-            > li.gravatar:after
-                content ""
+            > li.gravatar
+                img
+                    vertical-align middle
+                &:after
+                    content ""
 
 
 footer
@@ -164,6 +164,13 @@ footer
     text-align center
     width 100%
 
+input
+    background-color input-bg-color
+    border 1px solid input-border-color
+    border-radius (round-factor * 0.1)em
+    box-shadow -1px -1px 10px -2px input-shadow-color inset
+    padding 0.4em 0.5em
+
 .dialog
     background background * 1.2
     display block
@@ -172,6 +179,22 @@ footer
     top 3em
     > div
         display block
+
+.errorMsg
+    animation notification 0.2s ease-out
+    font-size 0.8em
+    position absolute
+    li
+        color negative-remark-fg-color
+        list-style-type none
+
+@keyframes notification
+    0%
+        transform translate(0, 2em)
+        opacity 0
+    100%
+        transform none
+        opacity 1
 
 .entries
     float none
@@ -254,6 +277,7 @@ mg.thumbnail
     display none
 
 #breadCrumbs
+    float left
     margin 0
     text-align left
     vertical-align top
@@ -261,7 +285,6 @@ mg.thumbnail
     ul, li
         display inline-block   
     > ul
-        width 100%
         > li:before
                 content " > "
         > li:first-child:before
@@ -310,9 +333,114 @@ mg.thumbnail
 .hidden
     display none
 
+dl.hideCaption
+    vertical-align top
+    dt
+        position absolute
+        visibility hidden
+    dd
+        margin-left 0
+
 
 /* User profile page */
-.userProfile
-    .gravatar, .email
-        vertical-align middle
-        margin 5px
+
+.profile-icon
+    float left
+    font-size 1em
+    padding 0
+    text-align center
+    vertical-align middle
+    width 1.5em
+
+#userProfile
+    position relative
+    span
+        display block
+    dl
+        font-size 0.9em
+        line-height 1.3em
+        margin 0 0 1em
+        width 120%
+    form
+        fieldset
+            border none
+            display block
+            margin auto
+            max-width 55em
+            text-align center
+        span
+            display inline-block
+            margin 0.5em auto
+            max-width 25em
+            text-align center
+            width 45%
+            label
+                display inline-block
+                margin-left -12em
+                text-align right
+                width 10em
+            input
+                display inline-block
+                max-width 100%
+                width 15em
+
+            @media screen and (max-width: 35em)
+                display block
+                width 100%
+            @media screen and (max-width: 71.99em)
+                text-align left
+                max-width 15em
+                label
+                    display block
+                    margin-left 0
+                    text-align left
+        .save
+            background-color neutral-bg-color
+            border-color neutral-fg-color
+            color neutral-fg-color
+        .cancel
+            background-color light-button-bg-color
+            border-color light-button-fg-color
+            color light-button-fg-color
+
+    .gravatar
+        font-size 0.8em
+        text-align center
+        dl, dt, dd
+            margin 0
+            text-indent none
+            width 100%
+        img
+            border-radius round-factor*0.2em
+            max-width 100%
+            width 237px
+        @media screen and (max-width: 30em)
+            float left
+    .user
+        font-size 1.5em
+        font-weight bold
+        line-height 100%
+    .name 
+        margin 0 0 0.5em
+    .email
+        icon('mail')
+        &:before
+            @extend .profile-icon;
+    .location
+        icon('location')
+        &:before
+            @extend .profile-icon;
+    .website
+        icon('link')
+        &:before
+            @extend .profile-icon;
+    aside
+        bottom 0
+        float none
+        position absolute
+        text-align left
+        .actions
+            button
+                background-color dark-button-bg-color
+                border none
+                color dark-button-fg-color
