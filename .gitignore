@@ -58,13 +58,10 @@ build
 
 node_modules
 frontend/public/css/*
-public/lib/*
+frontend/public/lib/*
 
 # Catalog-specific directories
 data
-
-# nodemon configuration
-frontend/.config
 
 *~
 *.orig

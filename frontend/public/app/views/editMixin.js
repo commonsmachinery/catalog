@@ -12,20 +12,17 @@ define(['jquery', 'underscore', 'util'],
     var EditMixin = {
         /* Extend this with view-specific event handlers, if any */
         events: {
-            'click [data-action="edit"]': 'onEditStart',
             'click [data-action="save"]': 'onEditSave',
             'click [data-action="cancel"]': 'onEditCancel',
+            'click button': 'preventSubmit'
         },
 
-        onEditStart: function onEditStart() {
-            console.debug('start editing');
+        initialize: function (opts) {
+            this._editStartAttrs = util.deepClone(this.model.attributes);
 
-            this.trigger('edit:start', this);
-
-            this._editStartAttrs = _.clone(this.model.attributes);
-
-            this.$('.editable').prop('disabled', false);
-
+            if(opts.template){
+                this.$el.html($(opts.template).html());
+            }
             // Disable Save until a change is made, and ensure it has
             // the right text.
             this.$('[data-action="save"]')
@@ -35,72 +32,74 @@ define(['jquery', 'underscore', 'util'],
             this.$('[data-action="cancel"]').prop('disabled', false);
 
             this.listenToOnce(this.model, 'change', this.onEditModelChange);
+        },
 
-            // Hide edit and show save/cancel
-            this.$('[data-action="edit"]').hide();
-            this.$('[data-action="save"], [data-action="cancel"]').show();
+        preventSubmit: function preventSubmit(ev){
+            // remove the undesired behavior of submiting the form on button click
+            ev.preventDefault();
+            return false;
         },
 
         onEditSave: function onEditSave() {
             var self = this;
 
             console.debug('start saving');
-            this.trigger('edit:save:start', this);
 
             // Indicate that we're working
-            this.$('.actions').prop('disabled', true);
+            this.$('.actions').attr('disabled', true);
             this.$('[data-action="save"]').text('Saving...');
-            this.$('.editable').prop('disabled', true);
             util.working('start', this.el);
 
-            this.model.save(null, {
-                success: function() {
-                    console.debug('start success');
-                    self.trigger('edit:save:success', self);
+            try{
+                this.listenToOnce(this.model, 'invalid', function(){
+                    this.onError(this.model.validationError);
+                });
+                this.model.save(null, {
+                    success: function(model, response, options) {
+                        console.debug('start success');
+                        self.trigger('edit:save:success', self);
+                        self.stopListening(self.model, 'invalid');
 
-                    // Go back to Edit button
-                    self.$('[data-action="save"], [data-action="cancel"]').hide();
-                    self.$('[data-action="edit"]').show();
+                        // Go back to Edit button
+                        self.$('[data-action="edit"]').show();
 
-                    // Re-enable buttons
-                    self.$('.actions').prop('disabled', false);
-                    util.working('stop', self.el);
+                        // Re-enable buttons
+                        self.$('.actions').prop('disabled', false);
+                        util.working('stop', self.el);
+                        self._editStartAttrs = null;
+                    },
 
-                    self._editStartAttrs = null;
-                },
+                    error: function(model, response) {
+                        self.trigger('edit:save:error', self, response);
+                        self.stopListening(self.model, 'invalid');
 
-                error: function(model, response) {
-                    self.trigger('edit:save:error', self, response);
+                        // TODO: proper error message handling
+                        console.error('error saving %s: %s %s %s',
+                                      model.id, response.status, response.statusText,
+                                      response.responseText);
 
-                    // TODO: proper error message handling
-                    console.error('error saving %s: %s %s %s',
-                                  model.id, response.status, response.statusText,
-                                  response.responseText);
-
-                    self.$('[data-action="save"]').text('Retry saving');
-                    
-                    // Re-enable buttons
-                    self.$('.actions').prop('disabled', false);
-                    util.working('stop', self.el);
-                },
-            });
+                        self.$('[data-action="save"]').text('Retry saving');
+                        
+                        this.onError('error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                    },
+                });
+            }
+            catch(err){
+                console.error(err);
+            }
         },
 
         onEditCancel: function onEditCancel() {
             console.debug('cancel editing');
             this.stopListening(this.model, 'change', this.onEditModelChange);
 
-            this.$('.editable').prop('disabled', true);
-
-            this.trigger('edit:cancel', this);
-
             // Reset to original state
+            var self = this;
+            this.listenToOnce(this.model, 'change', function(){
+                this._editStartAttrs = null;
+                self.trigger('edit:cancel', this);
+            });
             this.model.set(this._editStartAttrs);
-            this._editStartAttrs = null;
-
-            // Go back to Edit button
-            this.$('[data-action="save"], [data-action="cancel"]').hide();
-            this.$('[data-action="edit"]').show();
         },
 
         onEditModelChange: function onEditModelChange() {
@@ -108,6 +107,31 @@ define(['jquery', 'underscore', 'util'],
             // starting editing
             this.$('[data-action="save"]').prop('disabled', false);
         },
+
+        onError: function onError(err){
+            //user feedback, something went wrong
+            util.working('stop', this.el);
+            this.$('.actions').prop('disabled', false);
+
+            var $el = this.$el;
+            var $ul;
+
+            $el.find('.errorMsg').remove();
+
+            if(Array.isArray(err)){
+                $el.append('<ul class="errorMsg"></ul>');
+                $ul = $el.find('.errorMsg');
+                var len = err.length;
+                for (var i=0; i < len; i++){
+                    $ul.append('<li>' + err[i] + '</li>');
+                }
+            }
+            else{
+                $el.append('<div class="errorMsg">' + err + '</div>');
+            }
+            this.$('[data-action="save"]').text('Try again');
+            this.$('.actions').prop('disabled', false);
+        }
     };
 
     return EditMixin;

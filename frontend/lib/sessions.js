@@ -281,7 +281,7 @@ checkUserSession = function checkUserSession(req, res, next) {
 setLocals = function setLocals(req, res, next) {
     if (req.session) {
         var locals = res.locals;
-        locals.user =  req.session.uid;
+        locals.userId =  req.session.uid;
         locals.loginEmail = req.session.email;
         locals.loginType = req.session.loginType;
         locals.url = req.url;

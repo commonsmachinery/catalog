@@ -87,6 +87,7 @@ require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
 			"works/:id(/)": 'work',
 			"works/:id/posts(/)": 'posts',
             "works/:id/sources(/)": 'workSources',
+            "users/:id(/)": 'userProfile',
 			"login(/)": 'login'
 		},
 		admin: function(){
@@ -96,10 +97,13 @@ require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
 			require(['home'], function(view) { view(router); });
 		},
 		login: function(){
-			// require(['login'], function(view) { view(router); });
+			 require(['login'], function(view) { view(router); });
 		},
 		posts: function(id){
 			require(['posts'], function(view) { view(router); });
+		},
+		userProfile: function(id){
+			require(['userProfile'], function(view){ view(router); });
 		},
         userSources: function(userId){
             require(['sources'], function(view) { view(router, '/users/' + userId); });
