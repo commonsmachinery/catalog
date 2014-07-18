@@ -50,38 +50,43 @@ define(['jquery', 'underscore', 'util'],
             this.$('[data-action="save"]').text('Saving...');
             util.working('start', this.el);
 
-            this.listenToOnce(this.model, 'invalid', function(){
-                this.onError(this.model.validationError);
-            });
-            this.model.save(null, {
-                success: function(model, response, options) {
-                    console.debug('start success');
-                    self.trigger('edit:save:success', self);
-                    self.stopListening(self.model, 'invalid');
+            try{
+                this.listenToOnce(this.model, 'invalid', function(){
+                    this.onError(this.model.validationError);
+                });
+                this.model.save(null, {
+                    success: function(model, response, options) {
+                        console.debug('start success');
+                        self.trigger('edit:save:success', self);
+                        self.stopListening(self.model, 'invalid');
 
-                    // Go back to Edit button
-                    self.$('[data-action="edit"]').show();
+                        // Go back to Edit button
+                        self.$('[data-action="edit"]').show();
 
-                    // Re-enable buttons
-                    self.$('.actions').prop('disabled', false);
-                    util.working('stop', self.el);
-                    self._editStartAttrs = null;
-                },
+                        // Re-enable buttons
+                        self.$('.actions').prop('disabled', false);
+                        util.working('stop', self.el);
+                        self._editStartAttrs = null;
+                    },
 
-                error: function(model, response) {
-                    self.trigger('edit:save:error', self, response);
-                    self.stopListening(self.model, 'invalid');
+                    error: function(model, response) {
+                        self.trigger('edit:save:error', self, response);
+                        self.stopListening(self.model, 'invalid');
 
-                    // TODO: proper error message handling
-                    console.error('error saving %s: %s %s %s',
-                                  model.id, response.status, response.statusText,
-                                  response.responseText);
+                        // TODO: proper error message handling
+                        console.error('error saving %s: %s %s %s',
+                                      model.id, response.status, response.statusText,
+                                      response.responseText);
 
-                    self.$('[data-action="save"]').text('Retry saving');
-                    
-                    this.onError('error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
-                },
-            });
+                        self.$('[data-action="save"]').text('Retry saving');
+                        
+                        this.onError('error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                    },
+                });
+            }
+            catch(err){
+                console.error(err);
+            }
         },
 
         onEditCancel: function onEditCancel() {

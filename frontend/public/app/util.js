@@ -211,7 +211,7 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
             }
         }
         else{
-            return 'Unknown format string';
+            throw new Error('Unknown validation string: ' + format);
         }
 };      
 
