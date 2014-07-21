@@ -64,6 +64,16 @@ util.inherits(WorkNotFoundError, common.NotFoundError);
 
 var MediaNotFoundError = media.MediaNotFoundError;
 
+/* Error raised when a Work annotation object is not found.
+ */
+var AnnotationNotFoundError = exports.AnnotationNotFoundError = function AnnotationNotFoundError(id) {
+    this.name = "AnnotationNotFoundError";
+    common.NotFoundError.call(this, 'core.WorkAnnotation', id);
+    Error.captureStackTrace(this, AnnotationNotFoundError);
+};
+
+util.inherits(AnnotationNotFoundError, common.NotFoundError);
+
 /* All command methods return { save: Work(), event: CoreEvent() }
  * or { remove: Work(), event: CoreEvent() }
  *
@@ -528,4 +538,321 @@ exports.addMediaToWork = function addMediaToWork(context, workId, origWorkId, or
             return tempMedia;
         })
         .then(db.Media.objectExporter(context));
+};
+
+/* Create a new Annotation object from a source object with the same
+ * properties.
+ *
+ * Returns a promise that resolves to the new annotation
+ */
+exports.createWorkAnnotation = function createWorkAnnotation(context, workId, src) {
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return command.execute(cmd.createWorkAnnotation, context, work, src)
+        })
+        // return annotation to match the API
+        .then(function(work) {
+            return work.annotations[work.annotations.length - 1];
+        })
+        .then(db.WorkAnnotation.objectExporter(context));
+};
+
+cmd.createWorkAnnotation = function commandCreateWorkAnnotation(context, work, src) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    var dest = {
+        updated_by: context.userId
+    };
+
+    command.copyIfSet(src, dest, 'property');
+
+    work.annotations.push(dest);
+    var annotation = work.annotations[work.annotations.length - 1];
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [{
+            event: 'core.work.annotation.added',
+            param: { annotation: annotation.exportObject() },
+        }],
+    });
+
+    debug('creating new annotation: %j', annotation.toObject());
+
+    return { save: work, event: event };
+};
+
+/* Get an Annotation object for a given Work.
+ *
+ * Returns a promise that resolves to the annotation or null if not found.
+ */
+exports.getWorkAnnotation = function getWorkAnnotation(context, workId, annotationId) {
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(annotationId, AnnotationNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            var annotation = work.annotations.id(annotationId);
+
+            if (!annotation) {
+                throw new AnnotationNotFoundError(annotationId);
+            }
+
+            return annotation;
+        })
+        .then(db.WorkAnnotation.objectExporter(context));
+};
+
+/* Get an Annotation object for a given Work.
+ *
+ * Returns a promise that resolves to the annotation or null if not found.
+ */
+exports.getAllAnnotations = function getAllAnnotations(context, workId) {
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            return work.annotations;
+        })
+        .then(function(annotations) {
+            return annotations.map(function(annotation) {
+                return db.WorkAnnotation.objectExporter(context)(annotation);
+            });
+        });
+};
+
+/* Update a Work annotation from a source object.
+ *
+ * Returns a promise that resolves to the updated annotation.
+ */
+exports.updateWorkAnnotation = function updateWorkAnnotation(context, workId, annotationId, src) {
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(annotationId, AnnotationNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return command.execute(cmd.updateAnnotation, context, work, annotationId, src);
+        })
+        // return annotation to match the API
+        .then(function(work) {
+            return work.annotations.id(annotationId);
+        })
+        .then(db.WorkAnnotation.objectExporter(context));
+};
+
+cmd.updateAnnotation = function commandUpdateAnnotation(context, work, annotationId, src) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    var annotation = work.annotations.id(annotationId);
+    var old_annotation = annotation.exportObject();
+    if (!annotation) {
+        throw new AnnotationNotFoundError(annotationId);
+    }
+
+    var props = ['property', 'score'];
+    var changed = false;
+
+    for (var i = 0; i < props.length; i++) {
+        var prop = props[i];
+        var newValue = src[prop] === null ? undefined : src[prop];
+        if (annotation[prop] != newValue) {
+            annotation[prop] = newValue;
+            changed = true;
+        }
+    }
+
+    if (changed) {
+        // OK to apply update, so get a new version
+        work.increment();
+
+        var event = new db.CoreEvent({
+            user: context.userId,
+            type: 'core.Work',
+            object: work.id,
+            events: [{
+                event: 'core.work.annotation.changed',
+                param: {
+                    old_annotation: old_annotation,
+                    new_annotation: annotation.exportObject()
+                },
+            }],
+        });
+
+        return { save: work, event: event };
+    }
+    else {
+        return { save: work, event: null };
+    }
+};
+
+/* Remove work annotation
+ *
+ * Returns a promise that resolves to removed annotation.
+ */
+exports.removeWorkAnnotation = function removeWorkAnnotation(context, workId, annotationId) {
+    var origAnnotation;
+
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(annotationId, AnnotationNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            origAnnotation = work.annotations.id(annotationId);
+            if (!origAnnotation) {
+                throw new AnnotationNotFoundError(annotationId);
+            }
+
+            return command.execute(cmd.removeWorkAnnotation, context, work, annotationId).return(origAnnotation);
+        })
+        .then(db.WorkAnnotation.objectExporter(context));;
+};
+
+cmd.removeWorkAnnotation = function commandRemoveWorkAnnotation(context, work, annotation) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    work.annotations.pull(annotation);
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [{
+            event: 'core.work.annotation.removed',
+            param: { annotation: annotation }
+        }],
+    });
+
+    return { save: work, event: event };
+};
+
+/* Remove all work annotations
+ *
+ * Returns an empty list on success.
+ */
+exports.removeAllAnnotations = function removeAllAnnotations(context, workId) {
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return command.execute(cmd.removeAllAnnotations, context, work).return([]);
+        });
+};
+
+cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [],
+    });
+
+    for (var i = 0; i < work.annotations.length; ++i) {
+        event.events.push({
+            event: 'core.work.annotation.removed',
+            param: { annotation: work.annotations[i] },
+        });
+    }
+
+    work.annotations = [];
+
+    return { save: work, event: event };
 };

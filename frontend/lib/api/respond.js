@@ -226,6 +226,30 @@ exports.transformMedia = function(workId, media, context, options) {
     });
 };
 
+/* Transform an annotation object for a response, using fields and include
+ * from option.  This always return a promise, since include may
+ * require additional objects to be fetched from the core DB.
+ */
+exports.transformAnnotation = function(workId, annotation, context, options) {
+    annotation.href = uris.buildWorkAnnotationURI(workId, annotation.id);
+
+    annotation = filterFields(annotation, options);
+
+    idToObject(annotation, 'updated_by', uris.buildUserURI);
+
+    // Add other fields here as those parts are supported by the API
+
+    if (!options || !options.include) {
+        return Promise.resolve(annotation);
+    }
+
+    // Add referenced objects, when requested.
+
+    return populate(annotation, options.include, {
+        'updated_by': function() { return populateUser(context, annotation.updated_by); },
+    });
+};
+
 /* Set all relevant response headers for an object.
  */
 var setObjectHeaders = exports.setObjectHeaders = function(res, object) {
