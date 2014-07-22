@@ -179,7 +179,6 @@ var populate = function(object, include, references)
         });
 };
 
-
 /* Helper method to populate a User reference. */
 var populateUser = function(context, referenceObj) {
     if (!referenceObj) {
@@ -238,22 +237,39 @@ exports.transformWork = function(work, context, options) {
     idToObject(work, 'added_by', uris.buildUserURI);
     idToObject(work, 'updated_by', uris.buildUserURI);
 
-    // Transform annotations
-    if (options && options.annotations && work.annotations) {
-        work.annotations = filterAnnotations(work, options.annotations);
-    }
-
     // Add other fields here as those parts are supported by the API
 
-    if (!options || !options.include) {
+    if ((!options || !options.include) && !options.annotations) {
         return Promise.resolve(work);
     }
 
+    // Populate annotations.updated_by if include=annotations.updated_by is given
+    return new Promise(function(resolve, reject) {
+        var fetching = [];
+        if (options && options.include && options.include.split(',').indexOf('annotations.updated_by') != -1) {
+            for (var a in work.annotations) {
+                idToObject(work.annotations[a], 'updated_by', uris.buildUserURI);
+                fetching.push(populateUser(context, work.annotations[a].updated_by));
+            }
+            Promise.all(fetching).then(function() {
+                resolve(work);
+            });
+        } else {
+            resolve(work);
+        }
+    })
     // Add referenced objects, when requested.
-    return populate(work, options.include, {
+    .then(populate(work, options.include, {
         'owner': function() { return populateUser(context, work.owner && work.owner.user); },
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
+    }))
+    // Transform annotations to map, if requested.
+    .then(function(work) {
+        if (options && options.annotations && work.annotations) {
+            work.annotations = filterAnnotations(work, options.annotations);
+        }
+        return work;
     });
 };
 

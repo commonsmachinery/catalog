@@ -517,6 +517,24 @@ describe('annotations', function() {
                 })
                 .end(done);
         });
+
+        it('include=annotations.updated_by should fill updated_by', function(done) {
+            var req = request('');
+            req.get(testObjects.workURI + '/?annotations=title&include=annotations.updated_by')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var a = res.body;
+
+                    expect ( a ).to.have.property( 'annotations' );
+                    expect ( a.annotations ).to.have.property( 'title' );
+                    expect ( a.annotations.title ).to.be.an( 'array' );
+                    expect ( a.annotations.title[0] ).to.have.property( 'updated_by' );
+                    expect ( a.annotations.title[0].updated_by ).to.have.property( 'profile' );
+                })
+                .end(done);
+        });
     }); // 'GET /works/ID?include=annotations'
 
     describe('GET /works/ID/media/ID?annotations', function() {
