@@ -584,6 +584,7 @@ cmd.createWorkAnnotation = function commandCreateWorkAnnotation(context, work, s
     };
 
     command.copyIfSet(src, dest, 'property');
+    command.copyIfSet(src, dest, 'score');
 
     work.annotations.push(dest);
     var annotation = work.annotations[work.annotations.length - 1];

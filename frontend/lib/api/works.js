@@ -25,7 +25,7 @@ var transform = function(req) {
     return function(work) {
         return respond.transformWork(
             work, req.context,
-            _.pick(req.query, 'fields', 'include'));
+            _.pick(req.query, 'fields', 'include', 'annotations'));
     };
 };
 

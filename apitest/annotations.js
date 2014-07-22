@@ -88,7 +88,7 @@ describe('annotations', function() {
             req.post('/works')
             .set('Content-Type', 'application/json')
             .set('Authorization', util.auth(util.testUser))
-            .send({alias: 'anno0-' + util.testUser})
+            .send({alias: 'anno-' + Date.now() + '-' + util.testUser})
             .end(function(err, res) {
                 if (res) {
                     workURI = res.header.location;
@@ -435,4 +435,169 @@ describe('annotations', function() {
                 .end(done);
         });
     }); // 'DELETE /works/ID/annotations'
+
+    describe('GET /works/ID?include=annotations', function() {
+        var testObjects = {};
+
+        // create work and annotation
+        before(function(done) {
+            createWorkAndAnnotation(done, testObjects);
+        });
+
+        // add extra annotations
+        before(function(done) {
+            var annoReq = request(testObjects.workURI);
+            annoReq.post('/annotations')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .send({
+                    property: {
+                        propertyName: 'title',
+                        value: 'new title'
+                    },
+                    score: 5
+                })
+                .expect(201)
+                .end(done);
+        });
+
+        // add extra annotations
+        before(function(done) {
+            var annoReq = request(testObjects.workURI);
+            annoReq.post('/annotations')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .send({
+                    property: {
+                        propertyName: 'creator',
+                        value: 'bob'
+                    },
+                    score: 0
+                })
+                .expect(201)
+                .end(done);
+        });
+
+        it('?annotations should return annotations as a map', function(done) {
+            var req = request('');
+            req.get(testObjects.workURI + '/?annotations=title')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var a = res.body;
+
+                    expect ( a ).to.have.property( 'annotations' );
+                    expect ( a.annotations ).to.have.property( 'title' );
+                    expect ( a.annotations ).to.not.have.property( 'creator' );
+                    expect ( a.annotations.title ).to.be.an( 'array' );
+
+                    expect ( a.annotations.title[0] ).to.have.property( 'score' );
+                    expect ( a.annotations.title[0] ).to.have.property( 'property' );
+                    expect ( a.annotations.title[0].score ).to.be( 5 );
+                    expect ( a.annotations.title[0].property.value ).to.be( 'new title' );
+                })
+                .end(done);
+        });
+
+        it('?annotations=all should return all annotations as a map', function(done) {
+            var req = request('');
+            req.get(testObjects.workURI + '/?annotations=title,creator')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var a = res.body;
+
+                    expect ( a ).to.have.property( 'annotations' );
+                    expect ( a.annotations ).to.have.property( 'title' );
+                    expect ( a.annotations ).to.have.property( 'creator' );
+                    expect ( a.annotations.title ).to.be.an( 'array' );
+                    expect ( a.annotations.creator ).to.be.an( 'array' );
+                })
+                .end(done);
+        });
+    }); // 'GET /works/ID?include=annotations'
+
+    describe('GET /works/ID/media/ID?annotations', function() {
+        var workURI;
+        var mediaURI;
+
+        // create work for adding media
+        before(function(done){
+            var req = request(config.frontend.baseURL);
+            req.post('/works')
+            .set('Content-Type', 'application/json')
+            .set('Authorization', util.auth(util.testUser))
+            .send({alias: 'anno-' + Date.now() + '-' + util.testUser})
+            .expect(201)
+            .end(function(err, res) {
+                if (res) {
+                    workURI = res.header.location;
+                }
+                return done(err);
+            });
+        });
+
+        // create media
+        before(function(done){
+            var req = request(workURI);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .send({
+                    metadata: { src: "test" },
+                    annotations: [{
+                        property: {
+                            propertyName: 'title',
+                            value: 'media title'
+                        }
+                    }, {
+                        property: {
+                            propertyName: 'creator',
+                            value: 'media creator'
+                        }
+                    }]
+                })
+                .expect(201)
+                .end(function(err, res) {
+                    if (res) {
+                        mediaURI = res.header.location;
+                    }
+                    return done(err);
+                });
+        });
+
+        it('media?annotations should be returned as map', function(done) {
+            var req = request('');
+            req.get(mediaURI + '/?annotations=title')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var a = res.body;
+
+                    expect ( a ).to.have.property( 'annotations' );
+                    expect ( a.annotations ).to.have.property( 'title' );
+                    expect ( a.annotations ).to.not.have.property( 'creator' );
+                })
+                .end(done);
+        });
+
+        it('media?annotations=all should return all annotations', function(done) {
+            var req = request('');
+            req.get(mediaURI + '/?annotations=all')
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect(function(res) {
+                    var a = res.body;
+
+                    expect ( a ).to.have.property( 'annotations' );
+                    expect ( a.annotations ).to.have.property( 'title' );
+                    expect ( a.annotations ).to.have.property( 'creator' );
+                })
+                .end(done);
+        });
+    }); // 'GET /works/ID/media/ID?annotations'
 });

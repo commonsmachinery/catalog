@@ -85,6 +85,60 @@ var filterFields = function(object, options) {
     return newObj;
 };
 
+/* Filter work or media annotations using a list of property names,
+ * e.g. title,locator.
+ *
+ * This will change the response from a plain list to a hash map,
+ * only including the listed properties.
+ * (all means that all properties are included in the map.)
+ *
+ * The keys in this map are propertyName, and the value a list of the
+ * Annotations for that property sorted on score. This allows easy access
+ * like annotations.title[0].property.value to show e.g. a title without
+ * having to dig through the list.
+ */
+var filterAnnotations = function(object, annotations) {
+    var annotationMap, i, a, all;
+
+    if (typeof annotations === 'string') {
+        annotations = annotations.split(',');
+    }
+
+    if (annotations.length === 1 && annotations[0] === 'all') {
+        all = true;
+    }
+
+    // initialize annotation map
+    annotationMap = {};
+    if (!all) {
+        for (i=0; i < annotations.length; i++) {
+            annotationMap[annotations[i]] = [];
+        }
+    } else {
+        for (i=0; i < object.annotations.length; i++) {
+            annotationMap[object.annotations[i].property.propertyName] = [];
+        }
+    }
+
+    // pick requested annotations from the object
+    for (i=0; i < object.annotations.length; i++) {
+        a = object.annotations[i];
+
+        if (annotations.indexOf(a.property.propertyName) != -1 || all) {
+            annotationMap[a.property.propertyName].push(a);
+        }
+    }
+
+    // sort annotations by score
+    for (a in annotationMap) {
+        annotationMap[a].sort(function(a, b) {
+            return b.score - a.score;
+        });
+    }
+
+    return annotationMap;
+}
+
 /* Populate referenced objects if requested by the caller.  Returns a
  * promise that resolved to the populated object.  Any errors while
  * populating will be logged but not propagated.
@@ -142,6 +196,21 @@ var populateUser = function(context, referenceObj) {
         });
 };
 
+/* Helper method to populate a Media reference. */
+var populateMedia = function(context, referenceObj) {
+    if (!referenceObj) {
+        debug('nothing to populate - this is OK if field was filtered out');
+        return Promise.resolve(null);
+    }
+
+    return core.getMedia(context, referenceObj.id)
+        .then(function(media) {
+            _.extend(referenceObj, media);
+        })
+        .catch(function(err) {
+            console.error('error populating Media %s: %s', referenceObj.id, err);
+        });
+};
 
 /* Transform a user object for a response.  To be consistent
  * with other transform functions, this returns a promise
@@ -169,6 +238,11 @@ exports.transformWork = function(work, context, options) {
     idToObject(work, 'added_by', uris.buildUserURI);
     idToObject(work, 'updated_by', uris.buildUserURI);
 
+    // Transform annotations
+    if (options && options.annotations && work.annotations) {
+        work.annotations = filterAnnotations(work, options.annotations);
+    }
+
     // Add other fields here as those parts are supported by the API
 
     if (!options || !options.include) {
@@ -176,28 +250,11 @@ exports.transformWork = function(work, context, options) {
     }
 
     // Add referenced objects, when requested.
-
     return populate(work, options.include, {
         'owner': function() { return populateUser(context, work.owner && work.owner.user); },
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
     });
-};
-
-/* Helper method to populate a Media reference. */
-var populateMedia = function(context, referenceObj) {
-    if (!referenceObj) {
-        debug('nothing to populate - this is OK if field was filtered out');
-        return Promise.resolve(null);
-    }
-
-    return core.getMedia(context, referenceObj.id)
-        .then(function(media) {
-            _.extend(referenceObj, media);
-        })
-        .catch(function(err) {
-            console.error('error populating Media %s: %s', referenceObj.id, err);
-        });
 };
 
 /* Transform a media object for a response, using fields and include
@@ -211,6 +268,11 @@ exports.transformMedia = function(workId, media, context, options) {
 
     idToObject(media, 'added_by', uris.buildUserURI);
     media.replaces = { id: media.replaces, href: uris.buildWorkMediaURI(workId, media.id) };
+
+    // Transform annotations
+    if (options && options.annotations && media.annotations) {
+        media.annotations = filterAnnotations(media, options.annotations);
+    }
 
     // Add other fields here as those parts are supported by the API
 
