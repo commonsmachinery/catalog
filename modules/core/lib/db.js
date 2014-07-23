@@ -145,8 +145,18 @@ var MediaAnnotation = mongo.schema(mediaAnnotationProps);
 setExportMethods(MediaAnnotation);
 
 var WorkAnnotation = mongo.schema(_.extend({}, mediaAnnotationProps, {
-    updated_by: { type: ObjectId, required: true, ref: 'User' },
-    updated_at: { type: Date, required: true, default: Date.now },
+    updated_by: {
+        type: ObjectId,
+        // TODO: sync with documentation (field is optional in doc)
+        required: true,
+        ref: 'User'
+    },
+    updated_at: {
+        type: Date,
+        // TODO: sync with documentation (field is optional in doc)
+        required: true,
+        default: Date.now
+    },
     score: { type: Number, required: true, default: 0 },
 }));
 setExportMethods(WorkAnnotation);
@@ -171,7 +181,6 @@ var Media = mongo.schema({
     annotations: [MediaAnnotation],
     metadata: mongo.Schema.Types.Mixed,
 });
-
 setExportMethods(Media);
 
 
@@ -242,6 +251,7 @@ exports.CoreEvent = conn.model('CoreEvent', event.EventStagingSchema);
 exports.User = conn.model('User', User);
 exports.Media = conn.model('Media', Media);
 exports.Work = conn.model('Work', Work);
+exports.WorkAnnotation = conn.model('WorkAnnotation', WorkAnnotation);
 
 // Connect, returning a promise that resolve when connected
 

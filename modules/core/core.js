@@ -64,3 +64,10 @@ exports.createWorkMedia = work.createWorkMedia;
 exports.removeMediaFromWork = work.removeMediaFromWork;
 exports.unlinkAllMedia = work.unlinkAllMedia;
 exports.addMediaToWork = work.addMediaToWork;
+
+exports.getWorkAnnotation = work.getWorkAnnotation;
+exports.getAllAnnotations = work.getAllAnnotations;
+exports.createWorkAnnotation = work.createWorkAnnotation;
+exports.updateWorkAnnotation = work.updateWorkAnnotation;
+exports.removeWorkAnnotation = work.removeWorkAnnotation;
+exports.removeAllAnnotations = work.removeAllAnnotations;

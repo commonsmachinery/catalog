@@ -27,7 +27,7 @@ var transform = function(req) {
     return function(media) {
         return respond.transformMedia(
             req.params.workId, media, req.context,
-            _.pick(req.query, 'fields', 'include'));
+            _.pick(req.query, 'fields', 'include', 'annotations'));
     };
 };
 

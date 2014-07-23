@@ -23,6 +23,7 @@ var core = require('../../modules/core/core');
 var users = require('./api/users');
 var works = require('./api/works');
 var media = require('./api/media');
+var annotations = require('./api/annotations');
 var etag = require('./etag');
 
 
@@ -111,3 +112,13 @@ router.route('/works/:workId/media').all(setContext)
 router.route('/works/:workId/media/:mediaId').all(setContext)
     .get(media.getWorkMedia)
     .delete(media.removeMediaFromWork).all(handleErrors);
+
+router.route('/works/:workId/annotations').all(setContext)
+    .get(annotations.getAllAnnotations)
+    .post(annotations.createWorkAnnotation)
+    .delete(annotations.removeAllAnnotations).all(handleErrors);
+router.route('/works/:workId/annotations/:annotationId').all(setContext)
+    .get(annotations.getWorkAnnotation)
+    .put(annotations.updateWorkAnnotation)
+    .patch(annotations.updateWorkAnnotation)
+    .delete(annotations.removeWorkAnnotation).all(handleErrors);
