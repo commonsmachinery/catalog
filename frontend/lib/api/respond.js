@@ -262,11 +262,13 @@ exports.transformWork = function(work, context, options) {
         }
     })
     // Add referenced objects, when requested.
-    .then(populate(work, options.include, {
-        'owner': function() { return populateUser(context, work.owner && work.owner.user); },
-        'added_by': function() { return populateUser(context, work.added_by); },
-        'updated_by': function() { return populateUser(context, work.updated_by); },
-    }))
+    .then(function(work) {
+        return populate(work, options.include, {
+            'owner': function() { return populateUser(context, work.owner && work.owner.user); },
+            'added_by': function() { return populateUser(context, work.added_by); },
+            'updated_by': function() { return populateUser(context, work.updated_by); },
+        });
+    })
     // Transform annotations to map, if requested.
     .then(function(work) {
         if (options && options.annotations && work.annotations) {
