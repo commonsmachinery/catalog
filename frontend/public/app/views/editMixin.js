@@ -52,7 +52,7 @@ define(['jquery', 'underscore', 'util'],
 
             try{
                 this.listenToOnce(this.model, 'invalid', function(){
-                    this.onError(this.model.validationError);
+                    util.showError(this, this.model.validationError);
                 });
                 this.model.save(null, {
                     success: function(model, response, options) {
@@ -65,6 +65,7 @@ define(['jquery', 'underscore', 'util'],
 
                         // Re-enable buttons
                         self.$('.actions').prop('disabled', false);
+                        this.$('[data-action="save"]').text('Save');
                         util.working('stop', self.el);
                         self._editStartAttrs = null;
                     },
@@ -80,7 +81,7 @@ define(['jquery', 'underscore', 'util'],
 
                         self.$('[data-action="save"]').text('Retry saving');
                         
-                        this.onError('error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                        util.showError(self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
                     },
                 });
             }
@@ -91,9 +92,9 @@ define(['jquery', 'underscore', 'util'],
 
         onEditCancel: function onEditCancel() {
             console.debug('cancel editing');
-            this.stopListening(this.model, 'change', this.onEditModelChange);
 
-            // Reset to original state
+            // Reset to original state. the cancel event should trigger after we reset values
+            this.stopListening(this.model, 'change', this.onEditModelChange);
             var self = this;
             this.listenToOnce(this.model, 'change', function(){
                 this._editStartAttrs = null;
@@ -106,31 +107,6 @@ define(['jquery', 'underscore', 'util'],
             // Enable save button on first change to the model after
             // starting editing
             this.$('[data-action="save"]').prop('disabled', false);
-        },
-
-        onError: function onError(err){
-            //user feedback, something went wrong
-            util.working('stop', this.el);
-            this.$('.actions').prop('disabled', false);
-
-            var $el = this.$el;
-            var $ul;
-
-            $el.find('.errorMsg').remove();
-
-            if(Array.isArray(err)){
-                $el.append('<ul class="errorMsg"></ul>');
-                $ul = $el.find('.errorMsg');
-                var len = err.length;
-                for (var i=0; i < len; i++){
-                    $ul.append('<li>' + err[i] + '</li>');
-                }
-            }
-            else{
-                $el.append('<div class="errorMsg">' + err + '</div>');
-            }
-            this.$('[data-action="save"]').text('Try again');
-            this.$('.actions').prop('disabled', false);
         }
     };
 

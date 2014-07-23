@@ -37,7 +37,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
 
             this.dialog = new View(opts);
 
-            this.listenToOnce(view, 'create:cancel', function(){
+            this.listenToOnce(View, 'create:cancel', function(){
                 this.stopListening(this.dialog);
                 this.dialog.remove();
             });

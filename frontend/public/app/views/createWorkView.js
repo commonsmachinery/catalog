@@ -9,8 +9,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         'views/createMixin'],
        function($, _, Backbone, util,
                 stickit,
-                Work,
-                EditMixin)
+                CreateMixin)
 {
     'use strict';
 
