@@ -11,7 +11,7 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
 
         defaults: {
             public: true
-        }
+        },
 
         validate: function(){
             var attrs = this.attributes;

@@ -12,11 +12,10 @@ define(['jquery', 'underscore', 'util'],
     var CreateMixin = {
         /* Extend this with view-specific event handlers, if any */
         events: {
-            'click [data-action="create"]': 'onCreateStart',
             'click [data-action="cancel"]': 'onCreateCancel',
         },
 
-        onCreateStart: function onCreateStart() {
+        initialize: function(opts) {
             var self = this;
 
             console.debug('creating new object: %j', this.model.attributes);

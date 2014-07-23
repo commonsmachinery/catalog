@@ -1,34 +1,30 @@
-/* Catalog web application - view for creating new works
+/* Catalog web application - view to create new works
  *
  * Copyright 2014 Commons Machinery http://commonsmachinery.se/
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
-        'lib/Backbone.ModelBinder',
-        'models/workModel',
+        'lib/backbone.stickit',
         'views/createMixin'],
        function($, _, Backbone, util,
-                ModelBinder,
+                stickit,
                 Work,
-                CreateMixin)
+                EditMixin)
 {
     'use strict';
 
     var CreateWorkView = Backbone.View.extend(_.extend(CreateMixin, {
-        initialize: function() {
-            this.model = new Work({
-                visible: 'private',
-                state: 'draft',
-                metadataGraph: {}
-            });
-            this._binder = new ModelBinder();
+        bindings:{
+            '#input-alias': 'alias',
+            '#input-public': 'public',
+            '#input-description': 'description'
         },
 
-        render: function() {
-            this._binder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
+        render: function(){
+            this.stickit();
             return this;
-        },
+        }
     }));
 
     return CreateWorkView;

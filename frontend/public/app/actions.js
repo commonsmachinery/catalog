@@ -6,30 +6,50 @@
 
 /*global requirejs, require*/
 
-define(['lib/jquery', 'lib/backbone', 'views/createWorkView', 'models/work'], 
-    function($, Backbone, CreateWorkView, WorkModel){
+define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/workModel'], 
+    function($, _, Backbone, CreateWorkView, WorkModel){
     'use strict';
 
     var NavView = Backbone.View.extend({
-        initialize: function(){
-            this.$('.newWork').on('click',function(ev){
-                $('#content').append('<div class="dialog" id="workForm"></div>');
-                var createWorkView = new CreateWorkView({
-                    model: new WorkModel(),
-                    el: '.dialog#workForm'
-                }).render();
+        events: {
+            'click .createWork': function onCreateWork(){
 
-                this.listenToOnce(createWorkView, 'create:cancel', function(){
-                    createWorkView.remove();
-                })
+                this.showDialog(CreateWorkView, {
+                    model: new WorkModel(),
+                    el: '.dialog#workForm',
+                    template: '#workFormTemplate'
+                }).render();
+            }
+        },
+
+        initialize: function(){
+            this.delegateEvents();
+        },
+
+        showDialog: function showDialog(View, opts){
+            var currentDialog = this.dialog;
+            if(currentDialog){
+                this.stopListening(currentDialog);
+                currentDialog.remove();
+            }
+
+            $('#content').append('<div class="dialog" id="workForm"></div>');
+
+            this.dialog = new View(opts);
+
+            this.listenToOnce(view, 'create:cancel', function(){
+                this.stopListening(this.dialog);
+                this.dialog.remove();
             });
+
+            return this.dialog;
         }
     });
         
 
     return function(){
-        var navView = new NavView({
-            el: $('#navHeader')
+        var navView = new NavView({ //jslint ignore: line
+            el: $('nav#header')
         });
     }
 });
