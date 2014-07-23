@@ -24,32 +24,22 @@ requirejs.config({
 	}
 });
 
-require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
+require(['jquery', 'lib/backbone', 'session', 
+		'actions'], 
+		function($, Backbone, session, 
+			actions)
+{
     'use strict';
 
 	function _init(){
-		session.init();
+        session.init();
+        actions();
 
 		// TODO: this doesn't handle network timeouts, only various
 		// gateway timeouts.  This all probably should go into a
 		// wrapper class instead that handles common errors, but it
 		// must be reviewed how that interacts with Backbone.
 
-		function retry(xhr, status /*, error */){
-			/* jshint validthis:true */
-			if(this.tryCount < this.maxTries){
-				console.error('%s: %s... retrying', xhr, status);
-				this.tryCount++;
-				var self = this;
-				setTimeout(function(){
-					$.ajax(self);
-				}, 3000);
-			}
-			else{
-				console.error("couldn't process request!");
-				//ToDo: show some message dialog to the user
-			}
-		}
 
 		/* If network timeout or internal server error, retry */
 		$.ajaxSetup({
@@ -64,6 +54,22 @@ require(['jquery', 'lib/backbone', 'session'], function($, Backbone, session){
 				598: retry
 			}
 		});
+	}
+
+	function retry(xhr, status /*, error */){
+		/* jshint validthis:true */
+		if(this.tryCount < this.maxTries){
+			console.error('%s: %s... retrying', xhr, status);
+			this.tryCount++;
+			var self = this;
+			setTimeout(function(){
+				$.ajax(self);
+			}, 3000);
+		}
+		else{
+			console.error("couldn't process request!");
+			//ToDo: show some message dialog to the user
+		}
 	}
 
 	/* To allow navigation that changes a URL without loading a new
