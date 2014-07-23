@@ -73,7 +73,7 @@ describe('annotations', function() {
                     })
                     .end(done);
             });
-    }
+    };
 
     // Actual test cases
 

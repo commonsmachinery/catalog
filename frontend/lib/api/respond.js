@@ -124,20 +124,21 @@ var filterAnnotations = function(object, annotations) {
     for (i=0; i < object.annotations.length; i++) {
         a = object.annotations[i];
 
-        if (annotations.indexOf(a.property.propertyName) != -1 || all) {
+        if (annotations.indexOf(a.property.propertyName) !== -1 || all) {
             annotationMap[a.property.propertyName].push(a);
         }
     }
 
     // sort annotations by score
+    function compareScore(a, b) { return b.score - a.score; }
     for (a in annotationMap) {
-        annotationMap[a].sort(function(a, b) {
-            return b.score - a.score;
-        });
+        if (annotationMap.hasOwnProperty(a)) {
+            annotationMap[a].sort(compareScore);
+        }
     }
 
     return annotationMap;
-}
+};
 
 /* Populate referenced objects if requested by the caller.  Returns a
  * promise that resolved to the populated object.  Any errors while
@@ -246,10 +247,12 @@ exports.transformWork = function(work, context, options) {
     // Populate annotations.updated_by if include=annotations.updated_by is given
     return new Promise(function(resolve, reject) {
         var fetching = [];
-        if (options && options.include && options.include.split(',').indexOf('annotations.updated_by') != -1) {
+        if (options && options.include && options.include.split(',').indexOf('annotations.updated_by') !== -1) {
             for (var a in work.annotations) {
-                idToObject(work.annotations[a], 'updated_by', uris.buildUserURI);
-                fetching.push(populateUser(context, work.annotations[a].updated_by));
+                if (work.annotations.hasOwnProperty(a)) {
+                    idToObject(work.annotations[a], 'updated_by', uris.buildUserURI);
+                    fetching.push(populateUser(context, work.annotations[a].updated_by));
+                }
             }
             Promise.all(fetching).then(function() {
                 resolve(work);

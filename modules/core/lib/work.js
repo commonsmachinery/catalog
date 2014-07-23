@@ -559,7 +559,7 @@ exports.createWorkAnnotation = function createWorkAnnotation(context, workId, sr
         })
         .then(setWorkPerms(context))
         .then(function(work) {
-            return command.execute(cmd.createWorkAnnotation, context, work, src)
+            return command.execute(cmd.createWorkAnnotation, context, work, src);
         })
         // return annotation to match the API
         .then(function(work) {
@@ -719,7 +719,7 @@ cmd.updateAnnotation = function commandUpdateAnnotation(context, work, annotatio
     for (var i = 0; i < props.length; i++) {
         var prop = props[i];
         var newValue = src[prop] === null ? undefined : src[prop];
-        if (annotation[prop] != newValue) {
+        if (annotation[prop] !== newValue) {
             annotation[prop] = newValue;
             changed = true;
         }
@@ -777,7 +777,7 @@ exports.removeWorkAnnotation = function removeWorkAnnotation(context, workId, an
 
             return command.execute(cmd.removeWorkAnnotation, context, work, annotationId).return(origAnnotation);
         })
-        .then(db.WorkAnnotation.objectExporter(context));;
+        .then(db.WorkAnnotation.objectExporter(context));
 };
 
 cmd.removeWorkAnnotation = function commandRemoveWorkAnnotation(context, work, annotation) {

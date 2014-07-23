@@ -12,7 +12,6 @@ var debug = require('debug')('catalog:frontend:api:annotations'); // jshint igno
 
 // External libs
 var _ = require('underscore');
-var url = require('url');
 var Promise = require('bluebird');
 
 // Components
@@ -20,7 +19,6 @@ var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
-var config = require('../../../lib/config');
 
 /* Return promise handler to transform the annotation object for JSON responses.
  */
@@ -96,7 +94,7 @@ exports.getAllAnnotations = function getAllAnnotations(req, res, next) {
         core.getAllAnnotations(req.context, req.params.workId)
             .then(transformMany(req))
             .then(function(annotations) {
-                return res.json(200, annotations)
+                return res.json(200, annotations);
             })
             .catch(function(err) {
                 next(err);

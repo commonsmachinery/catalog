@@ -32,7 +32,7 @@ describe('Create annotation', function() {
             propertyName: 'title',
             value: 'test title'
         }
-    }
+    };
 
     before(function() {
         testWork = work.command.create({ userId: new ObjectId() }, {
@@ -104,7 +104,7 @@ describe('Remove annotation', function() {
             propertyName: 'title',
             value: 'test title'
         }
-    }
+    };
 
     before(function() {
         testWork = work.command.create({ userId: new ObjectId() }, {
