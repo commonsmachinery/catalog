@@ -1,0 +1,6 @@
+
+mixin defTerm(term, caption, className)
+    if term != null
+        span(class="#{className || caption.toLowerCase().replace(' ', '_')}")
+            dt #{caption}
+            dd #{term}   

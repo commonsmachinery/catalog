@@ -8,12 +8,6 @@
 
 - var owner = userId+'' === user.id+''
 
-mixin defTerm(term, caption)
-    if term != null
-        span(class=caption.toLowerCase().replace(' ', '_'))
-            dt #{caption}
-            dd #{term}    
-
 mixin userProfile(profile, showEmpty)
     section
         div.gravatar(class="grid-20 tablet-grid-25 mobile-grid-100")
@@ -23,7 +17,7 @@ mixin userProfile(profile, showEmpty)
         div(class="grid-45 tablet-grid-45 mobile-grid-60")
             dl.hideCaption
                 - var displayName = user.alias || user.id
-                +defTerm(showEmpty || displayName, 'User')
+                h1 +defTerm(showEmpty || displayName, 'User')
                 +defTerm(showEmpty || profile.name, 'Name')
                 +defTerm(showEmpty || profile.email, 'Email')
                 +defTerm(showEmpty || profile.location, 'Location')
@@ -35,7 +29,7 @@ mixin userProfile(profile, showEmpty)
                     a(href='#{userId}/sources') My stock sources
 
                 div.actions
-                    button.edit(data-action="edit-profile") Edit Profile
+                    button.edit(data-action="edit") Edit Profile
 
 include includes/top
     div#userProfile(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")

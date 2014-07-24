@@ -18,8 +18,8 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
     var userModel = null;
 
     var UserView = Backbone.View.extend({
-        // just bind action events, but not render yet
         initialize: function(){
+        // just bind action events, but not render yet
             this._profileView = new UserProfileView({
                 el: this.$el,
                 model: userModel

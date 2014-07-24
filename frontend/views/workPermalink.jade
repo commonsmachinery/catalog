@@ -3,104 +3,34 @@
 //- Copyright 2014 Commons Machinery http://commonsmachinery.se/
 //- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
-- var work = data
-
-- function shortenUserURI(uri) { var pos = uri.search(/\/[^\/]+$/); return pos > 0 ? uri.slice(pos + 1) : uri; };
-
-mixin editWorkView(work)
-    div#work
-        fieldset.editable(disabled=true)
-            div
-                h3
-                    = 'Work: '
-                    span(data-bind="id") #{work.id || ''}
-            div
-                | Permalink:
-                a(data-bind-href="resource", href=work.resource || '#')
-                    span(data-bind="resource") #{work.resource || ''}
-            div
-                = 'Created by '
-                span(data-bind="creator") #{shortenUserURI(work.creator || '')}
-                = ' on '
-                span(data-bind="created") #{work.created || ''}
-            div
-                = 'Last updated by '
-                span(data-bind="updatedBy") #{shortenUserURI(work.updatedBy || '')}
-                = ' on '
-                span(data-bind="updated") #{work.updated || ''}
-            div
-                label(for="visible") Visible:
-                select(data-bind="visible", id="visible")
-                    option(value="private", selected=(work.visible === 'private')) Private
-                    option(value="group", selected=(work.visible === 'group')) Group
-                    option(value="public", selected=(work.visible === 'public')) Public
-
-                label(for="state") State:
-                select(data-bind="state", id="state")
-                    option(value="draft", selected=(work.state === 'draft')) Draft
-                    option(value="published", selected=(work.state === 'published')) Published
-            div
-                h4
-                    a(data-bind-href="metadata", href=work.metadata || '#')
-                        | Metadata:
-            textarea(data-bind="metadataGraph")
-                = JSON.stringify(work.metadataGraph || '', null, 4)
-        fieldset.actions
-            button(data-action="edit") Edit
-            button.hidden(data-action="save", disabled=true) Save
-            button.hidden(data-action="cancel", disabled=true) Cancel
-            //- Let view show it if permission allows it
-            button.hidden(data-action="delete") Delete
 
 
-mixin readWorkView(work)
-    div#work
-        div
-            div
-                h3
-                    = 'Work: '
-                    span(data-bind="id") #{work.id || ''}
-            div
-                | Permalink:
-                a(data-bind-href="resource", href=work.resource || '#')
-                    span(data-bind="resource") #{work.resource || ''}
-            div
-                = 'Created by '
-                span(data-bind="creator") #{shortenUserURI(work.creator || '')}
-                = ' on '
-                span(data-bind="created") #{work.created || ''}
-            div
-                = 'Last updated by '
-                span(data-bind="updatedBy") #{shortenUserURI(work.updatedBy || '')}
-                = ' on '
-                span(data-bind="updated") #{work.updated || ''}
-            div
-                label(for="visible") Visible:
-                span(data-bind="visible", id="visible") #{work.visible || ''}
-
-                label(for="state") State:
-                span(data-bind="state", id="state") #{work.state || ''}
-            div
-                h4
-                    a(data-bind-href="metadata", href=work.metadata || '#')
-                        | Metadata:
-            pre(data-bind="metadataGraph")
-                = JSON.stringify(work.metadataGraph || '', null, 4)
-
+mixin workDetails(showEmpty)
+    section
+        - var displayTitle = work.alias || work.id
+        header: dl.hideCaption: h1 
+            +defTerm(displayTitle, 'Title')
+            +defTerm(work.public, 'Public')
+            if work._perms.write
+                button.edit(data-action="edit") Edit Details
+        div.embed
+        footer.details
+            div.gravatar
+                img(src=gravatarHashURL(work.added_by.profile.gravatar_hash, 50))
+            dl
+                - var val = '<a href='+ work.added_by.id +'>'+ work.added_by.id +'</a>'
+                +defTerm(val, 'Added by')
+                +defTerm(work.added_at, 'on', 'added_at')
+                +defTerm('--th time' , 'for the', 'forks')
+                +defTerm('--' , 'from', 'media')
+                +defTerm('-- collections', 'and currently part of', 'collections')
 
 include includes/top
-    if work.permissions.edit
-        +editWorkView(work)
-    else
-        +readWorkView(work)
+    div#workDetails
+        +workDetails
+
 
     include includes/bottom
-
-    script#editWorkTemplate(type="text/template")
-        +editWorkView({})
-
-    script#readWorkTemplate(type="text/template")
-        +readWorkView({})
 
     script.bootstrapData(type='application/json')
         != bootstrapData({ "data": work })

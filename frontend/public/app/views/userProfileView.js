@@ -42,7 +42,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         events: {
-            'click [data-action="edit-profile"]': "onEditProfile" 
+            'click [data-action="edit"]': "onEditProfile" 
         },
 
         initialize: function(opts) {
