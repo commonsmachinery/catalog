@@ -14,7 +14,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
         events: {
             'click .createWork': function onCreateWork(){
                 this.showDialog(CreateWorkView, {
-                    model: new WorkModel(),
+                    model: new WorkModel(null, {wait:true}),
                     el: '.dialog#workForm',
                     template: '#workFormTemplate'
                 }).render();
@@ -39,6 +39,9 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
                 this.stopListening(this.dialog);
                 this.dialog.remove();
             });
+            this.listenToOnce(this.dialog, 'create:success', function(){
+                window.location.assign(this.dialog.model.url());
+            })
 
             return this.dialog;
         }

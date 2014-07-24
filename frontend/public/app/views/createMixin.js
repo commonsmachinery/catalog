@@ -57,7 +57,6 @@ define(['jquery', 'underscore', 'util'],
 
                         // Re-enable view, in case it is persistently visible
                         self.$('[data-action="create"]').text('Save');
-                        self.$('.actions').prop('disabled', false);
                         util.working('stop', self.el);
                     },
 

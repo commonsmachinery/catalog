@@ -25,15 +25,15 @@ requirejs.config({
 });
 
 require(['jquery', 'lib/backbone', 'session', 
-		'actions'], 
+		'nav'], 
 		function($, Backbone, session, 
-			actions)
+			nav)
 {
     'use strict';
 
 	function _init(){
         session.init();
-        actions();
+        nav();
 
 		// TODO: this doesn't handle network timeouts, only various
 		// gateway timeouts.  This all probably should go into a
