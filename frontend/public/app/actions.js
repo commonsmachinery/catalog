@@ -13,7 +13,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
     var NavView = Backbone.View.extend({
         events: {
             'click .createWork': function onCreateWork(){
-
                 this.showDialog(CreateWorkView, {
                     model: new WorkModel(),
                     el: '.dialog#workForm',
@@ -36,8 +35,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
             $('#content').append('<div class="dialog" id="workForm"></div>');
 
             this.dialog = new View(opts);
-
-            this.listenToOnce(View, 'create:cancel', function(){
+            this.listenToOnce(this.dialog, 'create:cancel', function(){
                 this.stopListening(this.dialog);
                 this.dialog.remove();
             });

@@ -13,6 +13,7 @@ define(['jquery', 'underscore', 'util'],
         /* Extend this with view-specific event handlers, if any */
         events: {
             'click [data-action="cancel"]': 'onCreateCancel',
+            'click [data-action="save"]': 'onCreateSave',
         },
 
         initialize: function(opts) {
@@ -27,7 +28,6 @@ define(['jquery', 'underscore', 'util'],
             // Indicate that we are running
             this.$('[data-action="create"]').text('Creating...');
 
-            
         },
 
         onCreateCancel: function onCreateCancel() {

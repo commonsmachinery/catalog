@@ -31,5 +31,6 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
         }
 
     });
+
     return Work;
 });

@@ -25,6 +25,5 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             return this;
         }
     }));
-
     return CreateWorkView;
 });
