@@ -38,6 +38,11 @@ function buildWorkMediaURI(workID, mediaID) {
 }
 exports.buildWorkMediaURI = buildWorkMediaURI;
 
+function buildWorkAnnotationURI(workID, annotationID) {
+    return buildURI('works', workID, 'annotations', annotationID);
+}
+exports.buildWorkAnnotationURI = buildWorkAnnotationURI;
+
 function buildStockSourceURI(userID, sourceID) {
     return buildURI('users', userID, 'sources', sourceID);
 }
