@@ -5,11 +5,9 @@
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
-        'lib/backbone.stickit',
-        'models/userModel'],
+        'lib/backbone.stickit'],
        function($, _, Backbone, util,
-                stickit,
-                User)
+                stickit)
 {
     'use strict';
 
@@ -17,7 +15,14 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         bindings:{
             '.user': {
                 observe: 'alias',
-                update: 'renderOrNot',
+                update: function($el, val, model){
+                    if(val){
+                        $el.find('dd').html(val);
+                    }
+                    else{
+                        $el.find('dd').html(model.id);
+                    }
+                },
             },
             '.name': {
                 observe: 'profile.name',

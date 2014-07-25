@@ -182,7 +182,7 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
     };
 
     exports.emptyViewElement = function emptyViewElement(view, parent){
-        // don't want to remove the container and do want to stop listening to this view
+        // stop listening and empty view keeping the container
         view.stopListening();
         parent.stopListening(view);
         view.$el.empty();

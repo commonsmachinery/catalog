@@ -65,7 +65,7 @@ define(['jquery', 'underscore', 'util'],
 
                         // Re-enable buttons
                         self.$('.actions').prop('disabled', false);
-                        this.$('[data-action="save"]').text('Save');
+                        self.$('[data-action="save"]').text('Save');
                         util.working('stop', self.el);
                         self._editStartAttrs = null;
                     },

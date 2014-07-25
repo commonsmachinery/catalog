@@ -17,7 +17,8 @@ mixin userProfile(profile, showEmpty)
         div(class="grid-45 tablet-grid-45 mobile-grid-60")
             dl.hideCaption
                 - var displayName = user.alias || user.id
-                h1 +defTerm(showEmpty || displayName, 'User')
+                h1 
+                    +defTerm(showEmpty || displayName, 'User')
                 +defTerm(showEmpty || profile.name, 'Name')
                 +defTerm(showEmpty || profile.email, 'Email')
                 +defTerm(showEmpty || profile.location, 'Location')
@@ -32,8 +33,9 @@ mixin userProfile(profile, showEmpty)
                     button.edit(data-action="edit") Edit Profile
 
 include includes/top
-    div#userProfile(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
-        +userProfile(user.profile)
+    div#user
+        div#userProfile(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
+            +userProfile(user.profile)
 
     include includes/bottom
 
