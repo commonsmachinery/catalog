@@ -5,15 +5,17 @@
 
 
 
-mixin workDetails(showEmpty)
-    section
+mixin workDetails()
+    article
         - var displayTitle = work.alias || work.id
         header: dl.hideCaption: h1 
             +defTerm(displayTitle, 'Title')
             +defTerm(work.public, 'Public')
             if work._perms.write
-                button.edit(data-action="edit") Edit Details
-        div.embed
+                span.actions
+                    button.edit(data-action="edit") Edit Details
+        span.embed
+        span.description #{work.description}
         footer.details
             div.gravatar
                 img(src=gravatarHashURL(work.added_by.profile.gravatar_hash, 50))
@@ -26,11 +28,31 @@ mixin workDetails(showEmpty)
                 +defTerm('-- collections', 'and currently part of', 'collections')
 
 include includes/top
-    div#workDetails
-        +workDetails
+    div#work
+        div#workDetails
+            +workDetails
+
+        button.delete(data-action="delete") Delete Work
 
 
     include includes/bottom
+
+    script#editWorkDetailsTemplate(type="text/template")
+        form
+            span
+                label(for="input-alias") Alias:
+                input#input-alias(type="text")
+            span
+                label(for="input-description") Description:
+                textarea#input-description(cols="25", rows="3")
+            span.public
+                label(for="input-public") Make it public
+                input#input-public(type="checkbox")
+            button.save(data-action="save") Save
+            button.cancel(data-action="cancel") Cancel
+
+    script#workDetailsTemplate(type="text/template")
+        +workDetails()
 
     script.bootstrapData(type='application/json')
         != bootstrapData({ "data": work })

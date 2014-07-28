@@ -4,54 +4,69 @@
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
-define(['jquery', 'lib/backbone', 'util', 
+define(['jquery', 'underscore', 'lib/backbone', 'util', 
     'models/workModel', 
-    'views/editWorkDetailsView'
-    'views/workView'],
-       function($, Backbone, util, 
+    'views/editWorkDetailsView',
+    'views/workDetailsView',
+    'views/deleteMixin'],
+       function($, _, Backbone, util, 
             Work, 
             EditWorkDetailsView,
-            WorkDetailView)
+            WorkDetailsView,
+            DeleteMixin)
 {
     'use strict'; 
 
-    var WorkView = Backbone.Views.extend({
+    var WorkView = Backbone.View.extend(_.extend(DeleteMixin, {
         initialize: function(){
+            var self = this;
             // just bind action events, but not render yet
             this._workDetailsView = new WorkDetailsView({
-                el: this.$el,
+                el: this.$('#workDetails'),
                 model: this.model
             });
 
             this.listenToOnce(this._workDetailsView, 'edit:start', this.onEditStart);
-        }
-    })
+            this.listenToOnce(this, 'delete:success', function(){
+                util.deletedURI(this);
+            });
+        },
 
-    return function workPermalink (router, id) {
-        console.log('activating work view');
+        onEditStart: function onEditStart(){
+            console.log('editing work details');
+
+            // remove listeners from/to this view and empty container
+            util.emptyViewElement(this._workDetailsView, this);
+
+            this._editWorkDetailsView = new EditWorkDetailsView({
+                el: this.$('#workDetails'),
+                model: this.model,
+                template: '#editWorkDetailsTemplate'
+            }).render();
+
+            this.listenToOnce(this._editWorkDetailsView, 'edit:save:success edit:cancel', this.onEditFinish);
+        },
+
+        onEditFinish: function onEditFinish(){
+            util.emptyViewElement(this._editWorkDetailsView, this);
+
+            this._workDetailsView = new WorkDetailsView({
+                el: this.$('#workDetails'),
+                model: this.model,
+                template: '#workDetailsTemplate'
+            }).render();
+
+            this.listenToOnce(this._workDetailsView, 'edit:start', this.onEditStart);
+        },
+    }));
+
+    return function workPermalink (router) {
 
         var data = util.bootstrapData();
 
-        if (data) {
-            work = new Work(data);
-        }
-        else {
-            console.debug('fetching work %s from server (no bootstrap data)', id);
-            work = new Work({ id: id });
-            work.fetch();
-        }
-
-        // TODO: more generic error handling in util, please
-        work.on('error', function (obj, response, options) {
-            console.error('error syncing %s: %s %s %s',
-                          obj.id, response.status, response.statusText,
-                          response.responseText);
-        });
-
-        view = new WorkView({
+        var workView = new WorkView({
             el: '#work',
-            model: work,
+            model: new Work(data),
         });
-        view.render();
     };
 });

@@ -46,7 +46,7 @@ define(['jquery', 'underscore', 'util'],
 
             try{
                 this.listenToOnce(this.model, 'invalid', function(){
-                    util.shownError(this, this.model.validationError);
+                    util.showError(this, this.model.validationError);
                 });
                 this.model.save(null, {
                     success: function(model) {
@@ -71,7 +71,6 @@ define(['jquery', 'underscore', 'util'],
 
                         // Re-enable view
                         self.$('[data-action="create"]').text('Try Again');
-                        util.working('stop', self.el);
                         self.$('.editable, .actions').prop('disabled', false);
 
                         util.showError(self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);

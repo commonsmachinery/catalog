@@ -30,6 +30,7 @@ define(['jquery', 'underscore', 'util'],
             this.$('.actions').prop('disabled', true);
 
             // Indicate that we are running
+            util.working('start', this.el);
             this.$('[data-action="delete"]').text('Deleting...');
 
             this.model.destroy({
@@ -40,16 +41,14 @@ define(['jquery', 'underscore', 'util'],
                     self.trigger('delete:success', self);
 
                     // Re-enable buttons
+                    util.working('stop', this.el);
                     self.$('.actions').prop('disabled', false);
                 },
 
                 error: function(model, response) {
                     self.trigger('delete:error', self, response);
 
-                    // TODO: proper error message handling
-                    console.error('error deleting %s: %s %s %s',
-                                  model.id, response.status, response.statusText,
-                                  response.responseText);
+                    util.showError(this, self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
 
                     self.$('[data-action="delete"]').text('Retry delete');
 
