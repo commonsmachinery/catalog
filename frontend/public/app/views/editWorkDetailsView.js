@@ -4,10 +4,10 @@
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
-define(['jquery', 'lib/backbone', 'util',
+define(['jquery', 'underscore', 'lib/backbone', 'util',
         'lib/backbone.stickit',
         'views/editMixin'],
-       function($, Backbone, util,
+       function($, _, Backbone, util,
                 stickit,
                 EditMixin)
 {

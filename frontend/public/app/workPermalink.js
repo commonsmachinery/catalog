@@ -19,7 +19,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var WorkView = Backbone.View.extend(_.extend(DeleteMixin, {
         initialize: function(){
-            var self = this;
             // just bind action events, but not render yet
             this._workDetailsView = new WorkDetailsView({
                 el: this.$('#workDetails'),
@@ -64,7 +63,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         var data = util.bootstrapData();
 
-        var workView = new WorkView({
+        var workView = new WorkView({ // jshint ignore:line
             el: '#work',
             model: new Work(data),
         });

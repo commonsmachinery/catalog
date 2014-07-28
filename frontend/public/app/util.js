@@ -150,14 +150,14 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
     exports.deletedURI = function deletedURI(view){
         view.$el.empty();
         view.stopListening();
-        var msg = view.model.url() + ' successfully deleted.'
+        var msg = view.model.url() + ' successfully deleted.';
         view.$el.html('<div class="dialog">'+ msg +
             '<button class="back">Go Back</button>'+
         '</div>');
         view.$('.back').on('click', function(){
             window.history.back();
         });
-    }
+    };
 
     exports.getNested = function getNested(model){
         return function(path){

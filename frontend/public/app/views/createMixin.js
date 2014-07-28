@@ -17,7 +17,6 @@ define(['jquery', 'underscore', 'util'],
         },
 
         initialize: function(opts) {
-            var self = this;
 
             console.debug('creating new object: %j', this.model.attributes);
 

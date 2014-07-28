@@ -4,8 +4,6 @@
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
-/*global requirejs, require*/
-
 define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/workModel'], 
     function($, _, Backbone, CreateWorkView, WorkModel){
     'use strict';
@@ -41,7 +39,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
             });
             this.listenToOnce(this.dialog, 'create:success', function(){
                 window.location.assign(this.dialog.model.url());
-            })
+            });
 
             return this.dialog;
         }
@@ -49,8 +47,8 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
         
 
     return function(){
-        var navView = new NavView({ //jslint ignore: line
+        var navView = new NavView({ // jshint ignore: line
             el: $('nav#header')
         });
-    }
+    };
 });
