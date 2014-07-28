@@ -25,6 +25,9 @@ module.exports = {
 
             static: '/public',
             static_lib: '/../public',
+
+            maxWorksPerPage: 50,
+            defaultWorksPerPage: 12,
         },
 
         auth: {

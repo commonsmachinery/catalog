@@ -15,6 +15,7 @@ var express = require('express');
 
 // Common libs
 var command = require('../../lib/command');
+var config = require('../../lib/config');
 
 // Modules
 var core = require('../../modules/core/core');
@@ -84,9 +85,28 @@ var handleErrors = function handleErrors(err, req, res, next) {
     }
 };
 
+/* Validate paging parameters
+ */
+var validatePaging = function(req, res, next) {
+    req.query.page = req.query.page ? parseInt(req.query.page) : 1;
+    req.query.per_page = req.query.per_page ? parseInt(req.query.per_page) : config.frontend.defaultWorksPerPage;
+
+    if (!req.query.page || req.query.page < 1) {
+        throw new Error('Invalid page requested');
+    }
+
+    if (!req.query.per_page  || req.query.per_page  < 1) {
+        throw new Error('Invalid number of work per page requested');
+    }
+
+    if (req.query.per_page  > config.frontend.defaultWorksPerPage) {
+        throw new Error('Requested number of works per page exceeds server limit');
+    }
+
+    return next();
+}
 
 // Define the routes
-
 
 var router = exports.router = express.Router();
 
@@ -99,6 +119,7 @@ router.route('/users/:userId').all(setContext)
     .patch(users.updateUser).all(handleErrors);
 
 router.route('/works').all(setContext)
+    .get(validatePaging, works.listWorks)
     .post(works.createWork).all(handleErrors);
 router.route('/works/:workId').all(setContext)
     .get(works.getWork)

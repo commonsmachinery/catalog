@@ -58,6 +58,7 @@ exports.getWork = work.getWork;
 exports.createWork = work.createWork;
 exports.updateWork = work.updateWork;
 exports.deleteWork = work.deleteWork;
+exports.listWorks = work.listWorks;
 
 exports.getWorkMedia = work.getWorkMedia;
 exports.createWorkMedia = work.createWorkMedia;
