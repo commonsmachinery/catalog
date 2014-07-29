@@ -57,7 +57,7 @@ var convertFilter = function(req) {
 
     for (var i=0; i<filterFields.length; i++) {
         var filterField = filterFields[i].split(':');
-        if (filterField.length != 2) {
+        if (filterField.length !== 2) {
             throw new Error('Invalid filter parameter');
         }
 
@@ -76,7 +76,7 @@ var convertFilter = function(req) {
     }
 
     return conditions;
-}
+};
 
 /* Convert sort query parameter to mongodb sort option.
  */
@@ -104,19 +104,19 @@ var convertSort = function(req) {
     }
 
     return sort;
-}
+};
 
 /* Calculate number of skipped records from query parameters.
  */
 var getSkip = function(req) {
     return req.query.per_page * (req.query.page - 1);
-}
+};
 
 /* Calculate limit of records from query parameters.
  */
 var getLimit = function(req) {
     return req.query.per_page;
-}
+};
 
 /* Get paging links according for a list of works according to RFC 5005.
  */
@@ -139,7 +139,7 @@ var getPagingLinks = function(req) {
     }
 
     return linkMap;
-}
+};
 
 exports.createWork = function createWork(req, res, next) {
     core.createWork(req.context, req.body)

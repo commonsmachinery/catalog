@@ -864,8 +864,6 @@ cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
  * or empty list if no matching works found.
  */
 exports.listWorks = function listWorks(context, conditions, sort, skip, limit) {
-    var conditions = conditions;
-
     if (context.userId) {
         conditions = _.extend(conditions, {$or: [{
             'owner.user': context.userId

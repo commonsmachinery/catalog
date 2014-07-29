@@ -99,12 +99,12 @@ var validatePaging = function(req, res, next) {
         throw new Error('Invalid number of work per page requested');
     }
 
-    if (req.query.per_page  > config.frontend.defaultWorksPerPage) {
+    if (req.query.per_page  > config.frontend.maxWorksPerPage) {
         throw new Error('Requested number of works per page exceeds server limit');
     }
 
     return next();
-}
+};
 
 // Define the routes
 

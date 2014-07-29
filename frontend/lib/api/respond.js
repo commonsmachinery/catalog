@@ -222,7 +222,7 @@ var populateArray = function(context, array, itemProperty, populateFunc, transfo
         fetching.push(populateFunc(context, array[i][itemProperty]));
     }
     return Promise.all(fetching);
-}
+};
 
 /* Transform a user object for a response.  To be consistent
  * with other transform functions, this returns a promise

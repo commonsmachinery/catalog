@@ -6,6 +6,8 @@
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
+/* global describe, it, before, after */
+
 'use strict';
 
 var debug = require('debug')('catalog:apitest:works');
@@ -386,8 +388,8 @@ describe('Works', function() {
                             ownerIDs.push(res.body.owner.user.id);
                         }
                     }).end(done);
-            }
-        }
+            };
+        };
 
         // create some works
         before(function(done) {
