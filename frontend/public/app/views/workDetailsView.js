@@ -17,7 +17,7 @@ define(['jquery', 'lib/backbone', 'util',
                 observe: 'alias',
                 update: function($el, val, model){
                     if(val){
-                        $el.find('dd').html(val);
+                        $el.find('dd h1').html(val);
                     }
                     else{
                         $el.find('dd').html(model.id);
@@ -26,10 +26,20 @@ define(['jquery', 'lib/backbone', 'util',
             },
             '.description': {
                 observe: 'description',
-            },
-            '.public': {
-                observe: 'public',
                 update: 'renderOrNot'
+            },
+            '.public, .private': {
+                observe: 'public',
+                update: function($el, val, model){
+                    var className;
+                    if (val){
+                        className = 'public';
+                    }
+                    else{
+                        className = 'private';
+                    }
+                    $el.attr('class', className);
+                }
             }
         },
 

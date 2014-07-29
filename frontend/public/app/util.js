@@ -151,9 +151,12 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         view.$el.empty();
         view.stopListening();
         var msg = view.model.url() + ' successfully deleted.';
-        view.$el.html('<div class="dialog">'+ msg +
-            '<button class="back">Go Back</button>'+
-        '</div>');
+        view.$el.html(
+            '<div class="dialog"><div class="success"><span>'+ 
+                    msg +
+                '</span>' +
+                '<button class="back">Go Back</button>'+
+            '</div></div>');
         view.$('.back').on('click', function(){
             window.history.back();
         });

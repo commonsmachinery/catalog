@@ -98,9 +98,14 @@ define(['jquery', 'underscore', 'util'],
             var self = this;
             this.listenToOnce(this.model, 'change', function(){
                 this._editStartAttrs = null;
-                self.trigger('edit:cancel', this);
+                //if the model has changed, wait until reseted to trigger cancel.
+                self.trigger('edit:cancel');
             });
             this.model.set(this._editStartAttrs);
+            //if the model didn't change after reset, trigger cancel immediately
+            if(!this.model.hasChanged()){
+                self.trigger('edit:cancel');
+            }
         },
 
         onEditModelChange: function onEditModelChange() {

@@ -41,14 +41,14 @@ define(['jquery', 'underscore', 'util'],
                     self.trigger('delete:success', self);
 
                     // Re-enable buttons
-                    util.working('stop', this.el);
+                    util.working('stop', self.el);
                     self.$('.actions').prop('disabled', false);
                 },
 
                 error: function(model, response) {
                     self.trigger('delete:error', self, response);
 
-                    util.showError(this, self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                    util.showError(self, self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
 
                     self.$('[data-action="delete"]').text('Retry delete');
 

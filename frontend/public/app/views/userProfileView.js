@@ -17,7 +17,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 observe: 'alias',
                 update: function($el, val, model){
                     if(val){
-                        $el.find('dd').html(val);
+                        $el.find('dd h1').html(val);
                     }
                     else{
                         $el.find('dd').html(model.id);
