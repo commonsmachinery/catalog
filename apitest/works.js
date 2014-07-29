@@ -6,6 +6,8 @@
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
+/* global describe, it, before, after */
+
 'use strict';
 
 var debug = require('debug')('catalog:apitest:works');
@@ -14,6 +16,7 @@ var debug = require('debug')('catalog:apitest:works');
 var request = require('supertest');
 var expect = require('expect.js');
 var parseLinks = require('parse-links');
+var url = require('url');
 
 // Common libs
 var config = require('../lib/config');
@@ -360,4 +363,250 @@ describe('Works', function() {
                 .end(done);
         });
     });
+
+    describe('GET /works', function() {
+        var owner1 = util.auth('owner1-' + Date.now());
+        var owner2 = util.auth('owner2-' + Date.now());
+
+        var ownerIDs = [];
+        var workIDs = [];
+        var workURIs = [];
+        var mediaID;
+
+        var createListWork = function(owner, send, done) {
+            return function() {
+                var workReq = request(config.frontend.baseURL);
+                workReq.post('/works')
+                    .set('Content-Type', 'application/json')
+                    .set('Authorization', owner)
+                    .send(send)
+                    .expect(201)
+                    .expect(function(res) {
+                        if (res) {
+                            workURIs.push(res.header.location);
+                            workIDs.push(res.body.id);
+                            ownerIDs.push(res.body.owner.user.id);
+                        }
+                    }).end(done);
+            };
+        };
+
+        // create some works
+        before(function(done) {
+            createListWork(owner1, {
+                    alias: 'list1-' + Date.now()
+                }, createListWork(owner1, {
+                        alias: 'list2-' + Date.now(),
+                        public: true,
+                    }, createListWork(owner2, {
+                            alias: 'list3-' + Date.now(),
+                        }, createListWork(owner1, {
+                                alias: 'list4-' + Date.now(),
+                            }, done))))();
+        });
+
+        // create media
+        before(function(done) {
+            var req = request(workURIs[0]);
+            req.post('/media')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', owner1)
+                .send({metadata: { src: "test" }})
+                .expect( 201 )
+                .expect(function(res) {
+                    mediaID = res.body.id;
+                })
+                .end(done);
+        });
+
+        it('should filter works by owner', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0])
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 3 );
+                    expect( w[0].owner.user.id ).to.equal( ownerIDs[0] );
+                    expect( w[0].owner.user.id ).to.equal( ownerIDs[1] );
+                    expect( w[0].owner.user.id ).to.equal( ownerIDs[3] );
+                })
+                .end(done);
+        });
+
+        it('should list public works by other users', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0])
+                .set('Accept', 'application/json')
+                .set('Authorization', owner2)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 1 );
+                    expect( w[0].owner.user.id ).to.equal( ownerIDs[0] );
+                })
+                .end(done);
+        });
+
+        it('should list public works when not logged in', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0])
+                .set('Accept', 'application/json')
+                //.set('Authorization', owner2)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 1 );
+                    expect( w[0].owner.user.id ).to.equal( ownerIDs[0] );
+                })
+                .end(done);
+        });
+
+        it('should filter works by media', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=media:' + mediaID)
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 1 );
+                    expect( w[0].media[0] ).to.equal( mediaID );
+                })
+                .end(done);
+        });
+
+        it('should sort works by date added', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&sort=added_at")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 3 );
+
+                    expect ( w[0].added_at ).to.be.lessThan ( w[1].added_at );
+                    expect ( w[1].added_at ).to.be.lessThan ( w[2].added_at );
+
+                })
+                .end(done);
+        });
+
+        it('should sort works by date updated', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&sort=added_at")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 3 );
+
+                    expect ( w[0].updated_at ).to.be.lessThan ( w[1].updated_at );
+                    expect ( w[1].updated_at ).to.be.lessThan ( w[2].updated_at );
+
+                })
+                .end(done);
+        });
+
+        it('should sort in reverse order', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&sort=-added_at")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 3 );
+
+                    expect ( w[0].added_at ).to.be.greaterThan ( w[1].added_at );
+                    expect ( w[1].added_at ).to.be.greaterThan ( w[2].added_at );
+
+                })
+                .end(done);
+        });
+
+        it('should not allow too many pages per request', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&per_page=2000")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(500)
+                .end(done);
+        });
+
+        it('should not allow bogus page number', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&page=-1")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(500)
+                .end(done);
+        });
+
+        it('should support paging', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&page=2&per_page=2")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w.length ).to.equal( 1 );
+
+                    var links = parseLinks(res.header.link);
+                    expect( links ).to.have.property( 'first' );
+                    expect( links ).to.have.property( 'next' );
+                    expect( links ).to.have.property( 'previous' );
+
+                    var linkObj = url.parse(links.first, true);
+                    expect( linkObj.query ).to.have.property( 'page' );
+                    expect( linkObj.query.page ).to.be( '1' );
+
+                    linkObj = url.parse(links.previous, true);
+                    expect( linkObj.query ).to.have.property( 'page' );
+                    expect( linkObj.query.page ).to.be( '1' );
+
+                    linkObj = url.parse(links.next, true);
+                    expect( linkObj.query ).to.have.property( 'page' );
+                    expect( linkObj.query.page ).to.be( '3' );
+                })
+                .end(done);
+        });
+
+        it('should allow including fields', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&include=owner")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w[0].owner.user.id ).to.equal( ownerIDs[0] );
+                    expect( w[0].owner.user ).to.have.property( 'profile' );
+                    expect( w[0].owner.user.profile ).to.have.property( 'gravatar_hash' );
+                })
+                .end(done);
+        });
+    }); // list works
 });

@@ -857,3 +857,35 @@ cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
 
     return { save: work, event: event };
 };
+
+/* Get a list of Works.
+ *
+ * Returns a promise that resolves to the list of works
+ * or empty list if no matching works found.
+ */
+exports.listWorks = function listWorks(context, conditions, sort, skip, limit) {
+    if (context.userId) {
+        conditions = _.extend(conditions, {$or: [{
+            'owner.user': context.userId
+        }, {
+            'public': true
+        }]});
+    }
+    else {
+        conditions = _.extend(conditions, {
+            'public': true
+        });
+    }
+
+    return db.Work.findAsync(
+        conditions, null,
+        {
+            sort: sort,
+            skip: skip,
+            limit: limit
+        }
+    )
+    .map(function(work) {
+        return db.Work.objectExporter(context)(work);
+    });
+};

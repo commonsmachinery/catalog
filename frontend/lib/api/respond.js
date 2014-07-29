@@ -212,6 +212,18 @@ var populateMedia = function(context, referenceObj) {
         });
 };
 
+var populateArray = function(context, array, itemProperty, populateFunc, transformFunc) {
+    var fetching = [];
+
+    for (var i = 0; i < array.length; i++) {
+        if (transformFunc) {
+            transformFunc(array[i]);
+        }
+        fetching.push(populateFunc(context, array[i][itemProperty]));
+    }
+    return Promise.all(fetching);
+};
+
 /* Transform a user object for a response.  To be consistent
  * with other transform functions, this returns a promise
  * even though nothing more will be loaded from the core DB.
@@ -244,30 +256,15 @@ exports.transformWork = function(work, context, options) {
         return Promise.resolve(work);
     }
 
-    // Populate annotations.updated_by if include=annotations.updated_by is given
-    return new Promise(function(resolve, reject) {
-        var fetching = [];
-        if (options && options.include && (typeof options.include === 'string' ? options.include.split(',') : options.include).indexOf('annotations.updated_by') !== -1)  {
-            for (var a in work.annotations) {
-                if (work.annotations.hasOwnProperty(a)) {
-                    idToObject(work.annotations[a], 'updated_by', uris.buildUserURI);
-                    fetching.push(populateUser(context, work.annotations[a].updated_by));
-                }
-            }
-            Promise.all(fetching).then(function() {
-                resolve(work);
+    return populate(work, options.include, {
+        'owner': function() { return populateUser(context, work.owner && work.owner.user); },
+        'added_by': function() { return populateUser(context, work.added_by); },
+        'updated_by': function() { return populateUser(context, work.updated_by); },
+        'annotations.updated_by': function() {
+            return populateArray(context, work.annotations, 'updated_by', populateUser, function(a) {
+                idToObject(a, 'updated_by', uris.buildUserURI);
             });
-        } else {
-            resolve(work);
-        }
-    })
-    // Add referenced objects, when requested.
-    .then(function(work) {
-        return populate(work, options.include, {
-            'owner': function() { return populateUser(context, work.owner && work.owner.user); },
-            'added_by': function() { return populateUser(context, work.added_by); },
-            'updated_by': function() { return populateUser(context, work.updated_by); },
-        });
+        },
     })
     // Transform annotations to map, if requested.
     .then(function(work) {
