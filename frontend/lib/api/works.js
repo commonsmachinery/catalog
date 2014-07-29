@@ -50,9 +50,8 @@ exports.getWork = function getWork(req, res, next) {
             })
             .then(function(work) {
                 respond.setObjectHeaders(res, work);
-
-                // TODO: render work view
-                throw new Error("Work view not implemented!");
+                res.locals.work = work;
+                res.render('workPermalink');
             })
             .catch(function(err) {
                 next(err);
