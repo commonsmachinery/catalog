@@ -18,7 +18,7 @@
     "express-session": "1.x",
     "sessionstore": "0.4.x",
     "errorhandler": "1.x",
-    "jade": "1.1.x",
+    "jade": "1.5.x",
     "morgan": "1.x",
     "stylus": "0.42.x",
     "underscore": "1.6.x",
