@@ -1,19 +1,19 @@
-/* Catalog web application - user profile view
+/* Catalog web application - work details view
  *
  * Copyright 2014 Commons Machinery http://commonsmachinery.se/
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
-define(['jquery', 'underscore', 'lib/backbone', 'util',
+define(['jquery', 'lib/backbone', 'util',
         'lib/backbone.stickit'],
-       function($, _, Backbone, util,
+       function($, Backbone, util,
                 stickit)
 {
     'use strict';
 
-    var UserProfileView = Backbone.View.extend({
+    var WorkDetailsView = Backbone.View.extend({
         bindings:{
-            '.user': {
+            '.title': {
                 observe: 'alias',
                 update: function($el, val, model){
                     if(val){
@@ -24,30 +24,27 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                     }
                 },
             },
-            '.name': {
-                observe: 'profile.name',
+            '.description': {
+                observe: 'description',
                 update: 'renderOrNot'
             },
-            '.email': {
-                observe: 'profile.email',
-                update: 'renderOrNot'
-            },
-            '.location': {
-                observe: 'profile.location',
-                update: 'renderOrNot'
-            },
-            '.website': {
-                observe: 'profile.website',
-                update: 'renderOrNot'
-            },
-            '.gravatar_email': {
-                observe: 'profile.gravatar_email',
-                update: 'renderOrNot'
+            '.public, .private': {
+                observe: 'public',
+                update: function($el, val, model){
+                    var className;
+                    if (val){
+                        className = 'public';
+                    }
+                    else{
+                        className = 'private';
+                    }
+                    $el.attr('class', className);
+                }
             }
         },
 
         events: {
-            'click [data-action="edit"]': "onEditProfile" 
+            'click [data-action="edit"]': "onEditWork" 
         },
 
         initialize: function(opts) {
@@ -70,10 +67,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             }
         },
 
-        onEditProfile: function onEditProfile(){
+        onEditWork: function onEditProfile(){
             this.trigger('edit:start');
         }
     });
 
-    return UserProfileView;
+    return WorkDetailsView;
 });

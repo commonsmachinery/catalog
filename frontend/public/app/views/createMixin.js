@@ -12,54 +12,74 @@ define(['jquery', 'underscore', 'util'],
     var CreateMixin = {
         /* Extend this with view-specific event handlers, if any */
         events: {
-            'click [data-action="create"]': 'onCreateStart',
             'click [data-action="cancel"]': 'onCreateCancel',
+            'click [data-action="save"]': 'onCreateSave',
         },
 
-        onCreateStart: function onCreateStart() {
-            var self = this;
+        initialize: function(opts) {
 
             console.debug('creating new object: %j', this.model.attributes);
 
-            this.trigger('create:start', this);
-
-            // Disable both buttons and edit fields while running
-            this.$('.editable, .actions').prop('disabled', true);
+            if(opts.template){
+                this.$el.html($(opts.template).html());
+            }
 
             // Indicate that we are running
             this.$('[data-action="create"]').text('Creating...');
 
-            this.model.save(null, {
-                success: function(model) {
-                    console.debug('create success: %s', model.id);
-
-                    // Let others listen to this to determine what to do on success
-                    self.trigger('create:success', self, model);
-
-                    // Re-enable view, in case it is persistently visible
-                    self.$('[data-action="create"]').text('Create');
-                    self.$('.editable, .actions').prop('disabled', false);
-                },
-
-                error: function(model, response) {
-                    self.trigger('create:error', self, response);
-
-                    // TODO: proper error message handling
-                    console.error('error creating: %s %s %s',
-                                  response.status, response.statusText,
-                                  response.responseText);
-
-                    self.$('[data-action="create"]').text('Retry create');
-
-                    // Re-enable view
-                    self.$('.editable, .actions').prop('disabled', false);
-                },
-            });
         },
 
         onCreateCancel: function onCreateCancel() {
             this.trigger('create:cancel', this);
         },
+
+        onCreateSave: function onCreateSave(){
+            var self = this;
+
+            console.debug('start saving');
+
+            // Indicate that we're working
+            this.$('.actions').attr('disabled', true);
+            this.$('[data-action="save"]').text('Saving...');
+            util.working('start', this.el);
+
+            try{
+                this.listenToOnce(this.model, 'invalid', function(){
+                    util.showError(this, this.model.validationError);
+                });
+                this.model.save(null, {
+                    success: function(model) {
+                        console.debug('create success: %s', model.id);
+
+                        self.stopListening(self.model, 'invalid');
+                        self.trigger('create:success', self);
+
+                        // Re-enable view, in case it is persistently visible
+                        self.$('[data-action="create"]').text('Save');
+                        util.working('stop', self.el);
+                    },
+
+                    error: function(model, response) {
+                        self.stopListening(self.model, 'invalid');
+                        self.trigger('create:error', self, response);
+
+                        // TODO: proper error message handling
+                        console.error('error creating: %s %s %s',
+                                      response.status, response.statusText,
+                                      response.responseText);
+
+                        // Re-enable view
+                        self.$('[data-action="create"]').text('Try Again');
+                        self.$('.editable, .actions').prop('disabled', false);
+
+                        util.showError(self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                    },
+                });
+            }
+            catch(err){
+                console.error(err);
+            }
+        }
     };
 
     return CreateMixin;

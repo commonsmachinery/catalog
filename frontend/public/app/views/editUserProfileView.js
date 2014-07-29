@@ -6,11 +6,9 @@
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
         'lib/backbone.stickit',
-        'models/userModel',
         'views/editMixin'],
        function($, _, Backbone, util,
                 stickit,
-                User,
                 EditMixin)
 {
     'use strict';

@@ -70,6 +70,29 @@ button, input, textarea
 dl
     display inline-block
 
+footer
+    display inline-block
+    margin 1.5em 0 0 0
+    padding 0.5em
+    text-align center
+    width 100%
+
+form
+    fieldset
+        border none
+        display block
+        margin auto
+        max-width 55em
+        text-align center
+    .save
+        background-color neutral-bg-color
+        border-color neutral-fg-color
+        color neutral-fg-color
+    .cancel
+        background-color light-button-bg-color
+        border-color light-button-fg-color
+        color light-button-fg-color
+
 h1
     font-family h1-font || main-font
     color h1-font-color || content-color
@@ -133,10 +156,10 @@ header
                     height 1.5em
                     line-height 1.5em
                     vertical-align middle
-            .home a
+            .home a:before
                 icon('home', 1.5em)
 
-        > ul#user 
+        > ul#nav-user 
             clear none
             float right
             min-height nav-height
@@ -156,14 +179,6 @@ header
                 &:after
                     content ""
 
-
-footer
-    display inline-block
-    margin 1.5em 0 0 0
-    padding 0.5em
-    text-align center
-    width 100%
-
 input
     background-color input-bg-color
     border 1px solid input-border-color
@@ -171,14 +186,23 @@ input
     box-shadow -1px -1px 10px -2px input-shadow-color inset
     padding 0.4em 0.5em
 
+.delete
+    background-color negative-remark-bg-color
+    border solid 1px negative-remark-fg-color
+    color negative-remark-fg-color
+    float right
+
 .dialog
-    background background * 1.2
     display block
     padding 1em
     position absolute
     top 3em
-    > div
+    width 100%
+    > div, >form
+        background background * 1.2
         display block
+        margin auto
+        padding 1.5em
 
 .errorMsg
     animation notification 0.2s ease-out
@@ -226,10 +250,29 @@ input
         display block
         font-size 0.9em
 
+.inline-icon
+    float left
+    font-size 1em
+    line-height 1.3em
+    padding 0
+    text-align center
+    vertical-align middle
+    width 1.5em
 
-mg.thumbnail
+img.thumbnail
     max-width 200px
     max-height 200px
+
+.success
+    color positive-remark-fg-color 
+    max-width 40em
+    text-align center
+    span
+        display block
+        text-align left
+    button
+        display inline-block
+        margin-top 1.5em
 
 .working
     overflow hidden
@@ -246,18 +289,18 @@ mg.thumbnail
             background-image loading 
             background-repeat-y no-repeat
             background-size auto 100%
-            background-position 0px 50%
+            background-position 0
             content ''
             display block
             margin-left -50%
             margin-top -50%
             padding-top 100%
             width 100%
-            animation spin 0.35s steps(10) infinite
-            -o-animation spin 0.35s steps(10) infinite
-            -moz-animation spin 0.35s steps(10) infinite
-            -webkit-animation spin 0.35s steps(10) infinite
-            -ms-animation spin 0.35s steps(10) infinite
+            animation spin 0.35s steps(9, start) infinite
+            -o-animation spin 0.35s steps(9, start) infinite
+            -moz-animation spin 0.35s steps(9, start) infinite
+            -webkit-animation spin 0.35s steps(9, start) infinite
+            -ms-animation spin 0.35s steps(9, start) infinite
     .overlay
         background-color rgba(240,240,240,0.8)
         height 100%
@@ -270,7 +313,7 @@ mg.thumbnail
     0% 
         background-position 0%
     100% 
-        background-position -1000%
+        background-position -100%
 
 
 #bootstrapData
@@ -316,12 +359,6 @@ mg.thumbnail
     display block
     width 90%
 
-#works
-    padding 0
-    position relative
-
-
-
 @media screen and (max-width: 55em)
     #wrapper
         width 100%
@@ -341,19 +378,11 @@ dl.hideCaption
     dd
         margin-left 0
 
-
-/* User profile page */
-
-.profile-icon
-    float left
-    font-size 1em
-    padding 0
-    text-align center
-    vertical-align middle
-    width 1.5em
-
 #userProfile
     position relative
+    h1
+        font-size 1.2em
+        margin 0
     span
         display block
     dl
@@ -362,12 +391,6 @@ dl.hideCaption
         margin 0 0 1em
         width 120%
     form
-        fieldset
-            border none
-            display block
-            margin auto
-            max-width 55em
-            text-align center
         span
             display inline-block
             margin 0.5em auto
@@ -394,14 +417,6 @@ dl.hideCaption
                     display block
                     margin-left 0
                     text-align left
-        .save
-            background-color neutral-bg-color
-            border-color neutral-fg-color
-            color neutral-fg-color
-        .cancel
-            background-color light-button-bg-color
-            border-color light-button-fg-color
-            color light-button-fg-color
 
     .gravatar
         font-size 0.8em
@@ -421,26 +436,121 @@ dl.hideCaption
         font-weight bold
         line-height 100%
     .name 
-        margin 0 0 0.5em
+        margin 0 0 0.7em 0
     .email
-        icon('mail')
         &:before
-            @extend .profile-icon;
+            icon('mail')
+            @extend .inline-icon;
     .location
-        icon('location')
         &:before
-            @extend .profile-icon;
+            icon('location')
+            @extend .inline-icon;
     .website
-        icon('link')
         &:before
-            @extend .profile-icon;
+            icon('link')
+            @extend .inline-icon;
     aside
         bottom 0
         float none
         position absolute
         text-align left
-        .actions
-            button
-                background-color dark-button-bg-color
-                border none
-                color dark-button-fg-color
+        .edit
+            background-color dark-button-bg-color
+            border none
+            color dark-button-fg-color
+
+#work
+    position relative
+    #workDetails
+        position relative
+
+        dl
+            font-size 0.7em
+            margin 0
+        form
+            span
+                display block
+                margin 0.5em auto
+                max-width 25em
+                text-align left
+                label
+                    display inline-block
+                    text-align right
+                    vertical-align top
+                    width 10em
+                input, textarea
+                    display inline-block
+                    max-width 100%
+                    text-align left
+                    width 15em
+                textarea
+                    font-size 1.17em
+
+                #input-public
+                    width auto
+
+                @media screen and (max-width: 35em)
+                    width 15em
+                    label
+                        text-align left
+                        width auto
+                    input, textarea
+                        width 20em
+        h1
+            font-size 2em
+            margin 0
+        header
+            background none
+            text-align left
+            .public
+                &:after
+                    icon('eye')
+            .private
+                &:after
+                    icon('lock')
+            .public, .private
+                display inline-block
+                &:after
+                    @extend .inline-icon;
+                    font-size 0.9em
+            .title
+                display inline-block
+        .details
+            text-align left
+            padding 0
+            span:not(:last-child)
+                margin-right 0.4em
+            span, dt, dd, dl
+                display inline-block
+                vertical-align middle
+            dt, dd
+                margin 0
+            .gravatar img
+                width 2em
+        .edit
+            float right
+            background-color dark-button-bg-color
+            border none
+            color dark-button-fg-color
+
+#workForm
+    form
+        width 100%
+        max-width 25em
+        span
+            display block
+            margin 0.5em auto
+            width 45%
+            label
+                display inline-block 
+            input, textarea
+                display inline-block
+                max-width 100%
+                text-align left
+                width 15em
+            textarea
+                font-size 1.17em
+
+            #input-public
+                display inline-block
+                width auto

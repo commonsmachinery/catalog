@@ -1,4 +1,4 @@
-/* Catalog web application - view to create new works
+/* Catalog web application - edit work details view
  *
  * Copyright 2014 Commons Machinery http://commonsmachinery.se/
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
@@ -6,18 +6,18 @@
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
         'lib/backbone.stickit',
-        'views/createMixin'],
+        'views/editMixin'],
        function($, _, Backbone, util,
                 stickit,
-                CreateMixin)
+                EditMixin)
 {
     'use strict';
 
-    var CreateWorkView = Backbone.View.extend(_.extend(CreateMixin, {
+    var EditWorkDetailsView = Backbone.View.extend(_.extend(EditMixin, {
         bindings:{
             '#input-alias': 'alias',
-            '#input-public': 'public',
-            '#input-description': 'description'
+            '#input-description': 'description',
+            '#input-public': 'public'
         },
 
         render: function(){
@@ -25,5 +25,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             return this;
         }
     }));
-    return CreateWorkView;
+
+    return EditWorkDetailsView;
 });

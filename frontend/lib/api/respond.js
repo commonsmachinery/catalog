@@ -247,7 +247,7 @@ exports.transformWork = function(work, context, options) {
     // Populate annotations.updated_by if include=annotations.updated_by is given
     return new Promise(function(resolve, reject) {
         var fetching = [];
-        if (options && options.include && options.include.split(',').indexOf('annotations.updated_by') !== -1) {
+        if (options && options.include && (typeof options.include === 'string' ? options.include.split(',') : options.include).indexOf('annotations.updated_by') !== -1)  {
             for (var a in work.annotations) {
                 if (work.annotations.hasOwnProperty(a)) {
                     idToObject(work.annotations[a], 'updated_by', uris.buildUserURI);

@@ -147,6 +147,21 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return mergeBindings(content, href);
 	};
 
+    exports.deletedURI = function deletedURI(view){
+        view.$el.empty();
+        view.stopListening();
+        var msg = view.model.url() + ' successfully deleted.';
+        view.$el.html(
+            '<div class="dialog"><div class="success"><span>'+ 
+                    msg +
+                '</span>' +
+                '<button class="back">Go Back</button>'+
+            '</div></div>');
+        view.$('.back').on('click', function(){
+            window.history.back();
+        });
+    };
+
     exports.getNested = function getNested(model){
         return function(path){
             path = path.split('.');
@@ -182,7 +197,7 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
     };
 
     exports.emptyViewElement = function emptyViewElement(view, parent){
-        // don't want to remove the container and do want to stop listening to this view
+        // stop listening and empty view keeping the container
         view.stopListening();
         parent.stopListening(view);
         view.$el.empty();
@@ -213,9 +228,33 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         else{
             throw new Error('Unknown validation string: ' + format);
         }
-};      
+    };      
 
-    exports.working = function working(status, el){
+    exports.showError = function showError(view, err){
+        working('stop', view.el);
+        view.$('.actions').prop('disabled', false);
+
+        var $el = view.$el;
+        var $ul;
+
+        $el.find('.errorMsg').remove();
+
+        if(Array.isArray(err)){
+            $el.append('<ul class="errorMsg"></ul>');
+            $ul = $el.find('.errorMsg');
+            var len = err.length;
+            for (var i=0; i < len; i++){
+                $ul.append('<li>' + err[i] + '</li>');
+            }
+        }
+        else{
+            $el.append('<div class="errorMsg">' + err + '</div>');
+        }
+        view.$('[data-action="save"]').text('Try again');
+        view.$('.actions').prop('disabled', false);
+    };
+
+    var working = exports.working = function working(status, el){
         if(status === 'start'){
             $(el).addClass('working');
             $(el).prepend('<div class="overlay"><div class="loading"></div></div>');

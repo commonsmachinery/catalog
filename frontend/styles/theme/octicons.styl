@@ -29,11 +29,10 @@
     cursor: default;
 
 icon(name, size=1em)
-    &:before
-        @extend .icon;
-        font-size size
-        content icons[name];
-        {block}
+    @extend .icon;
+    font-size size
+    content icons[name];
+    {block}
 
 icons = {
     "alert": '\f02d', //  */

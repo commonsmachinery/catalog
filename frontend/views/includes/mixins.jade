@@ -1,0 +1,10 @@
+
+mixin defTerm(term, caption, className)
+    if term != null || block
+        span(class="#{className || caption.toLowerCase().replace(' ', '_')}")
+            dt #{caption}
+            dd 
+                if term
+                    | #{term}
+                if block
+                    block
