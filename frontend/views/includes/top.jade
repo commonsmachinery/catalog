@@ -34,7 +34,8 @@ html(lang="en")
                     ul#pages
                         li.home: a(href="/")
                         li.works: a(href="/works"): | works
-                        li.createWork: a(href="#"): | create work
+                        if userId
+                            li.createWork: a(href="#"): | create work
                     ul#nav-user
                         if (userId)
                             li.gravatar: img(src=gravatarHashURL(loginGravatarHash, 20), width='20', height='20')
