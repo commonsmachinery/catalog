@@ -72,3 +72,9 @@ exports.createWorkAnnotation = work.createWorkAnnotation;
 exports.updateWorkAnnotation = work.updateWorkAnnotation;
 exports.removeWorkAnnotation = work.removeWorkAnnotation;
 exports.removeAllAnnotations = work.removeAllAnnotations;
+
+exports.getWorkSource = work.getWorkSource;
+exports.getAllSources = work.getAllSources;
+exports.createWorkSource = work.createWorkSource;
+exports.removeWorkSource = work.removeWorkSource;
+exports.removeAllSources = work.removeAllSources;

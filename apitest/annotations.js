@@ -436,7 +436,7 @@ describe('annotations', function() {
         });
     }); // 'DELETE /works/ID/annotations'
 
-    describe('GET /works/ID?include=annotations', function() {
+    describe('GET /works/ID?annotations', function() {
         var testObjects = {};
 
         // create work and annotation
@@ -535,7 +535,7 @@ describe('annotations', function() {
                 })
                 .end(done);
         });
-    }); // 'GET /works/ID?include=annotations'
+    }); // 'GET /works/ID?annotations'
 
     describe('GET /works/ID/media/ID?annotations', function() {
         var workURI;

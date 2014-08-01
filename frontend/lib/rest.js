@@ -25,6 +25,7 @@ var users = require('./api/users');
 var works = require('./api/works');
 var media = require('./api/media');
 var annotations = require('./api/annotations');
+var sources = require('./api/sources');
 var etag = require('./etag');
 
 
@@ -143,3 +144,11 @@ router.route('/works/:workId/annotations/:annotationId').all(setContext)
     .put(annotations.updateWorkAnnotation)
     .patch(annotations.updateWorkAnnotation)
     .delete(annotations.removeWorkAnnotation).all(handleErrors);
+
+router.route('/works/:workId/sources').all(setContext)
+    .get(sources.getAllSources)
+    .post(sources.createWorkSource)
+    .delete(sources.removeAllSources).all(handleErrors);
+router.route('/works/:workId/sources/:sourceId').all(setContext)
+    .get(sources.getWorkSource)
+    .delete(sources.removeWorkSource).all(handleErrors);
