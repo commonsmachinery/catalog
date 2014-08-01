@@ -4,17 +4,28 @@
  * Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
  */
 
-define(['lib/backbone', 'models/workModel'],
-	   function(Backbone, Work)
+define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
+       function(Backbone, Paginator, Work)
 {
-	'use strict';
+    'use strict';
 
-	var WorkCollection = Backbone.Collection.extend({
-		model: Work,
-		url: '/works',
+    var WorkCollection = Backbone.PageableCollection.extend({
+        model: Work,
+        url: '/works',
 
-		initialize: function() {
-		}
-	});
-	return WorkCollection;
+        state: {
+            firstPage: 1,
+            pageSize: 12
+        },
+
+        queryParams: {
+            sortKey: 'sort'
+        },
+
+        initialize: function(){
+            console.log(this);
+        }
+    });
+
+    return WorkCollection;
 });

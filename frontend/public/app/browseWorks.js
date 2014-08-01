@@ -5,50 +5,45 @@
  */
 
 define(['jquery', 'underscore', 'lib/backbone', 'util',
-        'lib/Backbone.ModelBinder',
-        'models/workModel',
-		'collections/workCollection',
+        'collections/workCollection',
         'views/collectionView',
         'views/createWorkView'],
        function($, _, Backbone, util,
-                ModelBinder,
-				Work,
-				WorkCollection,
+                WorkCollection,
                 CollectionView,
                 CreateWorkView)
 {
-	'use strict';
+    'use strict';
 
-	var hub = _.extend({}, Backbone.Events);
-	var collection = null;
-	var view = null;
+    var hub = _.extend({}, Backbone.Events);
+    var collection;
 
-	var WorksActionView = Backbone.View.extend({
-		events: {
-			'click #batch-update': 'onBatchUpdate',
+    var WorksActionView = Backbone.View.extend({
+        events: {
+            'click #batch-update': 'onBatchUpdate',
             'click #add-work': 'onAddWork'
-		},
+        },
 
-		onBatchUpdate: function onBatchUpdate() {
-			var changes = {};
-			var trigger = false;
+        onBatchUpdate: function onBatchUpdate() {
+            var changes = {};
+            var trigger = false;
 
             var visible = this.$('#new-visible').val();
-			if (visible) {
-				changes.visible = visible;
-				trigger = true;
-			}
+            if (visible) {
+                changes.visible = visible;
+                trigger = true;
+            }
 
-			var state = this.$('#new-state').val();
-			if (state) {
-				changes.state = state;
-				trigger = true;
-			}
+            var state = this.$('#new-state').val();
+            if (state) {
+                changes.state = state;
+                trigger = true;
+            }
 
-			if (trigger) {
-				hub.trigger('batchUpdate', changes);
-			}
-		},
+            if (trigger) {
+                hub.trigger('batchUpdate', changes);
+            }
+        },
 
         onAddWork: function onAddWork() {
             var createView = new CreateWorkView({
@@ -68,39 +63,50 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 createView.remove();
             });
         }
-	});
+    });
 
-	var WorkListItemView = Backbone.View.extend({
-		initialize: function() {
-            this._modelBinder = new ModelBinder();
-			this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
+    var WorkListItemView = Backbone.View.extend({
+        bindings: {
+            '.entry': {
+                observe: 'id',
+                update: function($el, val, model){
+                    $el.attrs({
+                        id: 'work-'+ val,
+                        href: model.alias || model.id
+                    });
+                }
+            }
+        },
+
+        initialize: function() {
+            this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
             this._perms = this.model.get('permissions') || {};
 
             // "working" indicator
             this.listenTo(this.model, 'request', this.onRequest);
             this.listenTo(this.model, 'sync', this.onSync);
             this.listenTo(this.model, 'error', this.onSync);
-		},
+        },
 
-		render: function() {
-			if (this._perms.edit) {
-				// Disabled by default in the template
-				this.$('.batchSelectItem').prop('disabled', false);
-			}
+        render: function() {
+            if (this._perms.edit) {
+                // Disabled by default in the template
+                this.$('.batchSelectItem').prop('disabled', false);
+            }
 
-            this._modelBinder.bind(this.model, this.el, util.createDefaultBindings(this.el, 'work'));
-		},
+            this.stickit();
+        },
 
-		remove: function() {
-			this._modelBinder.unbind();
-			Backbone.View.remove.apply(this, arguments);
-		},
+        remove: function() {
+            this._modelBinder.unbind();
+            Backbone.View.remove.apply(this, arguments);
+        },
 
-		onBatchUpdate: function onBatchUpdate(changes) {
-			if (this._perms.edit && this.$('.batchSelectItem').prop('checked')) {
-				this.model.save(changes, { wait: true });
-			}
-		},
+        onBatchUpdate: function onBatchUpdate(changes) {
+            if (this._perms.edit && this.$('.batchSelectItem').prop('checked')) {
+                this.model.save(changes, { wait: true });
+            }
+        },
 
         onRequest: function onRequest(){
             util.working('start', this.el);
@@ -111,48 +117,50 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             util.working('stop', this.el);
             $(this.el).find('.batchSelectItem').prop('disabled', false);
         }
-	});
+    });
 
 
-	var WorksBrowseView = Backbone.View.extend({
-		initialize: function() {
-			this._actionView = new WorksActionView({
-				el: '#actions',
-			});
+    var WorksBrowseView = Backbone.View.extend({
+        initialize: function() {
+            this._actionView = new WorksActionView({
+                el: '#actions',
+            });
 
-			this._worksView = new CollectionView({
-				el: '#works',
-				collection: collection,
+            this._worksView = new CollectionView({
+                el: '#works',
+                collection: collection,
 
-				ItemView: WorkListItemView,
-				itemTemplate: $('#workListItemTemplate').html(),
-			});
-		},
+                ItemView: WorkListItemView,
+                itemTemplate: $('#workListItemTemplate').html(),
+            });
+        },
 
-		render: function() {
-			this._actionView.render();
-			this._worksView.render();
-		},
-	});
+        render: function() {
+            this._actionView.render();
+            this._worksView.render();
+        },
+    });
 
-	return function browseWorks(router, filters) {
-		console.log('activating works view');
+    return function browseWorks(router, filters) {
+        console.log('activating works view');
 
-		var data = util.bootstrapData();
+        var data = util.bootstrapData();
 
-		collection = new WorkCollection(data || []);
-		collection.on('error', function (obj, response, options) {
-			console.error('error syncing %s: %s %s %s',
-						  obj.id, response.status, response.statusText,
-						  response.responseText);
-		});
+        collection = new WorkCollection(data || []);
+        collection.on('error', function (obj, response, options) {
+            console.error('error syncing %s: %s %s %s',
+                          obj.id, response.status, response.statusText,
+                          response.responseText);
+        });
 
-		view = new WorksBrowseView();
-		view.render();
+        var view = new WorksBrowseView({
 
-		if (!data) {
-			console.log('fetching works from server (no bootstrap data)');
-			collection.fetch();
-		}
-	};
+        });
+        view.render();
+
+        if (!data) {
+            console.log('fetching works from server (no bootstrap data)');
+            collection.fetch();
+        }
+    };
 });

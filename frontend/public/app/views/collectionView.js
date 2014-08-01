@@ -73,7 +73,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
 				// Link up all pre-rendered HTML to the bootstrapped models
 				this.collection.each(function(model) {
 					var itemID = self.getItemID(model.id);
-					var existingElement = $('#' + itemID);
+					var existingElement = self.$('#' + itemID);
 
 					if (existingElement.length !== 1) {
 						console.error("no existing element for %s", itemID);
