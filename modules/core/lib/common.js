@@ -28,7 +28,7 @@ NotFoundError.prototype.constructor = NotFoundError;
  * (which should inherit from NotFoundError) if not.
  */
 exports.checkId = function checkId(id, ErrClass) {
-    if (! /^[0-9a-fA-F]{24}$/.test(id.toString())) {
+    if (!id || ! /^[0-9a-fA-F]{24}$/.test(id.toString())) {
         debug('invalid ObjectId: %s', id);
         throw new ErrClass(id);
     }

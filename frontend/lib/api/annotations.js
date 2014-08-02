@@ -138,7 +138,7 @@ exports.removeWorkAnnotation = function removeWorkAnnotation(req, res, next) {
 
 exports.removeAllAnnotations = function removeAllAnnotations(req, res, next) {
     core.removeAllAnnotations(req.context, req.params.workId)
-        .then(transform(req))
+        .then(transformMany(req))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);

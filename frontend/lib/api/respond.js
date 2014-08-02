@@ -330,6 +330,30 @@ exports.transformAnnotation = function(workId, annotation, context, options) {
     });
 };
 
+/* Transform a source object for a response, using fields and include
+ * from option.  This always return a promise, since include may
+ * require additional objects to be fetched from the core DB.
+ */
+exports.transformSource = function(workId, source, context, options) {
+    source.href = uris.buildWorkSourceURI(workId, source.id);
+
+    source = filterFields(source, options);
+
+    idToObject(source, 'added_by', uris.buildUserURI);
+
+    // Add other fields here as those parts are supported by the API
+
+    if (!options || !options.include) {
+        return Promise.resolve(source);
+    }
+
+    // Add referenced objects, when requested.
+
+    return populate(source, options.include, {
+        'added_by': function() { return populateUser(context, source.added_by); },
+    });
+};
+
 /* Set all relevant response headers for an object.
  */
 var setObjectHeaders = exports.setObjectHeaders = function(res, object) {
