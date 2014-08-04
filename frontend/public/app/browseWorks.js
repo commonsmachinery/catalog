@@ -67,13 +67,51 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var WorkListItemView = Backbone.View.extend({
         bindings: {
-            '.entry': {
-                observe: 'id',
+            '.delete': {
+                observe: '_perms.admin',
                 update: function($el, val, model){
-                    $el.attrs({
-                        id: 'work-'+ val,
-                        href: model.alias || model.id
-                    });
+                    if(val){
+                        $el.removeClass('hidden');
+                    }
+                    else if(! $el.hasClass('hidden')){
+                        $el.addClass('hidden');
+                    }
+                }
+            },
+            '.batchSelectItem': {
+                observe: '_perms.write',
+                update: function($el, val, model){
+                    if(val){
+                        $el.prop('disabled', false);
+                    }
+                    else{
+                        $el.prop('disabled', true);
+                    }
+                }
+            },
+            '.public, .private': {
+                observe: 'public',
+                update: function($el, val, model){
+                    var className;
+                    if (val){
+                        className = 'public';
+                    }
+                    else{
+                        className = 'private';
+                    }
+                    $el.attr('class', className);
+                }
+            },
+            '.title': {
+                observe: 'alias',
+                update: function($el, val, model){
+                    if(val){
+                        $el.html(val);
+                    }
+                    else{
+                        $el.html(model.id);
+                    }
+                    $el.attr('href', model.id);
                 }
             }
         },
@@ -89,17 +127,8 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         render: function() {
-            if (this._perms.edit) {
-                // Disabled by default in the template
-                this.$('.batchSelectItem').prop('disabled', false);
-            }
-
             this.stickit();
-        },
-
-        remove: function() {
-            this._modelBinder.unbind();
-            Backbone.View.remove.apply(this, arguments);
+            return this;
         },
 
         onBatchUpdate: function onBatchUpdate(changes) {
@@ -121,6 +150,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
 
     var WorksBrowseView = Backbone.View.extend({
+        events: {
+            'click .pagination a': 'gotoPage'
+        },
+
         initialize: function() {
             this._actionView = new WorksActionView({
                 el: '#actions',
@@ -133,12 +166,21 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 ItemView: WorkListItemView,
                 itemTemplate: $('#workListItemTemplate').html(),
             });
+
+            this.delegateEvents();
         },
 
         render: function() {
             this._actionView.render();
             this._worksView.render();
         },
+
+        gotoPage: function gotoPage(ev){
+            ev.preventDefault();
+            this._worksView.collection['get'+ ev.target.dataset.goto +'Page']();
+            window.history.pushState(null, null, ev.target.href);
+            return false;
+        }
     });
 
     return function browseWorks(router, filters) {
@@ -154,7 +196,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         });
 
         var view = new WorksBrowseView({
-
+            el: '#browseWorks'
         });
         view.render();
 

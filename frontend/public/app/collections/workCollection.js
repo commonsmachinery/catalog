@@ -23,7 +23,13 @@ define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
         },
 
         initialize: function(){
-            console.log(this);
+            var page;
+            if(window.location.search){
+                var page = window.location.search.match(/page=(\d+)/)[1]
+                if(page){
+                    this.state.currentPage = Number(page);
+                }
+            }
         }
     });
 

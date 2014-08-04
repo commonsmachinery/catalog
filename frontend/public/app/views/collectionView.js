@@ -43,8 +43,11 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
 			}
 
 			// Create the element for the view
+			var el = $(this._itemTemplate)
+				.attr('id', this.getItemID(model.id));
+
 			var opts = {
-				el: $(this._itemTemplate).attr('id', this.getItemID(model.id)),
+				el: el,
 				model: model,
 			};
 			_.defaults(opts, this._itemOptions);
