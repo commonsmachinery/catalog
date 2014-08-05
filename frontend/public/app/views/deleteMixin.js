@@ -12,7 +12,7 @@ define(['jquery', 'underscore', 'util'],
     var DeleteMixin = {
         /* Extend this with view-specific event handlers, if any */
         events: {
-            'click [data-action="delete"]': 'onDelete',
+            'click .delete': 'onDelete',
         },
 
         onDelete: function onDelete() {
@@ -31,7 +31,7 @@ define(['jquery', 'underscore', 'util'],
 
             // Indicate that we are running
             util.working('start', this.el);
-            this.$('[data-action="delete"]').text('Deleting...');
+            this.$('.delete').text('Deleting...');
 
             this.model.destroy({
                 success: function() {
@@ -50,7 +50,7 @@ define(['jquery', 'underscore', 'util'],
 
                     util.showError(self, self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
 
-                    self.$('[data-action="delete"]').text('Retry delete');
+                    self.$('.delete').text('Retry delete');
 
                     // Re-enable buttons
                     self.$('.actions').prop('disabled', false);

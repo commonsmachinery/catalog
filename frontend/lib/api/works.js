@@ -127,14 +127,16 @@ var getPagingLinks = function(req) {
     delete linkUrl.search;
     linkUrl.query.per_page = req.query.per_page;
 
+    var current = Number(linkUrl.query.page);
+
     linkUrl.query.page = 1;
     linkMap.first = url.format(linkUrl);
 
-    linkUrl.query.page = req.query.page + 1;
+    linkUrl.query.page = current + 1;
     linkMap.next = url.format(linkUrl);
 
     if (req.query.page > 1) {
-        linkUrl.query.page = req.query.page - 1;
+        linkUrl.query.page = current - 1;
         linkMap.previous = url.format(linkUrl);
     }
 
@@ -214,10 +216,13 @@ exports.listWorks = function listWorks(req, res, next) {
             )
             .then(transformMany(req))
             .then(function(works) {
-                uris.setLinks(res, getPagingLinks(req));
+                var linkMap = getPagingLinks(req);
+                uris.setLinks(res, linkMap);
 
-                // TODO: render works view
-                throw new Error("Works view not implemented!");
+                res.locals.pagination = linkMap;
+                res.locals.works = works;
+
+                res.render('listWorks');
             })
             .catch(function(err) {
                 next(err);

@@ -10,8 +10,8 @@
 */
 
 
-define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
-	  function($, _, ModelBinder)
+define(['jquery', 'underscore'],
+	  function($, _)
 {
 	'use strict';
 
@@ -52,38 +52,6 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
 		return value;
 	};
 
-	var mergeBindings = function mergeBindings() {
-		var bindings = arguments[0];
-
-		for (var i = 1; i < arguments.length; i++) {
-			var merging = arguments[i];
-			for (var k in merging) {
-				if (merging.hasOwnProperty(k)) {
-					var b = bindings[k];
-					var m = merging[k];
-
-					if (b) {
-						if (!_.isArray(b)) {
-							bindings[k] = b = [b];
-						}
-
-						if (_.isArray(m)) {
-							b.concat(m);
-						}
-						else {
-							b.push(m);
-						}
-					}
-					else {
-						bindings[k] = m;
-					}
-				}
-			}
-		}
-
-		return bindings;
-	};
-
     var deepClone = exports.deepClone = function deepClone(src){ // jshint ignore: line
         var curr;
         var obj = {};
@@ -101,51 +69,9 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         return obj;
     };
 
-	/* Create default bindings for a view, setting up standard converters etc.
-	   * The returned object can be passed to ModelBinder.bind().
-	  */
-	exports.createDefaultBindings = function createDefaultBindings(el, entryType) {
-		var content = ModelBinder.createDefaultBindings(el, 'data-bind');
-		var href = ModelBinder.createDefaultBindings(el, 'data-bind-href');
+    exports.bindDd = function bindDd($el, val, model){
 
-		for (var b in href) {
-			if (href.hasOwnProperty(b)) {
-				href[b].elAttribute = 'href';
-			}
-		}
-
-		// Special converters for content
-
-		if (content.metadataGraph) {
-            content.metadataGraph.converter = function(direction, value) {
-                if (direction === ModelBinder.Constants.ModelToView) {
-                    return JSON.stringify(value, null, 2);
-                }
-                else {
-					// TODO: Error handling here stinks. However, we
-					// will probably never expose raw RDF/JSON in the
-					// gui once we're past this initial work
-                    return JSON.parse(value);
-                }
-            };
-		}
-
-		// TODO: the frontend should send us a proper user profile and
-		// not just the URI.  Until then, at least strip away the base URL.
-		if (content.creator) {
-			content.creator.converter = convertUserURI;
-		}
-
-		if (content.updatedBy) {
-			content.updatedBy.converter = convertUserURI;
-		}
-
-		if (content.addedBy) {
-			content.addedBy.converter = convertUserURI;
-		}
-
-		return mergeBindings(content, href);
-	};
+    };
 
     exports.deletedURI = function deletedURI(view){
         view.$el.empty();

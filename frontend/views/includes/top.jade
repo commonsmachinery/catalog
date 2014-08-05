@@ -52,7 +52,7 @@ html(lang="en")
                             li: a(href="/login") Login
                 nav#breadCrumbs: ul
                     - var path = url;
-                    - path = path.replace(/(^\/|\/$)/g, '').split('/');
+                    - path = path.replace(/(^\/|\/$|\?.*)/g, '').split('/');
                     for i in path
                         - step = i.match(/([-_A-Z]?[^A-Z]*)/g);
                         - step = step.join(' ').toLowerCase();
