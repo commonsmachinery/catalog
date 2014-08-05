@@ -56,7 +56,13 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
             view.render();
 
             this._items[model.id] = view;
-            this.$('.entry').eq(this.collection.indexOf(model)).before(view.$el);
+            //insert in DOM by comparator order
+            if(this.$('.entry').eq(this.collection.indexOf(model)).length){
+                this.$('.entry').eq(this.collection.indexOf(model)).before(view.$el);
+            }
+            else{
+                this.$el.append(view.$el);
+            }
         },
 
         onRemove: function onRemove(model) {
