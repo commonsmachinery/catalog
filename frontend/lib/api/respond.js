@@ -31,6 +31,25 @@ var idToObject = function(object, prop, uriBuilder) {
     }
 };
 
+/* Change an ID array property into [{ id: x, href: y }] objects in place.
+ * Parameters:
+ *   array: array with IDs to transform to objects
+ *   itemProp: if not null, object[prop][n][itemProp] will be transformed instead
+ */
+var idsToObjects = function(array, itemProp, uriBuilder) {
+    if (array) {
+        for (var i = 0; i < array.length; i++) {
+            if (itemProp) {
+                var id = array[i][itemProp];
+                array[i][itemProp] = { id: id, href: uriBuilder(id) };
+            }
+            else {
+                var id = array[i];
+                array[i] = { id: id, href: uriBuilder(id) };
+            }
+        }
+    }
+};
 
 /* Filter fields in an object before responding.
  *
@@ -212,18 +231,6 @@ var populateMedia = function(context, referenceObj) {
         });
 };
 
-var populateArray = function(context, array, itemProperty, populateFunc, transformFunc) {
-    var fetching = [];
-
-    for (var i = 0; i < array.length; i++) {
-        if (transformFunc) {
-            transformFunc(array[i]);
-        }
-        fetching.push(populateFunc(context, array[i][itemProperty]));
-    }
-    return Promise.all(fetching);
-};
-
 /* Transform a user object for a response.  To be consistent
  * with other transform functions, this returns a promise
  * even though nothing more will be loaded from the core DB.
@@ -247,8 +254,15 @@ exports.transformWork = function(work, context, options) {
     if (work.owner) {
         idToObject(work.owner, 'user', uris.buildUserURI);
     }
+
     idToObject(work, 'added_by', uris.buildUserURI);
     idToObject(work, 'updated_by', uris.buildUserURI);
+
+    if (work.collabs) {
+        idsToObjects(work.collabs.users, null, uris.buildUserURI);
+    }
+    idsToObjects(work.annotations, 'updated_by', uris.buildUserURI);
+    idsToObjects(work.media, null, uris.buildUserURI);
 
     // Add other fields here as those parts are supported by the API
 
@@ -261,10 +275,15 @@ exports.transformWork = function(work, context, options) {
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
         'annotations.updated_by': function() {
-            return populateArray(context, work.annotations, 'updated_by', populateUser, function(a) {
-                idToObject(a, 'updated_by', uris.buildUserURI);
+            return Promise.map(work.annotations, function(a) {
+                return populateUser(context, a.updated_by);
             });
         },
+        'collabs.users': function() {
+            return Promise.map(work.collabs.users, function(u) {
+                return populateUser(context, u);
+            });
+        }
     })
     // Transform annotations to map, if requested.
     .then(function(work) {
