@@ -11,5 +11,5 @@ mixin defTerm(term, caption, className)
 
 
 mixin pageNav(url, caption)
-    if url
-        a(data-goto=caption href=url): | #{caption}
+    - var hidden = url ? '' : 'hidden'
+    a(class=hidden data-goto=caption href=url): | #{caption}

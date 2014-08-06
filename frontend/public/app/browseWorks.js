@@ -67,14 +67,19 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var WorkListItemView = Backbone.View.extend({
         bindings: {
-            '.delete': {
-                observe: '_perms.admin',
+            '.added_on': {
+                observe: 'added_at',
+                update: util.bindDefOrRemove
+            },
+            '.added_by a': {
+                observe: 'added_by.alias',
                 update: function($el, val, model){
-                    if(val){
-                        $el.removeClass('hidden');
+                    $el.attr('href', val.id);
+                    if (val){
+                        $el.html(val);
                     }
-                    else if(! $el.hasClass('hidden')){
-                        $el.addClass('hidden');
+                    else{
+                        $el.html(model.get('added_by.id'));
                     }
                 }
             },
@@ -86,6 +91,17 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                     }
                     else{
                         $el.prop('disabled', true);
+                    }
+                }
+            },
+            '.delete': {
+                observe: '_perms.admin',
+                update: function($el, val, model){
+                    if(val){
+                        $el.show();
+                    }
+                    else {
+                        $el.hide();
                     }
                 }
             },
@@ -151,7 +167,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var WorksBrowseView = Backbone.View.extend({
         events: {
-            'click .pagination a': 'gotoPage'
+            'click .pagination a': 'gotoPage',
         },
 
         initialize: function() {
@@ -166,7 +182,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 ItemView: WorkListItemView,
                 itemTemplate: $('#workListItemTemplate').html(),
             });
-
             this.delegateEvents();
         },
 
@@ -177,9 +192,27 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         gotoPage: function gotoPage(ev){
             ev.preventDefault();
-            this._worksView.collection['get'+ ev.target.dataset.goto +'Page']();
-            window.history.pushState(null, null, ev.target.href);
+            this._worksView.collection['get'+ ev.target.dataset.goto +'Page']()
+                .done(_.bind(this.onFetch, this, ev));
             return false;
+        },
+
+        onFetch: function onFetch(ev, data){
+            var current = this._worksView.collection.state.currentPage;
+            window.history.pushState(null, null, ev.target.href);
+            var link;
+            var $prev = this.$('[data-goto=Previous]');
+            if(current == 1){
+                $prev.hide();
+            }
+            else{
+                link = window.location.href.replace(/([^_])page=\d+/, '$1page='+ (current - 1))
+                $prev.attr('href', link);
+                $prev.show();
+            };
+            link = window.location.href.replace(/([^_])page=\d+/, '$1page='+ (current + 1))
+            this.$('[data-goto=Next]').attr('href', link);
+            this.$('.pagination .current').html(current);
         }
     });
 

@@ -26,7 +26,7 @@ define(['jquery', 'lib/backbone', 'util',
             },
             '.description': {
                 observe: 'description',
-                update: 'renderOrNot'
+                update: util.bindDefOrRemove
             },
             '.public, .private': {
                 observe: 'public',
@@ -56,15 +56,6 @@ define(['jquery', 'lib/backbone', 'util',
             this.$el.html($(this.template).html());
             this.stickit();
             return this;
-        },
-
-        renderOrNot: function($el, val, model){
-            if(val){
-                $el.find('dd').html(val);
-            }
-            else{
-                $el.remove();
-            }
         },
 
         onEditWork: function onEditProfile(){

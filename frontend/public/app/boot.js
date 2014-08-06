@@ -35,6 +35,8 @@ require(['jquery', 'lib/backbone', 'session',
         session.init();
         nav();
 
+        $('.hidden').removeClass('hidden').hide();
+
         // TODO: this doesn't handle network timeouts, only various
         // gateway timeouts.  This all probably should go into a
         // wrapper class instead that handles common errors, but it
@@ -61,7 +63,6 @@ require(['jquery', 'lib/backbone', 'session',
 			maxTries: 3,
 			statusCode: {
 				408: retry,
-				500: retry,
 				504: retry,
 				522: retry,
 				524: retry,

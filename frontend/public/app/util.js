@@ -69,8 +69,13 @@ define(['jquery', 'underscore'],
         return obj;
     };
 
-    exports.bindDd = function bindDd($el, val, model){
-
+    exports.bindDefOrRemove = function bindDefOrRemove($el, val, model){
+        if(val){
+            $el.find('dd').html(val);
+        }
+        else{
+            $el.remove();
+        }
     };
 
     exports.deletedURI = function deletedURI(view){

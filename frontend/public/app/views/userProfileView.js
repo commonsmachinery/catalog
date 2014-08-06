@@ -26,23 +26,23 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             },
             '.name': {
                 observe: 'profile.name',
-                update: 'renderOrNot'
+                update: util.bindDefOrRemove
             },
             '.email': {
                 observe: 'profile.email',
-                update: 'renderOrNot'
+                update: util.bindDefOrRemove
             },
             '.location': {
                 observe: 'profile.location',
-                update: 'renderOrNot'
+                update: util.bindDefOrRemove
             },
             '.website': {
                 observe: 'profile.website',
-                update: 'renderOrNot'
+                update: util.bindDefOrRemove
             },
             '.gravatar_email': {
                 observe: 'profile.gravatar_email',
-                update: 'renderOrNot'
+                update: util.bindDefOrRemove
             }
         },
 

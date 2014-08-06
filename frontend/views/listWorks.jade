@@ -7,22 +7,25 @@
 
 mixin workListItemView(work, empty)
     article.entry(id="works-#{work.id}" class="grid-25 tablet-grid-33 mobile-grid-100")
-        - var title = empty || work.alias || work.id
         header
             - var disabled = work._perms && work._perms.write ? false : true 
             input.batchSelectItem(type='checkbox', disabled=disabled)
+
+            - var title = empty || work.alias || work.id
             h2: a.title(href=work.href || '#')
                 | #{empty || title}
+
             span(class="#{work.public ? 'public' : 'private'}")
             - var isHidden = work._perms && work._perms.delete ? '' : 'hidden'
+
             button.delete(class=isHidden) X
             dl
-                - var added_by = work.added_by.alias || work.added_by.id
+                - var added_by = work && work.added_by ? work.added_by.alias || work.added_by.id : empty
                 +defTerm(null, 'Added By')
-                    a(href="#{empty || work.added_by.href}") added_by
+                    a(href="#{empty || work.added_by.href}") #{added_by}
             div.oembed
         dl
-            +defTerm(empty || work.added_on, 'Added on')
+            +defTerm(empty || work.added_at, 'Added on')
             +defTerm(empty || work.href, 'URL')
             +defTerm('-- collections', 'Used in')
 
@@ -53,6 +56,8 @@ include includes/top
             nav.pagination
                 +pageNav(pagination.first, 'First')
                 +pageNav(pagination.previous, 'Previous')
+                - var curr = pagination.previous ? Number(pagination.previous.match(/(?:\&|\?)page=(\d+)/)[1]) + 1 : 1
+                span.current #{curr}
                 +pageNav(pagination.next, 'Next')
 
     else

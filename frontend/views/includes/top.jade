@@ -33,7 +33,7 @@ html(lang="en")
                 nav#header
                     ul#pages
                         li.home: a(href="/")
-                        li.works: a(href="/works"): | works
+                        li.works: a(href="/works?include=added_by&page=1&"): | works
                         if userId
                             li.createWork: a(href="#"): | create work
                     ul#nav-user
