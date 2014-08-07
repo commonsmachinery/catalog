@@ -15,11 +15,13 @@ define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
 
         state: {
             firstPage: 1,
-            pageSize: 12
+            pageSize: 12,
+            sort: 'added_at'
         },
 
         queryParams: {
-            sortKey: 'sort'
+            sortKey: 'sort',
+            include: 'added_by'
         },
 
         initialize: function(){

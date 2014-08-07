@@ -35,8 +35,6 @@ require(['jquery', 'lib/backbone', 'session',
         session.init();
         nav();
 
-        $('.hidden').removeClass('hidden').hide();
-
         // TODO: this doesn't handle network timeouts, only various
         // gateway timeouts.  This all probably should go into a
         // wrapper class instead that handles common errors, but it

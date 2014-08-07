@@ -7,76 +7,109 @@
 define(['jquery', 'underscore', 'lib/backbone', 'util',
         'collections/workCollection',
         'views/collectionView',
-        'views/createWorkView'],
+        'views/createWorkView',
+        'views/deleteMixin'],
        function($, _, Backbone, util,
                 WorkCollection,
                 CollectionView,
-                CreateWorkView)
+                CreateWorkView,
+                DeleteMixin)
 {
     'use strict';
 
     var hub = _.extend({}, Backbone.Events);
     var collection;
 
-    var WorksActionView = Backbone.View.extend({
+    var WorkActionsView = Backbone.View.extend({
+        
         events: {
-            'click #batch-update': 'onBatchUpdate',
-            'click #add-work': 'onAddWork'
+            'click .apply-batch-update': "onBatchUpdate",
+        },
+
+        initialize: function(opts) {
+            this.template = opts.template;
+            this.collection = opts.collection;
+            this.delegateEvents();
+            return this;
+        },
+
+        render: function() {
+            this.$el.html($(this.template).html());
+            return this;
         },
 
         onBatchUpdate: function onBatchUpdate() {
             var changes = {};
             var trigger = false;
 
-            var visible = this.$('#new-visible').val();
-            if (visible) {
-                changes.visible = visible;
-                trigger = true;
-            }
-
-            var state = this.$('#new-state').val();
-            if (state) {
-                changes.state = state;
+            var setPublic = this.$('#input-public').val();
+            if (setPublic) {
+                if(setPublic === 'true'){
+                    changes.public = true;
+                }
+                else{
+                    changes.public = false;
+                }
                 trigger = true;
             }
 
             if (trigger) {
                 hub.trigger('batchUpdate', changes);
             }
-        },
-
-        onAddWork: function onAddWork() {
-            var createView = new CreateWorkView({
-                el: $($('#addWorkTemplate').html()),
-            });
-
-            $(document.body).append(createView.render().el);
-
-            this.listenTo(createView, 'create:success', function (view, work) {
-                createView.remove();
-
-                // Just redirect to the new work
-                document.location = work.get('resource');
-            });
-
-            this.listenTo(createView, 'create:cancel', function () {
-                createView.remove();
-            });
         }
     });
 
-    var WorkListItemView = Backbone.View.extend({
+    var WorkFiltersView = Backbone.View.extend({
+        
+        events: {
+            'click .apply-filters': "onApplyFilters"
+        },
+
+        initialize: function(opts) {
+            this.template = opts.template;
+            this.collection = opts.collection;
+            this.delegateEvents();
+            return this;
+        },
+
+        render: function() {
+            this.$el.html($(this.template).html());
+            return this;
+        },
+
+        onApplyFilters: function onApplyFilters(ev) {
+            var query = this.collection.queryParams;
+            var trigger = false;
+
+            var $byMe = this.$('#input-by');
+            var attr = $byMe.parent().data('filter');
+            if($byMe.is(':checked')){
+                var val = $byMe.siblings('input').eq(0).val();
+                query.filter = attr + ':' + val;
+                trigger = true;
+            }
+            else{
+                var exp = new RegExp(attr + '\:' + '[^,\&]*,?');
+                query.filter = query.filter.replace(exp, '');
+            }
+            var self = this;
+            this.collection.fetch();
+        }
+    });
+
+
+    var WorkListItemView = Backbone.View.extend(_.extend(DeleteMixin, {
         bindings: {
             '.added_on': {
                 observe: 'added_at',
                 update: util.bindDefOrRemove
             },
             '.added_by a': {
-                observe: 'added_by.alias',
+                observe: 'added_by',
                 update: function($el, val, model){
-                    $el.attr('href', val.id);
-                    if (val){
-                        $el.html(val);
+                    $el.attr('href', val.href);
+                    if (val.alias){
+                        $el.html(val.alias);
                     }
                     else{
                         $el.html(model.get('added_by.id'));
@@ -98,24 +131,21 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 observe: '_perms.admin',
                 update: function($el, val, model){
                     if(val){
-                        $el.show();
-                    }
-                    else {
-                        $el.hide();
+                        $el.removeClass('hidden');
                     }
                 }
             },
             '.public, .private': {
                 observe: 'public',
                 update: function($el, val, model){
-                    var className;
                     if (val){
-                        className = 'public';
+                        $el.addClass('public');
+                        $el.removeClass('private');
                     }
-                    else{
-                        className = 'private';
+                    else {
+                        $el.addClass('private');
+                        $el.removeClass('public');
                     }
-                    $el.attr('class', className);
                 }
             },
             '.title': {
@@ -127,14 +157,21 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                     else{
                         $el.html(model.id);
                     }
-                    $el.attr('href', model.id);
+                    $el.attr('href', model.href);
                 }
-            }
+            },
+            '.url a': {
+                observe: 'href',
+                update: function($el, val, model){
+                    $el.attr('href', val);
+                    $el.html(val);
+                }
+            },
         },
 
         initialize: function() {
             this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
-            this._perms = this.model.get('permissions') || {};
+            this._perms = this.model.get('_perms') || {};
 
             // "working" indicator
             this.listenTo(this.model, 'request', this.onRequest);
@@ -148,7 +185,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         onBatchUpdate: function onBatchUpdate(changes) {
-            if (this._perms.edit && this.$('.batchSelectItem').prop('checked')) {
+            if (this._perms.write && this.$('.batchSelectItem').prop('checked')) {
                 this.model.save(changes, { wait: true });
             }
         },
@@ -162,7 +199,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             util.working('stop', this.el);
             $(this.el).find('.batchSelectItem').prop('disabled', false);
         }
-    });
+    }));
 
 
     var WorksBrowseView = Backbone.View.extend({
@@ -171,9 +208,17 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         initialize: function() {
-            this._actionView = new WorksActionView({
+            this._actionView = new WorkActionsView({
                 el: '#actions',
-            });
+                template: '#actionsTemplate',
+                collection: collection
+            }).render();
+
+            this._filtersView = new WorkFiltersView({
+                el: '#filters',
+                template: '#filtersTemplate',
+                collection: collection
+            }).render();
 
             this._worksView = new CollectionView({
                 el: '#works',
@@ -183,6 +228,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 itemTemplate: $('#workListItemTemplate').html(),
             });
             this.delegateEvents();
+            collection.comparator = 'added_at';
         },
 
         render: function() {
