@@ -140,33 +140,6 @@ describe('Create work', function() {
         expect( m.description ).to.be( 'desc' );
         expect( m.public ).to.be( true );
     });
-
-
-/*
-    it('should use provided annotations', function() {
-        var r = work.command.create(context, {
-            annotations: [{
-                updated_by: userId,
-                score: 100,
-                property: {
-                    propertyName: 'title',
-                    titleLabel: 'test',
-                    value: 'test',
-                },
-            }],
-        });
-        expect( r ).to.have.property( 'save' );
-        var m = r.save;
-
-        expect( m ).to.have.property( 'annotations' );
-        expect( m.annotations.length ).to.be( 1 );
-        expect( m.annotations[0].score ).to.be( 100 );
-        expect( m.annotations[0].property.propertyName ).to.be( 'title' );
-        expect( m.annotations[0].property.titleLabel ).to.be( 'test' );
-        expect( m.annotations[0].property.value ).to.be( 'test' );
-    });
-*/
-
 });
 
 
@@ -338,5 +311,110 @@ describe('Delete work', function() {
         expect( e.events[0].event ).to.be( 'core.work.deleted' );
         expect( e.events[0].param ).to.have.property( 'work' );
         expect( e.events[0].param.work.id.toString() ).to.be( w.id );
+    });
+});
+
+describe('Work collaborators', function() {
+    var userId = new ObjectId();
+    var collaboratorId = new ObjectId();
+    var testWork;
+    var testContext;
+
+    var createAnnotation = {
+        property: {
+            propertyName: 'title',
+            value: 'test title'
+        }
+    };
+
+    before(function() {
+        testWork = work.command.create({ userId: new ObjectId() }, {
+            alias: 'alias',
+            description: 'description',
+            public: false,
+        }).save;
+
+        testContext = { userId: userId, perms: {} };
+
+        testContext.perms[testWork.id] = {
+            read: true,
+            write: true,
+            admin: true
+        };
+    });
+
+    it('updateWork should generate collabs.users.added events for new users', function() {
+        var r = work.command.update(testContext, testWork, {
+            collabs: {
+                users: [collaboratorId],
+            }
+        });
+
+        expect( r ).to.have.property( 'save' );
+        var w = r.save;
+
+        var e = r.event;
+
+        expect( e.user ).to.eql( userId );
+        expect( e.type ).to.be( 'core.Work' );
+        expect( e.events ).to.have.length( 1 );
+        expect( e.events[0].event ).to.be( 'core.work.collabs.users.added' );
+        expect( e.events[0].param ).to.have.property( 'user_id' );
+        expect( e.events[0].param.user_id ).to.be( collaboratorId );
+    });
+
+    it('updateWork should generate collabs.users.removed events for removed users', function() {
+        var r = work.command.update(testContext, testWork, {
+            collabs: {
+                users: [],
+            }
+        });
+
+        expect( r ).to.have.property( 'save' );
+        var w = r.save;
+
+        var e = r.event;
+
+        expect( e.user ).to.eql( userId );
+        expect( e.type ).to.be( 'core.Work' );
+        expect( e.events ).to.have.length( 1 );
+        expect( e.events[0].event ).to.be( 'core.work.collabs.users.removed' );
+        expect( e.events[0].param ).to.have.property( 'user_id' );
+        expect( e.events[0].param.user_id ).to.be( collaboratorId );
+    });
+
+    it('updateWork should not generate events for repeated ids', function() {
+        var r = work.command.update(testContext, testWork, {
+            collabs: {
+                users: [collaboratorId],
+            }
+        });
+
+        expect( r ).to.have.property( 'save' );
+        var w = r.save;
+
+        var r = work.command.update(testContext, testWork, {
+            collabs: {
+                users: [collaboratorId],
+            }
+        });
+
+        expect( r ).to.have.property( 'save' );
+        var w = r.save;
+
+        var e = r.event;
+
+        expect( e.user ).to.eql( userId );
+        expect( e.type ).to.be( 'core.Work' );
+        expect( e.events ).to.have.length( 0 );
+    });
+
+    it('collabs.users should be able to read, write, admin', function() {
+        var context = { userId: collaboratorId };
+        work.setWorkPerms(context)(testWork);
+
+        expect( context.perms[testWork.id].read ).to.be.ok();
+        expect( context.perms[testWork.id].write ).to.be.ok();
+        expect( context.perms[testWork.id].admin ).to.be.ok();
     });
 });
