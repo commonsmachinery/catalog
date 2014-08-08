@@ -491,9 +491,9 @@ describe('sources', function() {
                     expect ( w.sources.length ).to.be( 1 );
 
                     expect ( w.sources[0] ).to.have.property( 'source_work' );
-                    expect ( w.sources[0].source_work ).to.be.a('string');
+                    expect ( w.sources[0].source_work ).to.only.have.keys('id', 'href');
                     expect ( w.sources[0] ).to.have.property( 'added_by' );
-                    expect ( w.sources[0].added_by ).to.be.a('string');
+                    expect ( w.sources[0].added_by ).to.only.have.keys('id', 'href');
                 })
                 .end(done);
         });

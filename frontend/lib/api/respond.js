@@ -263,6 +263,8 @@ exports.transformWork = function(work, context, options) {
     }
     idsToObjects(work.annotations, 'updated_by', uris.buildUserURI);
     idsToObjects(work.media, null, uris.buildUserURI);
+    idsToObjects(work.sources, 'added_by', uris.buildUserURI);
+    idsToObjects(work.sources, 'source_work', uris.buildWorkURI);
 
     // Add other fields here as those parts are supported by the API
 
