@@ -417,7 +417,7 @@ exports.removeMediaFromWork = function removeMediaFromWork(context, workId, medi
 
 cmd.removeMedia = function commandRemoveMedia(context, work, media) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -469,7 +469,7 @@ exports.unlinkAllMedia = function unlinkAllMedia(context, workId) {
 
 cmd.unlinkAllMedia = function commandUnlinkAllMedia(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
