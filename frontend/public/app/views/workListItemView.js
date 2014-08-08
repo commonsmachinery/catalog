@@ -68,6 +68,8 @@ define(['jquery', 'lib/backbone', 'util',
             this.listenTo(this.model, 'sync', this.onSync);
             this.listenTo(this.model, 'error', this.onSync);
             this.listenTo(this.hub, 'batchUpdate', this.onBatchUpdate);
+
+            return this;
         },
 
         render: function() {

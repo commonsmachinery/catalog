@@ -113,6 +113,8 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 collection: collection
             }).render();
 
+            // expose hub
+            WorkListItemView.prototype.hub = hub;
             this._worksView = new CollectionView({
                 el: '#works',
                 collection: collection,
@@ -120,8 +122,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 ItemView: WorkListItemView,
                 itemTemplate: $('#workListItemTemplate').html(),
             });
-            // expose this hub
-            WorkListItemView.prototype.hub = hub;
 
             this.delegateEvents();
             collection.comparator = 'added_at';
