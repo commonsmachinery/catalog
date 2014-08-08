@@ -19,6 +19,7 @@ var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
+var request = require('./request');
 
 /* Return promise handler to transform the annotation object for JSON responses.
  */
@@ -110,6 +111,7 @@ exports.getAllAnnotations = function getAllAnnotations(req, res, next) {
 
 
 exports.createWorkAnnotation = function createWorkAnnotation(req, res, next) {
+    request.transformAnnotation(req.body);
     core.createWorkAnnotation(req.context, req.params.workId, req.body)
         .then(transform(req))
         .then(respond.asJSON(res, { status: 201 }))
@@ -119,6 +121,7 @@ exports.createWorkAnnotation = function createWorkAnnotation(req, res, next) {
 };
 
 exports.updateWorkAnnotation = function updateWorkAnnotation(req, res, next) {
+    request.transformAnnotation(req.body);
     core.updateWorkAnnotation(req.context, req.params.workId, req.params.annotationId, req.body)
         .then(transform(req))
         .then(respond.asJSON(res))

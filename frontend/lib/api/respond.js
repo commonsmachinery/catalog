@@ -283,7 +283,7 @@ exports.transformWork = function(work, context, options) {
             return Promise.map(work.collabs.users, function(u) {
                 return populateUser(context, u);
             });
-        }
+        },
     })
     // Transform annotations to map, if requested.
     .then(function(work) {

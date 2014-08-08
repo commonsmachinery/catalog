@@ -644,7 +644,7 @@ describe('Works', function() {
                 .end(done);
         });
 
-        it('xxx should allow including collabs.users', function(done) {
+        it('should allow including collabs.users', function(done) {
             var req = request(config.frontend.baseURL);
             req.get('/works?filter=owner.user:' + collabOwnerID + "&include=collabs.users")
                 .set('Accept', 'application/json')
