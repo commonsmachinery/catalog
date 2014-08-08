@@ -340,6 +340,7 @@ exports.transformSource = function(workId, source, context, options) {
     source = filterFields(source, options);
 
     idToObject(source, 'added_by', uris.buildUserURI);
+    idToObject(source, 'source_work', uris.buildWorkURI);
 
     // Add other fields here as those parts are supported by the API
 

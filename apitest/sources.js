@@ -265,7 +265,10 @@ describe('sources', function() {
                     var s = res.body;
 
                     expect( s.added_by ).to.have.property( 'profile' );
-                    expect( s.source_work ).to.be( testObjects.sourceWorkID );
+                    expect( s.source_work ).to.have.property( 'id' );
+                    expect( s.source_work.id ).to.be( testObjects.sourceWorkID );
+                    expect( s.source_work ).to.have.property( 'href' );
+                    expect( s.source_work.href ).to.be( testObjects.sourceWorkURI );
                 })
                 .end(done);
         });
