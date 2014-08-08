@@ -7,13 +7,11 @@
 define(['jquery', 'underscore', 'lib/backbone', 'util',
         'collections/workCollection',
         'views/collectionView',
-        'views/createWorkView',
-        'views/deleteMixin'],
+        'views/workListItemView'],
        function($, _, Backbone, util,
                 WorkCollection,
                 CollectionView,
-                CreateWorkView,
-                DeleteMixin)
+                WorkListItemView)
 {
     'use strict';
 
@@ -97,111 +95,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         }
     });
 
-
-    var WorkListItemView = Backbone.View.extend(_.extend(DeleteMixin, {
-        bindings: {
-            '.added_on': {
-                observe: 'added_at',
-                update: util.bindDefOrRemove
-            },
-            '.added_by a': {
-                observe: 'added_by',
-                update: function($el, val, model){
-                    $el.attr('href', val.href);
-                    if (val.alias){
-                        $el.html(val.alias);
-                    }
-                    else{
-                        $el.html(model.get('added_by.id'));
-                    }
-                }
-            },
-            '.batchSelectItem': {
-                observe: '_perms.write',
-                update: function($el, val, model){
-                    if(val){
-                        $el.prop('disabled', false);
-                    }
-                    else{
-                        $el.prop('disabled', true);
-                    }
-                }
-            },
-            '.delete': {
-                observe: '_perms.admin',
-                update: function($el, val, model){
-                    if(val){
-                        $el.removeClass('hidden');
-                    }
-                }
-            },
-            '.public, .private': {
-                observe: 'public',
-                update: function($el, val, model){
-                    if (val){
-                        $el.addClass('public');
-                        $el.removeClass('private');
-                    }
-                    else {
-                        $el.addClass('private');
-                        $el.removeClass('public');
-                    }
-                }
-            },
-            '.title': {
-                observe: 'alias',
-                update: function($el, val, model){
-                    if(val){
-                        $el.html(val);
-                    }
-                    else{
-                        $el.html(model.id);
-                    }
-                    $el.attr('href', model.href);
-                }
-            },
-            '.url a': {
-                observe: 'href',
-                update: function($el, val, model){
-                    $el.attr('href', val);
-                    $el.html(val);
-                }
-            },
-        },
-
-        initialize: function() {
-            this.listenTo(hub, 'batchUpdate', this.onBatchUpdate);
-            this._perms = this.model.get('_perms') || {};
-
-            // "working" indicator
-            this.listenTo(this.model, 'request', this.onRequest);
-            this.listenTo(this.model, 'sync', this.onSync);
-            this.listenTo(this.model, 'error', this.onSync);
-        },
-
-        render: function() {
-            this.stickit();
-            return this;
-        },
-
-        onBatchUpdate: function onBatchUpdate(changes) {
-            if (this._perms.write && this.$('.batchSelectItem').prop('checked')) {
-                this.model.save(changes, { wait: true });
-            }
-        },
-
-        onRequest: function onRequest(){
-            util.working('start', this.el);
-            $(this.el).find('.batchSelectItem').prop('disabled', true);
-        },
-
-        onSync: function onSync(){
-            util.working('stop', this.el);
-            $(this.el).find('.batchSelectItem').prop('disabled', false);
-        }
-    }));
-
-
     var WorksBrowseView = Backbone.View.extend({
         events: {
             'click .pagination a': 'gotoPage',
@@ -227,6 +120,9 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 ItemView: WorkListItemView,
                 itemTemplate: $('#workListItemTemplate').html(),
             });
+            // expose this hub
+            WorkListItemView.prototype.hub = hub;
+
             this.delegateEvents();
             collection.comparator = 'added_at';
         },

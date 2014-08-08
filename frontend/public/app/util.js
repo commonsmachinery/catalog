@@ -69,14 +69,37 @@ define(['jquery', 'underscore'],
         return obj;
     };
 
-    exports.bindDefOrRemove = function bindDefOrRemove($el, val, model){
-        if(val){
-            $el.find('dd').html(val);
+    exports.bind = {
+        aliasOrId: function aliasOrId($el, val, model){
+            if($el.prop('tagName') === 'A'){
+                $el.attr('href', model.href);
+            }
+            if (val){
+                $el.html(val);
+            }
+            else{
+                $el.html(model.id);
+            }
+        },
+        defOrRemove : function defOrRemove($el, val, model){
+            if(val){
+                $el.find('dd').html(val);
+            }
+            else{
+                $el.remove();
+            }
+        },
+        visibilityClass: function visibilityClass($el, val, model){
+            if (val){
+                $el.addClass('public');
+                $el.removeClass('private');
+            }
+            else {
+                $el.addClass('private');
+                $el.removeClass('public');
+            }
         }
-        else{
-            $el.remove();
-        }
-    };
+    }
 
     exports.deletedURI = function deletedURI(view){
         view.$el.empty();

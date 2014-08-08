@@ -13,36 +13,28 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var UserProfileView = Backbone.View.extend({
         bindings:{
-            '.user': {
+            '.user h1': {
                 observe: 'alias',
-                update: function($el, val, model){
-                    if(val){
-                        $el.find('dd h1').html(val);
-                    }
-                    else{
-                        $el.find('dd').html(model.id);
-                    }
-                },
-            },
+                update: util.bind.aliasOrId,
             '.name': {
                 observe: 'profile.name',
-                update: util.bindDefOrRemove
+                update: util.bind.defOrRemove
             },
             '.email': {
                 observe: 'profile.email',
-                update: util.bindDefOrRemove
+                update: util.bind.defOrRemove
             },
             '.location': {
                 observe: 'profile.location',
-                update: util.bindDefOrRemove
+                update: util.bind.defOrRemove
             },
             '.website': {
                 observe: 'profile.website',
-                update: util.bindDefOrRemove
+                update: util.bind.defOrRemove
             },
             '.gravatar_email': {
                 observe: 'profile.gravatar_email',
-                update: util.bindDefOrRemove
+                update: util.bind.defOrRemove
             }
         },
 

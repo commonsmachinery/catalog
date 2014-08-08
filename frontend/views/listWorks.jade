@@ -29,6 +29,9 @@ mixin workListItemView(work, empty)
             +defTerm(null, 'URL')
                 a(href="#{empty || work.href}") #{empty || work.href}
             +defTerm('-- collections', 'Used in')
+            span.metadata
+                +defTerm('???' || work.annotations.title, 'Original Title', 'meta-title')
+                +defTerm('???' || work.annotations.creator, 'Creator/Author', 'meta-author')
 
 include includes/top
     if works
