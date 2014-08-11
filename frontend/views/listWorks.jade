@@ -9,23 +9,28 @@ mixin workListItemView(work, empty)
     article.entry(id="works-#{work.id}" class="grid-25 tablet-grid-33 mobile-grid-100")
         header
             - var disabled = work._perms && work._perms.write ? false : true 
-            input.batchSelectItem(type='checkbox', disabled=disabled)
+            - var isHidden = disabled ? 'hidden' : ''
+            input.batchSelectItem(name='batchSelect-#{work.id}', id='batchSelect-#{work.id}', type='checkbox', disabled=disabled)
+            label.checkbox(class=isHidden, for='batchSelect-#{work.id}')
 
             - var title = empty || work.alias || work.id
             h2: a.title(href=work.href || '#')
                 | #{empty || title}
 
-            span(class="#{work.public ? 'public' : 'private'}")
-            - var isHidden = work._perms && work._perms.admin ? '' : 'hidden'
+            if work._perms && work._perms.write
+                span(class="#{work.public ? 'public' : 'private'}")
+
+            - isHidden = work._perms && work._perms.admin ? '' : 'hidden'
 
             button.delete(class=isHidden) X
-            dl
-                - var added_by = work && work.added_by ? work.added_by.alias || work.added_by.id : empty
-                +defTerm(null, 'Added By')
-                    a(href="#{empty || work.added_by.href}") #{added_by}
+
+            - var added_by = work && work.added_by ? work.added_by.alias || work.added_by.id : empty
+            +defTerm(null, 'Added By')
+                a(href="#{empty || work.added_by.href}") #{added_by}
             div.oembed
         dl
-            +defTerm(empty || work.added_at, 'Added on')
+            -var date = work.added_at ? work.added_at.toDateString() : '';
+            +defTerm(empty || date.substring(3, date.length), 'Added on')
             +defTerm(null, 'URL')
                 a(href="#{empty || work.href}") #{empty || work.href}
             +defTerm('-- collections', 'Used in')
@@ -38,7 +43,7 @@ include includes/top
         div#browseWorks
             if userId
                 //- this is a place holder for the template for easier layout
-                div#actions: script#actionsTemplate(type="text/template")
+                div#actions(class="prefix-5 grid-90 tablet prefix-5 tablet-grid-90 mobile-grid 100"): script#actionsTemplate(type="text/template")
                     span.visibility
                         label(for="input-visibility") Visibility
                         select#input-public
@@ -47,12 +52,12 @@ include includes/top
                             option(value="false") Private
                     button.apply-batch-update Apply
 
-                div#filters: script#filtersTemplate(type="text/template")
+                div#filters(class="prefix-5 grid-90 tablet prefix-5 tablet-grid-90 mobile-grid 100"): script#filtersTemplate(type="text/template")
                         //- toDo: text-field for added_by
                         //- data-filter could help to iterate every active filter and value instead of adding each manually when multiple filters are supported
                         span(data-filter='owner.user')
                             input#input-by(type="checkbox")
-                            label(for="input-by") By me
+                            label.checkbox(for="input-by") By me
                             input(type="hidden", value=userId)
                         button.apply-filters Filter
 
@@ -61,11 +66,12 @@ include includes/top
                     +workListItemView(work)
 
             nav.pagination
-                +pageNav(pagination.first, 'First')
-                +pageNav(pagination.previous, 'Previous')
                 - var curr = pagination.previous ? Number(pagination.previous.match(/(?:\&|\?)page=(\d+)/)[1]) + 1 : 1
+                - isHidden = curr == 1 ? 'hidden' : ''
+                +pageNav(pagination.first, 'First', '1°')(class=isHidden)
+                +pageNav(pagination.previous, 'Previous', '<-')(class=isHidden)
                 span.current #{curr}
-                +pageNav(pagination.next, 'Next')
+                +pageNav(pagination.next, 'Next', '->')
 
     else
         b There are no visible works.

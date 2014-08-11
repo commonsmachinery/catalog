@@ -10,6 +10,5 @@ mixin defTerm(term, caption, className)
                     block
 
 
-mixin pageNav(url, caption)
-    - var hidden = url ? '' : 'hidden'
-    a(class=hidden data-goto=caption href=url): | #{caption}
+mixin pageNav(url, rel, caption)
+    a(class=attributes.class data-goto=rel href=url): | #{caption}
