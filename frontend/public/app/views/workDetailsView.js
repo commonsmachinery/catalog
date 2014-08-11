@@ -33,7 +33,6 @@ define(['jquery', 'lib/backbone', 'util',
 
         initialize: function(opts) {
             this.template = opts.template;
-            this.delegateEvents();
         },
 
         render: function() {

@@ -48,6 +48,7 @@ define(['jquery', 'underscore', 'util'],
                     util.showError(this, this.model.validationError);
                 });
                 this.model.save(null, {
+                    wait: true,
                     success: function(model) {
                         console.debug('create success: %s', model.id);
 

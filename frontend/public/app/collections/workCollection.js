@@ -21,7 +21,8 @@ define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
 
         queryParams: {
             sortKey: 'sort',
-            include: 'added_by'
+            include: 'added_by',
+            filter: ''
         },
 
         initialize: function(){

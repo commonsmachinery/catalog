@@ -72,7 +72,7 @@ define(['jquery', 'underscore'],
     exports.bind = {
         aliasOrId: function aliasOrId($el, val, model){
             if($el.prop('tagName') === 'A'){
-                $el.attr('href', model.href);
+                $el.attr('href', model.href || model.get('href'));
             }
             if (val){
                 $el.html(val);
@@ -90,13 +90,18 @@ define(['jquery', 'underscore'],
             }
         },
         visibilityClass: function visibilityClass($el, val, model){
-            if (val){
-                $el.addClass('public');
-                $el.removeClass('private');
+            if(model.get('_perms.write')){
+                if (val){
+                    $el.addClass('public');
+                    $el.removeClass('private');
+                }
+                else {
+                    $el.addClass('private');
+                    $el.removeClass('public');
+                }
             }
-            else {
-                $el.addClass('private');
-                $el.removeClass('public');
+            else{
+                $el.hide();
             }
         }
     }
@@ -122,6 +127,9 @@ define(['jquery', 'underscore'],
             var attr = model.attributes;
             var len = path.length;
             for(var i=0; i < len; i++){
+                if(attr === undefined){
+                    return undefined;
+                }
                 attr = attr[path[i]];
             }
             return attr;
@@ -139,7 +147,7 @@ define(['jquery', 'underscore'],
                     attr = model.attributes;
                     len = path.length;
                     for(var j=0; j < len-1; j++){
-                       attr = attr[path[j]];
+                        attr = attr[path[j]];
                     }
                     attr[path[j]] = obj[i];
                     model.trigger('change:' + i, model, obj[i], options);

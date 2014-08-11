@@ -22,17 +22,27 @@ define(['jquery', 'lib/backbone', 'util',
                     util.bind.aliasOrId($el, val.alias, val);
                 }
             },
-            '.added_on dd': 'added_at',
+            '.added_on dd': {
+                observe: 'added_at',
+                onGet: function(val){
+                    var date = new Date(val).toDateString();
+                    return date.substring(3, date.length);
+                }
+            },
             '.batchSelectItem': {
                 observe: '_perms.write',
                 update: function($el, val, model){
                     if(val){
                         $el.prop('disabled', false);
+                        $el.siblings('label').removeClass('hidden');
                     }
                     else{
                         $el.prop('disabled', true);
+                        $el.siblings('label').addClass('hidden');
                     }
-                }
+                    // this is a one-time unidirectional binding
+                    this.unstickit(model, '.batchSelectItem');
+                },
             },
             '.delete': {
                 observe: '_perms.admin',

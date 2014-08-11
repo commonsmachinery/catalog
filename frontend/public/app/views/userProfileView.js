@@ -16,6 +16,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             '.user h1': {
                 observe: 'alias',
                 update: util.bind.aliasOrId,
+            },
             '.name': {
                 observe: 'profile.name',
                 update: util.bind.defOrRemove
@@ -44,7 +45,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         initialize: function(opts) {
             this.template = opts.template;
-            this.delegateEvents();
         },
 
         render: function() {

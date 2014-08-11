@@ -56,9 +56,11 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
             view.render();
 
             this._items[model.id] = view;
+
+            var index = this.collection.indexOf(model);
             //insert in DOM by comparator order
-            if(this.$('.entry').eq(this.collection.indexOf(model)).length){
-                this.$('.entry').eq(this.collection.indexOf(model)).before(view.$el);
+            if(this.$('.entry').eq(index).length){
+                this.$('.entry').eq(index).before(view.$el);
             }
             else{
                 this.$el.append(view.$el);
@@ -67,7 +69,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
 
         onRemove: function onRemove(model) {
             var view = this._items[model.id];
-
             if (view) {
                 console.debug('removing view for model: %s', model.id);
                 view.remove();
@@ -77,7 +78,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
 
         render: function render() {
             var self = this;
-
             if (this._firstRender) {
                 // Link up all pre-rendered HTML to the bootstrapped models
                 this.collection.each(function(model) {

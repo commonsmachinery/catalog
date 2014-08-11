@@ -17,6 +17,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var hub = _.extend({}, Backbone.Events);
     var collection;
+    var appRouter;
 
     var WorkActionsView = Backbone.View.extend({
         
@@ -27,7 +28,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         initialize: function(opts) {
             this.template = opts.template;
             this.collection = opts.collection;
-            this.delegateEvents();
             return this;
         },
 
@@ -79,6 +79,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             var query = this.collection.queryParams;
             var trigger = false;
 
+            // toggle the inclusion of filter
             var $byMe = this.$('#input-by');
             var attr = $byMe.parent().data('filter');
             if($byMe.is(':checked')){
@@ -90,28 +91,32 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 var exp = new RegExp(attr + '\:' + '[^,\&]*,?');
                 query.filter = query.filter.replace(exp, '');
             }
+
             var self = this;
-            this.collection.fetch();
+            this.collection.fetch().done(function(){
+                appRouter.navigate(decodeURIComponent(this.url), {trigger:false})
+            });
         }
     });
 
     var WorksBrowseView = Backbone.View.extend({
         events: {
-            'click .pagination a': 'gotoPage',
+            'click .pagination a': 'gotoPage'
         },
 
         initialize: function() {
+
             this._actionView = new WorkActionsView({
                 el: '#actions',
                 template: '#actionsTemplate',
                 collection: collection
-            }).render();
+            });
 
             this._filtersView = new WorkFiltersView({
                 el: '#filters',
                 template: '#filtersTemplate',
                 collection: collection
-            }).render();
+            });
 
             // expose hub
             WorkListItemView.prototype.hub = hub;
@@ -123,17 +128,16 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 itemTemplate: $('#workListItemTemplate').html(),
             });
 
-            this.delegateEvents();
             collection.comparator = 'added_at';
         },
 
         render: function() {
             this._actionView.render();
+            this._filtersView.render();
             this._worksView.render();
         },
 
         gotoPage: function gotoPage(ev){
-            ev.preventDefault();
             this._worksView.collection['get'+ ev.target.dataset.goto +'Page']()
                 .done(_.bind(this.onFetch, this, ev));
             return false;
@@ -141,24 +145,36 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         onFetch: function onFetch(ev, data){
             var current = this._worksView.collection.state.currentPage;
-            window.history.pushState(null, null, ev.target.href);
-            var link;
+
+            window.location.hash = '#works';
+            appRouter.navigate(ev.target.href.replace(ev.target.origin, ''), {trigger: false});
+
+            //update or hide previous button
+            var link = window.location.href;
             var $prev = this.$('[data-goto=Previous]');
+            var $first = this.$('[data-goto=First]');
             if(current == 1){
-                $prev.hide();
+                $prev.addClass('hidden');
+                $first.addClass('hidden');
             }
             else{
-                link = window.location.href.replace(/([^_])page=\d+/, '$1page='+ (current - 1))
+                link = link.replace(/([^_])page=\d+/, '$1page='+ (current - 1))
                 $prev.attr('href', link);
-                $prev.show();
+                $prev.removeClass('hidden');
+                $first.removeClass('hidden');
             };
-            link = window.location.href.replace(/([^_])page=\d+/, '$1page='+ (current + 1))
+
+            //update next button
+            link = link.replace(/([^_])page=\d+/, '$1page='+ (current + 1))
             this.$('[data-goto=Next]').attr('href', link);
+            //update current
+
             this.$('.pagination .current').html(current);
         }
     });
 
     return function browseWorks(router, filters) {
+        appRouter = router;
         console.log('activating works view');
 
         var data = util.bootstrapData();
