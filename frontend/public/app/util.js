@@ -42,16 +42,6 @@ define(['jquery', 'underscore'],
 		}
 	};
 
-	// Helper functions for the default bindings
-	var convertUserURI = function convertUserURI(direction, value) {
-		if (value) {
-			var pos = value.search(/\/[^\/]+$/);
-			value = pos > 0 ? value.slice(pos + 1) : value;
-		}
-
-		return value;
-	};
-
     var deepClone = exports.deepClone = function deepClone(src){ // jshint ignore: line
         var curr;
         var obj = {};
@@ -104,7 +94,7 @@ define(['jquery', 'underscore'],
                 $el.hide();
             }
         }
-    }
+    };
 
     exports.deletedURI = function deletedURI(view){
         view.$el.empty();

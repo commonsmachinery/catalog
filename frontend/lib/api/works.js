@@ -218,7 +218,6 @@ exports.listWorks = function listWorks(req, res, next) {
             .then(function(works) {
                 var linkMap = getPagingLinks(req);
                 uris.setLinks(res, linkMap);
-                console.log(linkMap);
                 res.locals.pagination = linkMap;
                 res.locals.works = works;
 

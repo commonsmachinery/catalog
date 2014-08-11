@@ -59,8 +59,8 @@ button, input[type="button"]
     color neutral-fg-color
     cursor pointer
     margin 0.3rem 1rem 0.3rem 0
-    min-height 1rem
-    min-width 1rem
+    height 1.5rem
+    width 5rem
     text-shadow none
 button, input, textarea
     &:disabled
@@ -340,6 +340,7 @@ img.thumbnail
         position absolute
         top 0px
         width 100%
+        z-index 2
 
 @keyframes spin
     0% 
@@ -486,16 +487,17 @@ dl.hideCaption
         float none
         position absolute
         text-align left
-        .edit
+        button
             background-color dark-button-bg-color
             border none
             color dark-button-fg-color
+            height 2em
+            width 6rem
 
 #work
     position relative
     #workDetails
         position relative
-
         dl
             font-size 0.7rem
             margin 0
@@ -510,13 +512,14 @@ dl.hideCaption
                     text-align right
                     vertical-align top
                     width 10rem
+                label.checkbox
+                        width 1em
                 input, textarea
                     display inline-block
                     max-width 100%
+                    padding 0.5em
                     text-align left
-                    width 15rem
-                textarea
-                    font-size 1.17rem
+                    width 13rem
 
                 #input-public
                     width auto
@@ -564,8 +567,15 @@ dl.hideCaption
             background-color dark-button-bg-color
             border none
             color dark-button-fg-color
+            height 1.5rem
+            width 6rem
+    aside
+        .delete
+            height 1.5rem
+            width 6rem
 
 #browseWorks
+    position relative
     dt, dd
         display inline-block
         font-size 0.8rem
@@ -621,6 +631,7 @@ dl.hideCaption
     .metadata
         margin 1em 0 0 0
     #works
+        clear both
         padding 0
 
 #createWorkForm

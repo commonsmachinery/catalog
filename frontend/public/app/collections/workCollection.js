@@ -28,7 +28,7 @@ define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
         initialize: function(){
             var page;
             if(window.location.search){
-                var page = window.location.search.match(/(?:\&|\?)page=(\d+)/);
+                page = window.location.search.match(/(?:\&|\?)page=(\d+)/);
                 var per_page = window.location.search.match(/per_page=(\d+)/);
                 if(page){
                     this.state.currentPage = Number(page[1]);

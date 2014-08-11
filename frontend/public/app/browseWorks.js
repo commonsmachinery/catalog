@@ -88,13 +88,12 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 trigger = true;
             }
             else{
-                var exp = new RegExp(attr + '\:' + '[^,\&]*,?');
+                var exp = new RegExp(attr + ':' + '[^,&]*,?');
                 query.filter = query.filter.replace(exp, '');
             }
 
-            var self = this;
             this.collection.fetch().done(function(){
-                appRouter.navigate(decodeURIComponent(this.url), {trigger:false})
+                appRouter.navigate(decodeURIComponent(this.url), {trigger:false});
             });
         }
     });
@@ -153,19 +152,19 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             var link = window.location.href;
             var $prev = this.$('[data-goto=Previous]');
             var $first = this.$('[data-goto=First]');
-            if(current == 1){
+            if(current === 1){
                 $prev.addClass('hidden');
                 $first.addClass('hidden');
             }
             else{
-                link = link.replace(/([^_])page=\d+/, '$1page='+ (current - 1))
+                link = link.replace(/([^_])page=\d+/, '$1page='+ (current - 1));
                 $prev.attr('href', link);
                 $prev.removeClass('hidden');
                 $first.removeClass('hidden');
-            };
+            }
 
             //update next button
-            link = link.replace(/([^_])page=\d+/, '$1page='+ (current + 1))
+            link = link.replace(/([^_])page=\d+/, '$1page='+ (current + 1));
             this.$('[data-goto=Next]').attr('href', link);
             //update current
 
