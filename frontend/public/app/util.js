@@ -231,27 +231,23 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
     };      
 
     exports.showError = function showError(view, err){
-        working('stop', view.el);
-        view.$('.actions').prop('disabled', false);
-
         var $el = view.$el;
-        var $ul;
 
         $el.find('.errorMsg').remove();
 
         if(Array.isArray(err)){
-            $el.append('<ul class="errorMsg"></ul>');
-            $ul = $el.find('.errorMsg');
+            var $ul = $('<ul class="errorMsg"></ul>');
             var len = err.length;
             for (var i=0; i < len; i++){
-                $ul.append('<li>' + err[i] + '</li>');
+               var $li = $('<li></li>').text(err[i]);
+                $ul.append($li);
             }
+            $el.append($ul);
         }
         else{
-            $el.append('<div class="errorMsg">' + err + '</div>');
+            var $msg = $('<div class="errorMsg">' + err + '</div>').text(err);
+            $el.append($msg);
         }
-        view.$('[data-action="save"]').text('Try again');
-        view.$('.actions').prop('disabled', false);
     };
 
     var working = exports.working = function working(status, el){
