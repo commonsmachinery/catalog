@@ -43,6 +43,13 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             '.gravatar_email': {
                 observe: 'profile.gravatar_email',
                 update: 'renderOrNot'
+            },
+            '.gravatar': {
+                observe: 'profile.gravatar_hash',
+                update: function($el, val, model){
+                    var src = '//www.gravatar.com/avatar/'+ val +'?d=retro&s=237';
+                    $('.gravatar img').attr('src', src);
+                }
             }
         },
 
