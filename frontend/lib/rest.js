@@ -93,15 +93,15 @@ var validatePaging = function(req, res, next) {
     req.query.per_page = req.query.per_page ? parseInt(req.query.per_page) : config.frontend.defaultWorksPerPage;
 
     if (!req.query.page || req.query.page < 1) {
-        throw new Error('Invalid page requested');
+        return res.send(400);
     }
 
     if (!req.query.per_page  || req.query.per_page  < 1) {
-        throw new Error('Invalid number of work per page requested');
+        return res.send(400);
     }
 
     if (req.query.per_page  > config.frontend.maxWorksPerPage) {
-        throw new Error('Requested number of works per page exceeds server limit');
+        req.query.per_page = config.frontend.maxWorksPerPage;
     }
 
     return next();

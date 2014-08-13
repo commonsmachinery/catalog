@@ -265,7 +265,10 @@ describe('sources', function() {
                     var s = res.body;
 
                     expect( s.added_by ).to.have.property( 'profile' );
-                    expect( s.source_work ).to.be( testObjects.sourceWorkID );
+                    expect( s.source_work ).to.have.property( 'id' );
+                    expect( s.source_work.id ).to.be( testObjects.sourceWorkID );
+                    expect( s.source_work ).to.have.property( 'href' );
+                    expect( s.source_work.href ).to.be( testObjects.sourceWorkURI );
                 })
                 .end(done);
         });
@@ -488,9 +491,9 @@ describe('sources', function() {
                     expect ( w.sources.length ).to.be( 1 );
 
                     expect ( w.sources[0] ).to.have.property( 'source_work' );
-                    expect ( w.sources[0].source_work ).to.be.a('string');
+                    expect ( w.sources[0].source_work ).to.only.have.keys('id', 'href');
                     expect ( w.sources[0] ).to.have.property( 'added_by' );
-                    expect ( w.sources[0].added_by ).to.be.a('string');
+                    expect ( w.sources[0].added_by ).to.only.have.keys('id', 'href');
                 })
                 .end(done);
         });

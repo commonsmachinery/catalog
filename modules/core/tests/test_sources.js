@@ -153,7 +153,7 @@ describe('Remove source', function() {
         };
     });
 
-    it('should require admin to delete', function() {
+    it('should require write to delete', function() {
         var r, s;
 
         var otherUserContext = {
@@ -218,7 +218,7 @@ describe('Remove all sources', function() {
         };
     });
 
-    it('should require admin to remove all sources', function() {
+    it('should require write to remove all sources', function() {
         var otherUserContext = {
             userId: new ObjectId(),
             perms: {}

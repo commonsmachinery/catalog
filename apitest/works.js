@@ -577,21 +577,30 @@ describe('Works', function() {
                 .end(done);
         });
 
-        it('should not allow too many pages per request', function(done) {
+        it('should work when per_page is > config.maxWorksPerPage', function(done) {
             var req = request(config.frontend.baseURL);
             req.get('/works?filter=owner.user:' + ownerIDs[0] + "&per_page=2000")
                 .set('Accept', 'application/json')
                 .set('Authorization', owner1)
-                .expect(500)
+                .expect(200)
                 .end(done);
         });
 
-        it('should not allow bogus page number', function(done) {
+        it('should not allow bogus page value', function(done) {
             var req = request(config.frontend.baseURL);
             req.get('/works?filter=owner.user:' + ownerIDs[0] + "&page=-1")
                 .set('Accept', 'application/json')
                 .set('Authorization', owner1)
-                .expect(500)
+                .expect(400)
+                .end(done);
+        });
+
+        it('should not allow bogus per_page value', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&page=1&per_page=-1")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(400)
                 .end(done);
         });
 

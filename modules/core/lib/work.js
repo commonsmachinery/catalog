@@ -452,7 +452,7 @@ exports.removeMediaFromWork = function removeMediaFromWork(context, workId, medi
 
 cmd.removeMedia = function commandRemoveMedia(context, work, media) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -504,7 +504,7 @@ exports.unlinkAllMedia = function unlinkAllMedia(context, workId) {
 
 cmd.unlinkAllMedia = function commandUnlinkAllMedia(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -827,7 +827,7 @@ exports.removeWorkAnnotation = function removeWorkAnnotation(context, workId, an
 
 cmd.removeWorkAnnotation = function commandRemoveWorkAnnotation(context, work, annotation) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -875,7 +875,7 @@ exports.removeAllAnnotations = function removeAllAnnotations(context, workId) {
 
 cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -910,16 +910,16 @@ cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
  */
 exports.listWorks = function listWorks(context, conditions, sort, skip, limit) {
     if (context.userId) {
-        conditions = _.extend(conditions, {$or: [{
+        conditions = _.extend({$or: [{
             'owner.user': context.userId
         }, {
             'public': true
-        }]});
+        }]}, conditions);
     }
     else {
-        conditions = _.extend(conditions, {
+        conditions = _.extend({
             'public': true
-        });
+        }, conditions);
     }
 
     return db.Work.findAsync(
@@ -1120,7 +1120,7 @@ exports.removeWorkSource = function removeWorkSource(context, workId, sourceId) 
 
 cmd.removeWorkSource = function commandRemoveWorkSource(context, work, source) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -1168,7 +1168,7 @@ exports.removeAllSources = function removeAllSources(context, workId) {
 
 cmd.removeAllSources = function commandRemoveAllSources(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
