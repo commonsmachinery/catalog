@@ -37,14 +37,16 @@ var idToObject = function(object, prop, uriBuilder) {
  *   itemProp: if not null, object[prop][n][itemProp] will be transformed instead
  */
 var idsToObjects = function(array, itemProp, uriBuilder) {
+    var id;
+
     if (array) {
         for (var i = 0; i < array.length; i++) {
             if (itemProp) {
-                var id = array[i][itemProp];
+                id = array[i][itemProp];
                 array[i][itemProp] = { id: id, href: uriBuilder(id) };
             }
             else {
-                var id = array[i];
+                id = array[i];
                 array[i] = { id: id, href: uriBuilder(id) };
             }
         }

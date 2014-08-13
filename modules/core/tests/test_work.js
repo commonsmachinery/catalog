@@ -5,7 +5,7 @@
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
-/* global describe, it, beforeEach, afterEach */
+/* global describe, it, before, beforeEach, afterEach */
 
 'use strict';
 
@@ -320,13 +320,6 @@ describe('Work collaborators', function() {
     var testWork;
     var testContext;
 
-    var createAnnotation = {
-        property: {
-            propertyName: 'title',
-            value: 'test title'
-        }
-    };
-
     before(function() {
         testWork = work.command.create({ userId: new ObjectId() }, {
             alias: 'alias',
@@ -344,16 +337,16 @@ describe('Work collaborators', function() {
     });
 
     it('updateWork should generate collabs.users.added events for new users', function() {
-        var r = work.command.update(testContext, testWork, {
+        var r, e;
+
+        r = work.command.update(testContext, testWork, {
             collabs: {
                 users: [collaboratorId],
             }
         });
 
         expect( r ).to.have.property( 'save' );
-        var w = r.save;
-
-        var e = r.event;
+        e = r.event;
 
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
@@ -364,16 +357,16 @@ describe('Work collaborators', function() {
     });
 
     it('updateWork should generate collabs.users.removed events for removed users', function() {
-        var r = work.command.update(testContext, testWork, {
+        var r, e;
+
+        r = work.command.update(testContext, testWork, {
             collabs: {
                 users: [],
             }
         });
 
         expect( r ).to.have.property( 'save' );
-        var w = r.save;
-
-        var e = r.event;
+        e = r.event;
 
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );
@@ -384,25 +377,27 @@ describe('Work collaborators', function() {
     });
 
     it('updateWork should not generate events for repeated ids', function() {
-        var r = work.command.update(testContext, testWork, {
+        var r, w, e;
+
+        r = work.command.update(testContext, testWork, {
             collabs: {
                 users: [collaboratorId],
             }
         });
 
         expect( r ).to.have.property( 'save' );
-        var w = r.save;
+        w = r.save;
 
-        var r = work.command.update(testContext, testWork, {
+        r = work.command.update(testContext, testWork, {
             collabs: {
                 users: [collaboratorId],
             }
         });
 
         expect( r ).to.have.property( 'save' );
-        var w = r.save;
+        w = r.save;
 
-        var e = r.event;
+        e = r.event;
 
         expect( e.user ).to.eql( userId );
         expect( e.type ).to.be( 'core.Work' );

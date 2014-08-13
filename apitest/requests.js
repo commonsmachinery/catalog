@@ -43,14 +43,18 @@ describe('Request transformations', function() {
             .expect(302)
             .expect('location', util.urlRE.user)
             .end(function(err, res) {
-                if (err) return done(err);
+                if (err) {
+                    return done(err);
+                }
                 var testUserURI = res.header.location;
                 request('')
                     .get(testUserURI)
                     .set('Accept', 'application/json')
                     .expect(200)
                     .end(function (err, res) {
-                        if (err) return done(err);
+                        if (err) {
+                            return done(err);
+                        }
                         testUserID = res.body.id;
                         done();
                     });
@@ -64,14 +68,18 @@ describe('Request transformations', function() {
             .expect(302)
             .expect('location', util.urlRE.user)
             .end(function(err, res) {
-                if (err) return done(err);
+                if (err) {
+                    return done(err);
+                }
                 var otherUserURI = res.header.location;
                 request('')
                     .get(otherUserURI)
                     .set('Accept', 'application/json')
                     .expect(200)
                     .end(function (err, res) {
-                        if (err) return done(err);
+                        if (err) {
+                            return done(err);
+                        }
                         otherUserID = res.body.id;
                         done();
                     });

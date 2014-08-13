@@ -11,9 +11,6 @@
 var debug = require('debug')('catalog:frontend:api:request'); // jshint ignore:line
 
 // Frontend libs
-var uris = require('../uris');
-var etag = require('../etag');
-
 
 /* Change an { id: x, href: y } object in place to ID property.
  */
@@ -30,14 +27,16 @@ var objectToID = function(object, prop) {
  *   itemProp: if not null, object[prop][n][itemProp] will be transformed instead
  */
 var objectsToIDs = function(array, itemProp) {
+    var objectID;
+
     if (array) {
         for (var i = 0; i < array.length; i++) {
             if (itemProp && array[i] && array[i].itemProp && array[i][itemProp].id) {
-                var objectID = array[i][itemProp].id;
+                objectID = array[i][itemProp].id;
                 array[i][itemProp] = objectID;
             }
             else if (array[i] && array[i].id) {
-                var objectID = array[i].id;
+                objectID = array[i].id;
                 array[i] = objectID;
             }
         }

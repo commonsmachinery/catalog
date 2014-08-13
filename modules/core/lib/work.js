@@ -188,7 +188,7 @@ exports.updateWork = function updateWork(context, workId, src) {
 
 
 cmd.update = function commandUpdateWork(context, work, src) {
-    var collabsUsersChanged = false;
+    var i, collabsUsersChanged = false;
 
     // Check permissions set with setWorkPerms()
     if (!(context.perms[work.id] && context.perms[work.id].write)) {
@@ -216,22 +216,22 @@ cmd.update = function commandUpdateWork(context, work, src) {
 
     if (src.collabs) {
         if (src.collabs.users) {
-            for (var i = 0; i < src.collabs.users.length; i++) {
-                if (work.collabs.users.indexOf(src.collabs.users[i]) == -1) {
+            for (i = 0; i < src.collabs.users.length; i++) {
+                if (work.collabs.users.indexOf(src.collabs.users[i]) === -1) {
                     event.events.push({
                         event: 'core.work.collabs.users.added',
                         param: { user_id: src.collabs.users[i] }
-                    })
+                    });
                     collabsUsersChanged = true;
                 }
             }
 
-            for (var i = 0; i < work.collabs.users.length; i++) {
-                if (src.collabs.users.indexOf(work.collabs.users[i]) == -1) {
+            for (i = 0; i < work.collabs.users.length; i++) {
+                if (src.collabs.users.indexOf(work.collabs.users[i]) === -1) {
                     event.events.push({
                         event: 'core.work.collabs.users.removed',
                         param: { user_id: work.collabs.users[i] }
-                    })
+                    });
 
                     collabsUsersChanged = true;
                 }
