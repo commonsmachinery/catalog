@@ -198,7 +198,8 @@ describe('Media', function() {
                 .expect(200)
                 .expect(function(res) {
                     var work = res.body;
-                    expect(work.media).to.contain(newMediaID);
+                    expect( work.media ).to.be.an( 'array' );
+                    expect( work.media[0].id ).to.be( newMediaID );
                 })
                 .end(done);
         });

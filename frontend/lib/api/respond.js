@@ -37,14 +37,16 @@ var idToObject = function(object, prop, uriBuilder) {
  *   itemProp: if not null, object[prop][n][itemProp] will be transformed instead
  */
 var idsToObjects = function(array, itemProp, uriBuilder) {
+    var id;
+
     if (array) {
         for (var i = 0; i < array.length; i++) {
             if (itemProp) {
-                var id = array[i][itemProp];
+                id = array[i][itemProp];
                 array[i][itemProp] = { id: id, href: uriBuilder(id) };
             }
             else {
-                var id = array[i];
+                id = array[i];
                 array[i] = { id: id, href: uriBuilder(id) };
             }
         }
@@ -263,8 +265,11 @@ exports.transformWork = function(work, context, options) {
     }
     idsToObjects(work.annotations, 'updated_by', uris.buildUserURI);
     idsToObjects(work.media, null, uris.buildUserURI);
+<<<<<<< HEAD
+=======
     idsToObjects(work.sources, 'added_by', uris.buildUserURI);
     idsToObjects(work.sources, 'source_work', uris.buildWorkURI);
+>>>>>>> master
 
     // Add other fields here as those parts are supported by the API
 
@@ -279,6 +284,14 @@ exports.transformWork = function(work, context, options) {
         'annotations.updated_by': function() {
             return Promise.map(work.annotations, function(a) {
                 return populateUser(context, a.updated_by);
+<<<<<<< HEAD
+            });
+        },
+        'collabs.users': function() {
+            return Promise.map(work.collabs.users, function(u) {
+                return populateUser(context, u);
+=======
+>>>>>>> master
             });
         },
         'collabs.users': function() {

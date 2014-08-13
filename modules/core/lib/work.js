@@ -39,8 +39,12 @@ var setWorkPerms = exports.setWorkPerms = function(context) {
             perms = context.perms[work.id] = {};
         }
 
-        // Only user can modify the object
+        // Owner can read, modify, admin the object
         if (context.userId && context.userId.toString() === work.owner.user.toString()) {
+            perms.read = perms.write = perms.admin = true;
+        }
+        // collabs.users can read, modify, admin the object
+        else if (context.userId && work.collabs && work.collabs.users.indexOf(context.userId.toString()) > -1) {
             perms.read = perms.write = perms.admin = true;
         }
         else {
@@ -184,6 +188,8 @@ exports.updateWork = function updateWork(context, workId, src) {
 
 
 cmd.update = function commandUpdateWork(context, work, src) {
+    var i, collabsUsersChanged = false;
+
     // Check permissions set with setWorkPerms()
     if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
@@ -207,6 +213,35 @@ cmd.update = function commandUpdateWork(context, work, src) {
     command.updateProperties(
         src, work, ['alias', 'description', 'public'],
         event, 'core.work.changed');
+
+    if (src.collabs) {
+        if (src.collabs.users) {
+            for (i = 0; i < src.collabs.users.length; i++) {
+                if (work.collabs.users.indexOf(src.collabs.users[i]) === -1) {
+                    event.events.push({
+                        event: 'core.work.collabs.users.added',
+                        param: { user_id: src.collabs.users[i] }
+                    });
+                    collabsUsersChanged = true;
+                }
+            }
+
+            for (i = 0; i < work.collabs.users.length; i++) {
+                if (src.collabs.users.indexOf(work.collabs.users[i]) === -1) {
+                    event.events.push({
+                        event: 'core.work.collabs.users.removed',
+                        param: { user_id: work.collabs.users[i] }
+                    });
+
+                    collabsUsersChanged = true;
+                }
+            }
+
+            if (collabsUsersChanged) {
+                work.collabs = src.collabs;
+            }
+        }
+    }
 
     return { save: work, event: event };
 };
