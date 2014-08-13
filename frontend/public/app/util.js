@@ -250,7 +250,7 @@ define(['jquery', 'underscore', 'lib/Backbone.ModelBinder'],
         }
     };
 
-    var working = exports.working = function working(status, el){
+    exports.working = function working(status, el){
         if(status === 'start'){
             $(el).addClass('working');
             $(el).prepend('<div class="overlay"><div class="loading"></div></div>');

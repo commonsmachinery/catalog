@@ -32,7 +32,7 @@ var updateGravatarHash = function updateGravatarHash(req){
     return function(user){
         req.session.gravatarHash = user.profile.gravatar_hash;
         return user;
-    }
+    };
 };
 
 exports.getCurrentUser = function getCurrentUser(req, res) {
