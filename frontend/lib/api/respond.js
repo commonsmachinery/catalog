@@ -265,11 +265,9 @@ exports.transformWork = function(work, context, options) {
     }
     idsToObjects(work.annotations, 'updated_by', uris.buildUserURI);
     idsToObjects(work.media, null, uris.buildUserURI);
-<<<<<<< HEAD
-=======
+
     idsToObjects(work.sources, 'added_by', uris.buildUserURI);
     idsToObjects(work.sources, 'source_work', uris.buildWorkURI);
->>>>>>> master
 
     // Add other fields here as those parts are supported by the API
 
@@ -284,14 +282,6 @@ exports.transformWork = function(work, context, options) {
         'annotations.updated_by': function() {
             return Promise.map(work.annotations, function(a) {
                 return populateUser(context, a.updated_by);
-<<<<<<< HEAD
-            });
-        },
-        'collabs.users': function() {
-            return Promise.map(work.collabs.users, function(u) {
-                return populateUser(context, u);
-=======
->>>>>>> master
             });
         },
         'collabs.users': function() {
