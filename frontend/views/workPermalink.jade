@@ -6,7 +6,7 @@
 
 
 mixin workDetails()
-    article
+    section
         - var displayTitle = work.alias || work.id
         header
             dl.hideCaption 
@@ -31,10 +31,37 @@ mixin workDetails()
                 +defTerm('--' , 'from', 'media')
                 +defTerm('-- collections', 'and currently part of', 'collections')
 
+mixin workAnnotations()
+    section
+        header
+            h1 Metadata
+            if work._perms.write
+                span.actions
+                    button.edit(data-action="edit") Edit Metadata
+
+        dl.metadata
+            for i in work.annotations
+                dt #{i.property.propertyName}
+                dd #{i.property.value}
+        pre #{JSON.stringify(work, null, 1)}
+
+mixin workSources()
+    | Placeholder
+        
+
+mixin workMedia()
+    
+
 include includes/top
     div#work(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
         div#workDetails(class="grid-85 tablet-grid-80 mobile-grid-100")
             +workDetails
+        div#workAnnotations(class="grid-85 tablet-grid-80 mobile-grid-100")
+            +workAnnotations
+        div#workSources(class="grid-85 tablet-grid-80 mobile-grid-100")
+            +workSources
+        div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
+            +workMedia
         aside
             button.delete(data-action="delete") Delete Work
 
