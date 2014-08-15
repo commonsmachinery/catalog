@@ -3,7 +3,20 @@
 //- Copyright 2014 Commons Machinery http://commonsmachinery.se/
 //- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
+mixin workSourceItem(source, empty)
+    - var source_work = source.source_work;
+    article.entry(id="sources-#{empty || source_work.id}" class="grid-25 tablet-grid-33 mobile-grid-100")
+        header
+            h2: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
 
+            // button.remove -
+
+        dl
+            +defTerm('', 'Added By')
+                a(href="#{empty || source.added_by.href}") #{empty || source.added_by.id}
+            +defTerm('', 'Added on')
+            +defTerm(null, 'URL')
+                a(href="#{emty || source_work.href}") #{empty || source_work.href}
 
 mixin workDetails()
     section
@@ -48,13 +61,18 @@ mixin workSources()
     section
         header
             h1 Sources
-            ul
-                for i in work.sources
-                    li: a(href=i.href) #{i.id}
-        
+        ul
+        for i in work.sources
+            li
+                +workSourceItem(i)
 
 mixin workMedia()
-    | Placeholder
+    section
+        header
+            h1 Media
+        ul
+            for i in work.media
+                li: a(href=i.href) #{i.id}
 
 include includes/top
     div#work(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
@@ -66,8 +84,7 @@ include includes/top
             +workSources
         div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
             +workMedia
-        
-        pre #{JSON.stringify(work, null, 1)}
+
         aside
             button.delete(data-action="delete") Delete Work
 
