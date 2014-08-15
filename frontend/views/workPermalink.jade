@@ -43,14 +43,18 @@ mixin workAnnotations()
             for i in work.annotations
                 dt #{i.property.propertyName}
                 dd #{i.property.value}
-        pre #{JSON.stringify(work, null, 1)}
 
 mixin workSources()
-    | Placeholder
+    section
+        header
+            h1 Sources
+            ul
+                for i in work.sources
+                    li: a(href=i.href) #{i.id}
         
 
 mixin workMedia()
-    
+    | Placeholder
 
 include includes/top
     div#work(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
@@ -62,6 +66,8 @@ include includes/top
             +workSources
         div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
             +workMedia
+        
+        pre #{JSON.stringify(work, null, 1)}
         aside
             button.delete(data-action="delete") Delete Work
 
