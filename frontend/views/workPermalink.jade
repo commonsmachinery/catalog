@@ -5,7 +5,8 @@
 
 mixin workSourceItem(source, empty)
     - var source_work = source.source_work;
-    article.entry(id="sources-#{empty || source_work.id}" class="grid-25 tablet-grid-33 mobile-grid-100")
+    li.entry(id="sources-#{empty || source_work.id}", class="grid-25 tablet-grid-33 mobile-grid-100"): article
+    
         header
             h2: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
 
@@ -14,7 +15,8 @@ mixin workSourceItem(source, empty)
         dl
             +defTerm('', 'Added By')
                 a(href="#{empty || source.added_by.href}") #{empty || source.added_by.id}
-            +defTerm('', 'Added on')
+            -var date = empty ? empty : work.added_at.toDateString();
+            +defTerm(date.substring(3, date.length), 'Added on')
             +defTerm(null, 'URL')
                 a(href="#{emty || source_work.href}") #{empty || source_work.href}
 
@@ -29,7 +31,7 @@ mixin workDetails()
             if work._perms.write
                 span.actions
                     button.edit(data-action="edit") Edit Details
-        span.embed #{work.media}
+        span.embed #{'- no embed -'}
         span.description #{work.description}
         footer.details(class="grid-100 tablet-grid-100 mobile-grid-100")
             dl
@@ -48,22 +50,20 @@ mixin workAnnotations()
     section
         header
             h1 Metadata
-            if work._perms.write
-                span.actions
-                    button.edit(data-action="edit") Edit Metadata
+            //if work._perms.write
+            //    span.actions
+            //        button.edit(data-action="edit") Edit Metadata
 
         dl.metadata
             for i in work.annotations
-                dt #{i.property.propertyName}
-                dd #{i.property.value}
+                +defTerm(i.property.value, i.property.propertyName+':')
 
 mixin workSources()
     section
         header
             h1 Sources
         ul
-        for i in work.sources
-            li
+            for i in work.sources
                 +workSourceItem(i)
 
 mixin workMedia()
