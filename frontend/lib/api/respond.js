@@ -36,18 +36,27 @@ var idToObject = function(object, prop, uriBuilder) {
  *   array: array with IDs to transform to objects
  *   itemProp: if not null, object[prop][n][itemProp] will be transformed instead
  */
-var idsToObjects = function(array, itemProp, uriBuilder) {
+var idsToObjects = function(array, itemProp, uriBuilder, parent) {
     var id;
+
+    var buildUri = function buildUri(parent, id){
+        if(parent){
+            return uriBuilder(parent, id);
+        }
+        else{
+            return uriBuilder(id);
+        }
+    }
 
     if (array) {
         for (var i = 0; i < array.length; i++) {
             if (itemProp) {
                 id = array[i][itemProp];
-                array[i][itemProp] = { id: id, href: uriBuilder(id) };
+                array[i][itemProp] = { id: id, href: buildUri(parent, id) };
             }
             else {
                 id = array[i];
-                array[i] = { id: id, href: uriBuilder(id) };
+                array[i] = { id: id, href: buildUri(parent, id) };
             }
         }
     }
@@ -248,6 +257,7 @@ exports.transformUser = function(user) {
  * require additional objects to be fetched from the core DB.
  */
 exports.transformWork = function(work, context, options) {
+
     work.href = uris.buildWorkURI(work.id);
 
     work = filterFields(work, options);
@@ -264,10 +274,10 @@ exports.transformWork = function(work, context, options) {
         idsToObjects(work.collabs.users, null, uris.buildUserURI);
     }
     idsToObjects(work.annotations, 'updated_by', uris.buildUserURI);
-    idsToObjects(work.media, null, uris.buildUserURI);
+    idsToObjects(work.media, null, uris.buildWorkMediaURI, work.id);
 
     idsToObjects(work.sources, 'added_by', uris.buildUserURI);
-    idsToObjects(work.sources, 'source_work', uris.buildWorkURI);
+    idsToObjects(work.sources, 'source_work', uris.buildWorkSourceURI, work.id);
 
     // Add other fields here as those parts are supported by the API
 
