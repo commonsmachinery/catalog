@@ -3,10 +3,25 @@
 //- Copyright 2014 Commons Machinery http://commonsmachinery.se/
 //- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 
+mixin workSourceItem(source, empty)
+    - var source_work = source.source_work;
+    li.entry(id="sources-#{empty || source_work.id}", class="grid-25 tablet-grid-33 mobile-grid-100"): article
+    
+        header
+            h2: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
 
+            // button.remove -
+
+        dl
+            +defTerm('', 'Added By')
+                a(href="#{empty || source.added_by.href}") #{empty || source.added_by.id}
+            -var date = empty ? empty : work.added_at.toDateString();
+            +defTerm(date.substring(3, date.length), 'Added on')
+            +defTerm(null, 'URL')
+                a(href="#{emty || source_work.href}") #{empty || source_work.href}
 
 mixin workDetails()
-    article
+    section
         - var displayTitle = work.alias || work.id
         header
             dl.hideCaption 
@@ -16,7 +31,7 @@ mixin workDetails()
                 span(class="#{work.public ? 'public' : 'private'}")
                 span.actions
                     button.edit(data-action="edit") Edit Details
-        span.embed #{work.media}
+        span.embed #{'- no embed -'}
         span.description #{work.description}
         footer.details(class="grid-100 tablet-grid-100 mobile-grid-100")
             dl
@@ -31,10 +46,45 @@ mixin workDetails()
                 +defTerm('--' , 'from', 'media')
                 +defTerm('-- collections', 'and currently part of', 'collections')
 
+mixin workAnnotations()
+    section
+        header
+            h1 Metadata
+            //if work._perms.write
+            //    span.actions
+            //        button.edit(data-action="edit") Edit Metadata
+
+        dl.metadata
+            for i in work.annotations
+                +defTerm(i.property.value, i.property.propertyName+':')
+
+mixin workSources()
+    section
+        header
+            h1 Sources
+        ul
+            for i in work.sources
+                +workSourceItem(i)
+
+mixin workMedia()
+    section
+        header
+            h1 Media
+        ul
+            for i in work.media
+                li: a(href=i.href) #{i.id}
+
 include includes/top
     div#work(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
         div#workDetails(class="grid-85 tablet-grid-80 mobile-grid-100")
             +workDetails
+        div#workAnnotations(class="grid-85 tablet-grid-80 mobile-grid-100")
+            +workAnnotations
+        div#workSources(class="grid-85 tablet-grid-80 mobile-grid-100")
+            +workSources
+        div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
+            +workMedia
+
         aside
             button.delete(data-action="delete") Delete Work
 

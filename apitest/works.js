@@ -367,10 +367,16 @@ describe('Works', function() {
     describe('GET /works', function() {
         var owner1 = util.auth('owner1-' + Date.now());
         var owner2 = util.auth('owner2-' + Date.now());
+        var collabOwner = util.auth('collabOwner-' + Date.now());
 
         var ownerIDs = [];
         var workIDs = [];
         var workURIs = [];
+
+        var collabWorkID;
+        var collabWorkURI;
+        var collabOwnerID;
+
         var mediaID;
 
         var createListWork = function(owner, send, done) {
@@ -403,6 +409,34 @@ describe('Works', function() {
                         }, createListWork(owner1, {
                                 alias: 'list4-' + Date.now(),
                             }, done))))();
+        });
+
+        // create work with collaborators
+        before(function(done) {
+            var workReq = request(config.frontend.baseURL);
+            workReq.post('/works')
+                .set('Content-Type', 'application/json')
+                .set('Authorization', collabOwner)
+                .send({
+                    alias: 'list-collabs-' + Date.now(),
+                })
+                .expect(201)
+                .expect(function(res) {
+                    collabWorkURI = res.header.location;
+                    collabWorkID = res.body.id;
+                    collabOwnerID = res.body.owner.user.id;
+                }).end(function() {
+                    var updateReq = request('');
+                    updateReq.put(collabWorkURI)
+                        .set('Content-Type', 'application/json')
+                        .set('Authorization', collabOwner)
+                        .send({
+                            collabs: {
+                                users: [ownerIDs[0]]
+                            },
+                        })
+                        .expect(200, done);
+                });
         });
 
         // create media
@@ -480,7 +514,8 @@ describe('Works', function() {
 
                     expect( w ).to.be.an( 'array' );
                     expect( w.length ).to.equal( 1 );
-                    expect( w[0].media[0] ).to.equal( mediaID );
+                    expect( w[0].media ).to.be.an( 'array' );
+                    expect( w[0].media[0].id ).to.equal( mediaID );
                 })
                 .end(done);
         });
@@ -542,21 +577,30 @@ describe('Works', function() {
                 .end(done);
         });
 
-        it('should not allow too many pages per request', function(done) {
+        it('should work when per_page is > config.maxWorksPerPage', function(done) {
             var req = request(config.frontend.baseURL);
             req.get('/works?filter=owner.user:' + ownerIDs[0] + "&per_page=2000")
                 .set('Accept', 'application/json')
                 .set('Authorization', owner1)
-                .expect(500)
+                .expect(200)
                 .end(done);
         });
 
-        it('should not allow bogus page number', function(done) {
+        it('should not allow bogus page value', function(done) {
             var req = request(config.frontend.baseURL);
             req.get('/works?filter=owner.user:' + ownerIDs[0] + "&page=-1")
                 .set('Accept', 'application/json')
                 .set('Authorization', owner1)
-                .expect(500)
+                .expect(400)
+                .end(done);
+        });
+
+        it('should not allow bogus per_page value', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&page=1&per_page=-1")
+                .set('Accept', 'application/json')
+                .set('Authorization', owner1)
+                .expect(400)
                 .end(done);
         });
 
@@ -605,6 +649,25 @@ describe('Works', function() {
                     expect( w[0].owner.user.id ).to.equal( ownerIDs[0] );
                     expect( w[0].owner.user ).to.have.property( 'profile' );
                     expect( w[0].owner.user.profile ).to.have.property( 'gravatar_hash' );
+                })
+                .end(done);
+        });
+
+        it('should allow including collabs.users', function(done) {
+            var req = request(config.frontend.baseURL);
+            req.get('/works?filter=owner.user:' + collabOwnerID + "&include=collabs.users")
+                .set('Accept', 'application/json')
+                .set('Authorization', collabOwner)
+                .expect(200)
+                .expect(function(res) {
+                    var w = res.body;
+
+                    expect( w ).to.be.an( 'array' );
+                    expect( w[0] ).to.have.property ( 'collabs' );
+                    expect( w[0].collabs ).to.have.property ( 'users' );
+                    expect( w[0].collabs.users ).to.be.an( 'array' );
+                    expect( w[0].collabs.users[0] ).to.have.property( 'profile' );
+                    expect( w[0].collabs.users[0].profile ).to.have.property( 'gravatar_hash' );
                 })
                 .end(done);
         });

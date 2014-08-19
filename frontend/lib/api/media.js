@@ -19,6 +19,7 @@ var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
+var request = require('./request');
 var config = require('../../../lib/config');
 
 /* Return promise handler to transform the media object for JSON responses.
@@ -35,6 +36,8 @@ exports.createWorkMedia = function createWorkMedia(req, res, next) {
     var path;
     var origWorkId;
     var origMediaId;
+
+    request.transformMedia(req.body);
 
     if (req.body.hasOwnProperty('href')) {
         if ( (req.body.href.indexOf(config.frontend.baseURL) === 0) &&

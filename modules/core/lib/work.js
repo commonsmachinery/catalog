@@ -39,8 +39,12 @@ var setWorkPerms = exports.setWorkPerms = function(context) {
             perms = context.perms[work.id] = {};
         }
 
-        // Only user can modify the object
+        // Owner can read, modify, admin the object
         if (context.userId && context.userId.toString() === work.owner.user.toString()) {
+            perms.read = perms.write = perms.admin = true;
+        }
+        // collabs.users can read, modify, admin the object
+        else if (context.userId && work.collabs && work.collabs.users.indexOf(context.userId.toString()) > -1) {
             perms.read = perms.write = perms.admin = true;
         }
         else {
@@ -73,6 +77,16 @@ var AnnotationNotFoundError = exports.AnnotationNotFoundError = function Annotat
 };
 
 util.inherits(AnnotationNotFoundError, common.NotFoundError);
+
+/* Error raised when a Work source object is not found.
+ */
+var SourceNotFoundError = exports.SourceNotFoundError = function SourceNotFoundError(id) {
+    this.name = "SourceNotFoundError";
+    common.NotFoundError.call(this, 'core.Source', id);
+    Error.captureStackTrace(this, SourceNotFoundError);
+};
+
+util.inherits(SourceNotFoundError, common.NotFoundError);
 
 /* All command methods return { save: Work(), event: CoreEvent() }
  * or { remove: Work(), event: CoreEvent() }
@@ -174,6 +188,8 @@ exports.updateWork = function updateWork(context, workId, src) {
 
 
 cmd.update = function commandUpdateWork(context, work, src) {
+    var i, collabsUsersChanged = false;
+
     // Check permissions set with setWorkPerms()
     if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
@@ -197,6 +213,35 @@ cmd.update = function commandUpdateWork(context, work, src) {
     command.updateProperties(
         src, work, ['alias', 'description', 'public'],
         event, 'core.work.changed');
+
+    if (src.collabs) {
+        if (src.collabs.users) {
+            for (i = 0; i < src.collabs.users.length; i++) {
+                if (work.collabs.users.indexOf(src.collabs.users[i]) === -1) {
+                    event.events.push({
+                        event: 'core.work.collabs.users.added',
+                        param: { user_id: src.collabs.users[i] }
+                    });
+                    collabsUsersChanged = true;
+                }
+            }
+
+            for (i = 0; i < work.collabs.users.length; i++) {
+                if (src.collabs.users.indexOf(work.collabs.users[i]) === -1) {
+                    event.events.push({
+                        event: 'core.work.collabs.users.removed',
+                        param: { user_id: work.collabs.users[i] }
+                    });
+
+                    collabsUsersChanged = true;
+                }
+            }
+
+            if (collabsUsersChanged) {
+                work.collabs = src.collabs;
+            }
+        }
+    }
 
     return { save: work, event: event };
 };
@@ -407,7 +452,7 @@ exports.removeMediaFromWork = function removeMediaFromWork(context, workId, medi
 
 cmd.removeMedia = function commandRemoveMedia(context, work, media) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -459,7 +504,7 @@ exports.unlinkAllMedia = function unlinkAllMedia(context, workId) {
 
 cmd.unlinkAllMedia = function commandUnlinkAllMedia(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -782,7 +827,7 @@ exports.removeWorkAnnotation = function removeWorkAnnotation(context, workId, an
 
 cmd.removeWorkAnnotation = function commandRemoveWorkAnnotation(context, work, annotation) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -830,7 +875,7 @@ exports.removeAllAnnotations = function removeAllAnnotations(context, workId) {
 
 cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
     // Check permissions set with setWorkPerms()
-    if (!(context.perms[work.id] && context.perms[work.id].admin)) {
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
     }
 
@@ -865,16 +910,16 @@ cmd.removeAllAnnotations = function commandRemoveAllAnnotations(context, work) {
  */
 exports.listWorks = function listWorks(context, conditions, sort, skip, limit) {
     if (context.userId) {
-        conditions = _.extend(conditions, {$or: [{
+        conditions = _.extend({$or: [{
             'owner.user': context.userId
         }, {
             'public': true
-        }]});
+        }]}, conditions);
     }
     else {
-        conditions = _.extend(conditions, {
+        conditions = _.extend({
             'public': true
-        });
+        }, conditions);
     }
 
     return db.Work.findAsync(
@@ -889,4 +934,265 @@ exports.listWorks = function listWorks(context, conditions, sort, skip, limit) {
         setWorkPerms(context)(work);
         return db.Work.objectExporter(context)(work);
     });
+};
+
+/* Get an Source object for a given Work.
+ *
+ * Returns a promise that resolves to the source.
+ */
+exports.getWorkSource = function getWorkSource(context, workId, sourceId) {
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(sourceId, SourceNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            var source = work.sources.id(sourceId);
+
+            if (!source) {
+                throw new SourceNotFoundError(sourceId);
+            }
+
+            return source;
+        })
+        .then(db.Source.objectExporter(context));
+};
+
+/* Get all Source objects for a given Work.
+ *
+ * Returns a promise that resolves to the list of sources.
+ */
+exports.getAllSources = function getAllSources(context, workId) {
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            // Check permissions set with setWorkPerms()
+            if (!(context.perms[work.id] && context.perms[work.id].read)) {
+                throw new command.PermissionError(context.userId, work.id);
+            }
+
+            return work.sources;
+        })
+        .then(function(sources) {
+            return sources.map(function(source) {
+                return db.Source.objectExporter(context)(source);
+            });
+        });
+};
+
+/* Create a new Source object from a source object with the same
+ * properties.
+ *
+ * Returns a promise that resolves to the new source
+ */
+exports.createWorkSource = function createWorkSource(context, workId, src) {
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(src.source_work, WorkNotFoundError);
+
+    return Promise.props({
+            work: db.Work.findByIdAsync(workId),
+            sourceWork: db.Work.findByIdAsync(src.source_work)
+        })
+        .then(function(result) {
+            if (!result.work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            if (!result.sourceWork) {
+                debug('core.Work (source_work) not found: %s', src.source_work);
+                throw new WorkNotFoundError(src.source_work);
+            }
+
+            return result.work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return command.execute(cmd.createWorkSource, context, work, src);
+        })
+        // return source according to the API
+        .then(function(work) {
+            return work.sources[work.sources.length - 1];
+        })
+        .then(db.Source.objectExporter(context));
+};
+
+cmd.createWorkSource = function commandCreateWorkSource(context, work, src) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    if (!src.source_work) {
+        // TODO: should we implement error type and handler for this error?
+        throw new command.CommandError('src.source_work missing');
+    }
+
+    // Check that work doesn't already have src.source_work
+    if (_.find(work.sources, function(s) {
+        return s.source_work.toString() === src.source_work;
+    })) {
+        // TODO: should we implement error type and handler for this error?
+        throw new command.CommandError('duplicate src.source_work');
+    }
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    var dest = {
+        added_by: context.userId
+    };
+
+    dest.source_work = src.source_work;
+
+    work.sources.push(dest);
+    var source = work.sources[work.sources.length - 1];
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [{
+            event: 'core.work.source.added',
+            param: { source: source.exportObject() },
+        }],
+    });
+
+    debug('creating new source: %j', source.toObject());
+
+    return { save: work, event: event };
+};
+
+/* Remove work source
+ *
+ * Returns a promise that resolves to removed source.
+ */
+exports.removeWorkSource = function removeWorkSource(context, workId, sourceId) {
+    var origSource;
+
+    common.checkId(workId, WorkNotFoundError);
+    common.checkId(sourceId, SourceNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            origSource = work.sources.id(sourceId);
+            if (!origSource) {
+                throw new SourceNotFoundError(sourceId);
+            }
+
+            return command.execute(cmd.removeWorkSource, context, work, sourceId).return(origSource);
+        })
+        .then(db.Source.objectExporter(context));
+};
+
+cmd.removeWorkSource = function commandRemoveWorkSource(context, work, source) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    work.sources.pull(source);
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [{
+            event: 'core.work.source.removed',
+            param: { source: source }
+        }],
+    });
+
+    return { save: work, event: event };
+};
+
+/* Remove all work sources
+ *
+ * Returns an empty list on success.
+ */
+exports.removeAllSources = function removeAllSources(context, workId) {
+    common.checkId(workId, WorkNotFoundError);
+
+    return db.Work.findByIdAsync(workId)
+        .then(function(work) {
+            if (!work) {
+                debug('core.Work not found: %s', workId);
+                throw new WorkNotFoundError(workId);
+            }
+
+            return work;
+        })
+        .then(setWorkPerms(context))
+        .then(function(work) {
+            return command.execute(cmd.removeAllSources, context, work).return([]);
+        });
+};
+
+cmd.removeAllSources = function commandRemoveAllSources(context, work) {
+    // Check permissions set with setWorkPerms()
+    if (!(context.perms[work.id] && context.perms[work.id].write)) {
+        throw new command.PermissionError(context.userId, work.id);
+    }
+
+    command.checkVersionConflict(context, work);
+
+    // OK to apply update, so get a new version
+    work.increment();
+
+    var event = new db.CoreEvent({
+        user: context.userId,
+        type: 'core.Work',
+        object: work.id,
+        events: [],
+    });
+
+    for (var i = 0; i < work.sources.length; ++i) {
+        event.events.push({
+            event: 'core.work.source.removed',
+            param: { source: work.sources[i] },
+        });
+    }
+
+    work.sources = [];
+
+    return { save: work, event: event };
 };

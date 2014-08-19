@@ -436,7 +436,7 @@ describe('annotations', function() {
         });
     }); // 'DELETE /works/ID/annotations'
 
-    describe('GET /works/ID?include=annotations', function() {
+    describe('GET /works/ID?annotations', function() {
         var testObjects = {};
 
         // create work and annotation
@@ -502,7 +502,7 @@ describe('annotations', function() {
 
         it('?annotations=all should return all annotations as a map', function(done) {
             var req = request('');
-            req.get(testObjects.workURI + '/?annotations=title,creator')
+            req.get(testObjects.workURI + '/?annotations=all')
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)
@@ -535,7 +535,7 @@ describe('annotations', function() {
                 })
                 .end(done);
         });
-    }); // 'GET /works/ID?include=annotations'
+    }); // 'GET /works/ID?annotations'
 
     describe('GET /works/ID/media/ID?annotations', function() {
         var workURI;

@@ -252,6 +252,7 @@ exports.User = conn.model('User', User);
 exports.Media = conn.model('Media', Media);
 exports.Work = conn.model('Work', Work);
 exports.WorkAnnotation = conn.model('WorkAnnotation', WorkAnnotation);
+exports.Source = conn.model('Source', Source);
 
 // Connect, returning a promise that resolve when connected
 

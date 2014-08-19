@@ -20,6 +20,7 @@ var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
+var request = require('./request');
 var uris = require('../uris');
 
 /* Return promise handler to transform the work object for JSON responses.
@@ -144,6 +145,7 @@ var getPagingLinks = function(req) {
 };
 
 exports.createWork = function createWork(req, res, next) {
+    request.transformWork(req.body);
     core.createWork(req.context, req.body)
         .then(transform(req))
         .then(respond.asJSON(res, { status: 201 }))
@@ -189,6 +191,7 @@ exports.getWork = function getWork(req, res, next) {
 };
 
 exports.updateWork = function updateWork(req, res, next) {
+    request.transformWork(req.body);
     core.updateWork(req.context, req.params.workId, req.body)
         .then(transform(req))
         .then(respond.asJSON(res))

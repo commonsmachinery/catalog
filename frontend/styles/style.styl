@@ -68,8 +68,13 @@ button, input, textarea
         border solid 1px disabled-fg-color !important
         color disabled-fg-color !important
 
-dl
+dl, dd, dt
     display inline-block
+    font-size 0.9rem
+    margin 0
+    text-align left
+dt
+    margin-right 0.1em
 
 footer
     display inline-block
@@ -95,11 +100,13 @@ form
         color light-button-fg-color
 
 h1
-    font-family h1-font || main-font
     color h1-font-color || content-color
+    font-family h1-font || main-font
+    font-size 1.2rem
 h2
-    font-family h2-font || main-font
     color h2-font-color || content-color
+    font-family h2-font || main-font
+    font-size 1.2rem
 
 header
    background-color app-header-color
@@ -235,8 +242,8 @@ input[type=checkbox]:checked + label.checkbox:before
     animation notification 0.2s ease-out
     font-size 0.8rem
     position absolute
+    color negative-remark-fg-color
     li
-        color negative-remark-fg-color
         list-style-type none
 
 @keyframes notification
@@ -496,11 +503,26 @@ dl.hideCaption
 
 #work
     position relative
+    header
+        height 2.5rem
+        position relative
+        h1
+            line-height 2.5rem
+    span
+        display block
+    .actions
+        position absolute
+        right 0.3rem
+        text-align right
+        top 0.3rem
     #workDetails
         position relative
         dl
             font-size 0.7rem
             margin 0
+        dt, dd
+            font-size 0.7rem
+            font-weight normal
         form
             span
                 display block
@@ -573,6 +595,26 @@ dl.hideCaption
         .delete
             height 1.5rem
             width 6rem
+
+    #workAnnotations
+        dt
+            font-weight bold
+    #workSources
+        span, dl
+            word-break break-all
+        dd, dt
+            font-size 0.8rem
+            display inline
+        h2
+            display block
+            font-size 1.2rem
+            margin-bottom 0.5em
+            word-break break-all
+        ul
+            padding 0
+            li
+                display inline-block
+                list-style-type none
 
 #browseWorks
     position relative

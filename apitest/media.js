@@ -198,7 +198,8 @@ describe('Media', function() {
                 .expect(200)
                 .expect(function(res) {
                     var work = res.body;
-                    expect(work.media).to.contain(newMediaID);
+                    expect( work.media ).to.be.an( 'array' );
+                    expect( work.media[0].id ).to.be( newMediaID );
                 })
                 .end(done);
         });
@@ -249,6 +250,21 @@ describe('Media', function() {
                     expect( parseLinks(res.header.link).self ).to.be( mediaURI );
 
                     debug('media etag: %s', res.header.etag);
+                })
+                .end(done);
+        });
+
+        it('should not get replaces field when unset', function(done) {
+            req.get(mediaURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect( 'etag', util.etagRE )
+                .expect( 'link', /rel="self"/ )
+                .expect(function(res) {
+                    var m = res.body;
+
+                    expect( m.replaces ).to.be( undefined );
                 })
                 .end(done);
         });

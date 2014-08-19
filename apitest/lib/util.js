@@ -22,7 +22,8 @@ exports.urlRE = {
     user: /\/users\/[0-9a-f]+$/,
     work: /\/works\/[0-9a-f]+$/,
     media: /\/works\/[0-9a-f]+\/media\/[0-9a-f]+$/,
-    annotation: /\/works\/[0-9a-f]+\/annotations\/[0-9a-f]+$/
+    annotation: /\/works\/[0-9a-f]+\/annotations\/[0-9a-f]+$/,
+    source: /\/works\/[0-9a-f]+\/sources\/[0-9a-f]+$/
 };
 
 exports.etagRE = /^W\/".*"$/;

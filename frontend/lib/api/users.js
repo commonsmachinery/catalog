@@ -19,7 +19,7 @@ var core = require('../../../modules/core/core');
 var uris = require('../uris');
 
 var respond = require('./respond');
-
+var request = require('./request');
 
 /* Return promise handler to transform the work object for JSON responses.
  */
@@ -29,6 +29,14 @@ var transform = function() {
     };
 };
 
+var updateGravatarHash = function updateGravatarHash(req){
+    return function(user){
+        if (req.session && req.session.userId === user.id) {
+            req.session.gravatarHash = user.profile.gravatar_hash;
+        }
+        return user;
+    };
+};
 
 exports.getCurrentUser = function getCurrentUser(req, res) {
     if (req.context.userId) {
@@ -38,7 +46,6 @@ exports.getCurrentUser = function getCurrentUser(req, res) {
         res.send(403);
     }
 };
-
 
 exports.getUser = function getUser(req, res, next) {
     var htmlResponse = function() {
@@ -72,7 +79,9 @@ exports.getUser = function getUser(req, res, next) {
 
 
 exports.updateUser = function updateUser(req, res, next) {
+    request.transformUser(req.body);
     core.updateUser(req.context, req.params.userId, req.body)
+        .then(updateGravatarHash(req))
         .then(transform())
         .then(respond.asJSON(res))
         .catch(function(err) {

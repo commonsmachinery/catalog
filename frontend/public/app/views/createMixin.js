@@ -46,6 +46,9 @@ define(['jquery', 'underscore', 'util'],
             try{
                 this.listenToOnce(this.model, 'invalid', function(){
                     util.showError(this, this.model.validationError);
+                    util.working('stop', self.el);
+                    self.$('[data-action="save"]').text('Try Again');
+                    self.$('.actions').prop('disabled', false);
                 });
                 this.model.save(null, {
                     wait: true,
@@ -70,10 +73,11 @@ define(['jquery', 'underscore', 'util'],
                                       response.responseText);
 
                         // Re-enable view
-                        self.$('[data-action="create"]').text('Try Again');
-                        self.$('.editable, .actions').prop('disabled', false);
+                        self.$('[data-action="save"]').text('Try Again');
+                        self.$('.actions').prop('disabled', false);
+                        util.working('stop', self.el);
 
-                        util.showError(self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                        util.showError(self, 'Error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
                     },
                 });
             }
