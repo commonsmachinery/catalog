@@ -248,6 +248,7 @@ exports.transformUser = function(user) {
  * require additional objects to be fetched from the core DB.
  */
 exports.transformWork = function(work, context, options) {
+
     work.href = uris.buildWorkURI(work.id);
 
     work = filterFields(work, options);
@@ -264,10 +265,14 @@ exports.transformWork = function(work, context, options) {
         idsToObjects(work.collabs.users, null, uris.buildUserURI);
     }
     idsToObjects(work.annotations, 'updated_by', uris.buildUserURI);
-    idsToObjects(work.media, null, uris.buildUserURI);
+    idsToObjects(work.media, null, function(mediaId){
+        return uris.buildWorkMediaURI(work.id, mediaId);
+    });
 
     idsToObjects(work.sources, 'added_by', uris.buildUserURI);
-    idsToObjects(work.sources, 'source_work', uris.buildWorkURI);
+    idsToObjects(work.sources, 'source_work', function(sourceId){
+        return uris.buildWorkMediaURI(work.id, sourceId);
+    });
 
     // Add other fields here as those parts are supported by the API
 
