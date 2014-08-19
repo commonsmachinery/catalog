@@ -1,0 +1,37 @@
+//- Catalog web - page displaying work media
+//- 
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+mixin mediaDetails()
+    section
+        - var displayTitle = media.id
+        header
+            dl.hideCaption 
+                    h1 Media: #{displayTitle}
+        span.embed #{'- no embed -'}
+        footer.details(class="grid-100 tablet-grid-100 mobile-grid-100")
+            dl
+                +defTerm(media.version + ',' , 'Version', 'version')
+                +defTerm(null, 'added by')
+                    a(href=media.added_by.href) #{media.added_by.id}
+                +defTerm(null, 'on', 'added_at')
+                    -var date = media.added_at.toDateString();
+                    | #{date.substring(3, date.length)}
+
+mixin mediaAnnotations()
+    section
+        header
+            h1 Annotations
+
+        dl.metadata
+            for i in media.annotations
+                +defTerm(i.property.value, i.property.propertyName+':')
+
+include includes/top
+    div#media(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
+        +mediaDetails
+    div#mediaAnnotations(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
+        +mediaAnnotations
+
+    include includes/bottom
