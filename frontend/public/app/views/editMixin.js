@@ -53,6 +53,9 @@ define(['jquery', 'underscore', 'util'],
             try{
                 this.listenToOnce(this.model, 'invalid', function(){
                     util.showError(this, this.model.validationError);
+                    util.working('stop', self.el);
+                    self.$('[data-action="save"]').text('Try Again');
+                    self.$('.actions').prop('disabled', false);
                 });
                 this.model.save(null, {
                     success: function(model, response, options) {
@@ -66,7 +69,9 @@ define(['jquery', 'underscore', 'util'],
                         // Re-enable buttons
                         self.$('.actions').prop('disabled', false);
                         self.$('[data-action="save"]').text('Save');
+
                         util.working('stop', self.el);
+
                         self._editStartAttrs = null;
                     },
 
@@ -81,7 +86,11 @@ define(['jquery', 'underscore', 'util'],
 
                         self.$('[data-action="save"]').text('Retry saving');
                         
-                        util.showError(self, 'error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
+                        util.working('stop', self.el);
+                        self.$('[data-action="save"]').text('Try again');
+                        self.$('.actions').prop('disabled', false);
+
+                        util.showError(self, 'Error saving: ' + response.responseText + ': status ' + response.status + ' ' + response.statusText);
                     },
                 });
             }
