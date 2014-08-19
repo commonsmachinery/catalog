@@ -19,6 +19,7 @@ var core = require('../../../modules/core/core');
 var uris = require('../uris');
 
 var respond = require('./respond');
+var request = require('./request');
 
 /* Return promise handler to transform the work object for JSON responses.
  */
@@ -76,6 +77,7 @@ exports.getUser = function getUser(req, res, next) {
 
 
 exports.updateUser = function updateUser(req, res, next) {
+    request.transformUser(req.body);
     core.updateUser(req.context, req.params.userId, req.body)
         .then(updateGravatarHash(req))
         .then(transform())

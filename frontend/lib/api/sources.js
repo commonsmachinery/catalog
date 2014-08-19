@@ -19,6 +19,7 @@ var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
+var request = require('./request');
 
 /* Return promise handler to transform the source object for JSON responses.
  */
@@ -110,6 +111,7 @@ exports.getAllSources = function getAllSources(req, res, next) {
 
 
 exports.createWorkSource = function createWorkSource(req, res, next) {
+    request.transformSource(req.body);
     core.createWorkSource(req.context, req.params.workId, req.body)
         .then(transform(req))
         .then(respond.asJSON(res, { status: 201 }))
