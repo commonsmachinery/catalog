@@ -314,7 +314,9 @@ exports.transformMedia = function(workId, media, context, options) {
     media = filterFields(media, options);
 
     idToObject(media, 'added_by', uris.buildUserURI);
-    media.replaces = { id: media.replaces, href: uris.buildWorkMediaURI(workId, media.id) };
+    idToObject(media, 'replaces', function(mediaId) {
+        return uris.buildWorkMediaURI(workId, mediaId);
+    });
 
     // Transform annotations
     if (options && options.annotations && media.annotations) {

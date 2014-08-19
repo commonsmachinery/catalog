@@ -254,6 +254,21 @@ describe('Media', function() {
                 .end(done);
         });
 
+        it('should not get replaces field when unset', function(done) {
+            req.get(mediaURI)
+                .set('Accept', 'application/json')
+                .set('Authorization', util.auth(util.testUser))
+                .expect(200)
+                .expect( 'etag', util.etagRE )
+                .expect( 'link', /rel="self"/ )
+                .expect(function(res) {
+                    var m = res.body;
+
+                    expect( m.replaces ).to.be( undefined );
+                })
+                .end(done);
+        });
+
         it('should be possible to request specific fields only', function(done) {
             req.get(mediaURI + '?fields=metadata')
                 .set('Accept', 'application/json')
