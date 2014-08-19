@@ -31,7 +31,9 @@ var transform = function() {
 
 var updateGravatarHash = function updateGravatarHash(req){
     return function(user){
-        req.session.gravatarHash = user.profile.gravatar_hash;
+        if (req.session && req.session.userId === user.id) {
+            req.session.gravatarHash = user.profile.gravatar_hash;
+        }
         return user;
     };
 };
