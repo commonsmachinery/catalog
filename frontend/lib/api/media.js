@@ -69,9 +69,8 @@ exports.getWorkMedia = function getWorkMedia(req, res, next) {
             .then(transform(req))
             .then(function(media) {
                 respond.setObjectHeaders(res, media);
-
-                // TODO: render work view
-                throw new Error("Media view not implemented!");
+                res.locals.media = media;
+                res.render('media');
             })
             .catch(function(err) {
                 next(err);

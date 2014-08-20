@@ -266,6 +266,10 @@ input
     vertical-align middle
     width 1.5em
 
+.metadata
+    dt
+        font-weight bold
+
 img.thumbnail
     max-width 200px
     max-height 200px
@@ -345,6 +349,14 @@ img.thumbnail
     float none
     margin auto
     text-align left
+    header
+        height auto
+        margin 1.5rem 0
+        min-height 0
+        text-align middle
+        h1
+            font-size 0.9rem
+            margin 0
 
 #homeHeader
     background home-header-bg
@@ -384,6 +396,22 @@ dl.hideCaption
         visibility hidden
     dd
         margin-left 0
+
+#media
+    dl span
+        display block
+    header
+        padding 0.5em
+    #mediaDetails
+        dl span
+            display inline-block
+            margin 0.2em
+        header
+            background none
+            padding 0
+            h1
+                font-size 1.2rem
+                text-align left
 
 #userProfile
     position relative
@@ -468,10 +496,7 @@ dl.hideCaption
 #work
     position relative
     header
-        height 2.5rem
-        position relative
-        h1
-            line-height 2.5rem
+        padding 0.5em
     span
         display block
     .actions
@@ -481,7 +506,6 @@ dl.hideCaption
         top 0.3rem
     #workDetails
         position relative
-
         dl
             margin 0
         dt, dd
@@ -520,6 +544,7 @@ dl.hideCaption
             margin 0
         header
             background none
+            padding 0
             text-align left
             .public
                 &:after
@@ -551,9 +576,6 @@ dl.hideCaption
             background-color dark-button-bg-color
             border none
             color dark-button-fg-color
-    #workAnnotations
-        dt
-            font-weight bold
     #workSources
         span, dl
             word-break break-all
@@ -565,11 +587,12 @@ dl.hideCaption
             font-size 1.2rem
             margin-bottom 0.5em
             word-break break-all
-        ul
-            padding 0
-            li
-                display inline-block
-                list-style-type none
+        article
+            display inline-block
+            header
+                 0.1em 0.5em
+        .entriesList
+            margin -1em
 
 #workForm
     form
