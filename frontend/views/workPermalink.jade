@@ -5,7 +5,7 @@
 
 mixin workSourceItem(source, empty)
     - var source_work = source.source_work;
-    li.entry(id="sources-#{empty || source_work.id}", class="grid-25 tablet-grid-33 mobile-grid-100"): article
+    article.entry(id="sources-#{empty || source_work.id}", class="grid-25 tablet-grid-33 mobile-grid-100"): article
     
         header
             h2: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
@@ -62,7 +62,7 @@ mixin workSources()
     section
         header
             h1 Sources
-        ul
+        div.entriesList
             for i in work.sources
                 +workSourceItem(i)
 
