@@ -7,8 +7,7 @@ mixin mediaDetails()
     section
         - var displayTitle = media.id
         header
-            dl.hideCaption 
-                    h1 Media: #{displayTitle}
+            h1 Media: #{displayTitle}
         span.embed #{'- no embed -'}
         footer.details(class="grid-100 tablet-grid-100 mobile-grid-100")
             dl
@@ -30,8 +29,9 @@ mixin mediaAnnotations()
 
 include includes/top
     div#media(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
-        +mediaDetails
-    div#mediaAnnotations(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
-        +mediaAnnotations
+        div#mediaDetails
+            +mediaDetails
+        div#mediaAnnotations
+            +mediaAnnotations
 
     include includes/bottom
