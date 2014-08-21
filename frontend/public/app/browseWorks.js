@@ -129,9 +129,6 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             });
 
             collection.comparator = 'added_at';
-            collection.on('add', function(arg, erg, irg){
-                console.info(arg,erg,irg);
-            });
 
             this.listenTo(collection, 'reset', this.onFetch);
         },
