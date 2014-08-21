@@ -27,6 +27,8 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
             // Use listenTo to bind and ensure all events are unbound
             // when the view is destroyed
             this.listenTo(this.collection, 'add', this.onAdd);
+            this.listenTo(this.collection, 'reset', this.onReset);
+
             this.listenTo(this.collection, 'remove', this.onRemove);
             this.listenTo(this.collection, 'destroy', this.onRemove);
 
@@ -73,6 +75,24 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
                 console.debug('removing view for model: %s', model.id);
                 view.remove();
                 delete this._items[model.id];
+            }
+        },
+
+        onReset: function onReset(coll){
+            this.empty();
+            var i;
+            for(i in coll.models){
+                this.onAdd(coll.models[i]);
+            }
+        },
+
+        empty: function onEmpty(){
+            console.debug('removing all views');
+            var i;
+            var views = this._items;
+            for(i in views){
+                views[i].remove();
+                delete views[i];
             }
         },
 

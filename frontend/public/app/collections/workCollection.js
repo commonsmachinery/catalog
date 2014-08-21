@@ -10,10 +10,12 @@ define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
     'use strict';
 
     var WorkCollection = Backbone.PageableCollection.extend({
+        mode: 'infinite',
         model: Work,
         url: '/works',
 
         state: {
+            currentPage: 1,
             firstPage: 1,
             pageSize: 12,
             sort: 'added_at'
@@ -21,20 +23,22 @@ define(['lib/backbone', 'lib/backbone.paginator', 'models/workModel'],
 
         queryParams: {
             sortKey: 'sort',
-            include: 'added_by',
+            include: 'all',
             filter: ''
         },
 
-        initialize: function(){
-            var page;
+        initialize: function(data, opt){
+            var per_page;
+            var filter;
             if(window.location.search){
-                page = window.location.search.match(/(?:\&|\?)page=(\d+)/);
-                var per_page = window.location.search.match(/per_page=(\d+)/);
-                if(page){
-                    this.state.currentPage = Number(page[1]);
-                }
+                per_page = window.location.search.match(/per_page=(\d+)/);
                 if(per_page){
                     this.state.pageSize = Number(per_page[1]);
+                }
+
+                filter = window.location.search.match(/filter=([^&]+)/);
+                if(filter){
+                    this.state.filter = filter;
                 }
             }
         }

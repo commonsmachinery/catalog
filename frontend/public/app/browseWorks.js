@@ -76,7 +76,8 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         onApplyFilters: function onApplyFilters(ev) {
-            var query = this.collection.queryParams;
+            var collection = this.collection;
+            var query = collection.queryParams;
             var trigger = false;
 
             // toggle the inclusion of filter
@@ -91,10 +92,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 var exp = new RegExp(attr + ':' + '[^,&]*,?');
                 query.filter = query.filter.replace(exp, '');
             }
-
-            this.collection.fetch().done(function(){
-                appRouter.navigate(decodeURIComponent(this.url), {trigger:false});
-            });
+            collection.getFirstPage();
+            collection.reset();
+            collection.fullCollection.reset();
+            collection.fetch();
         }
     });
 
@@ -128,6 +129,11 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             });
 
             collection.comparator = 'added_at';
+            collection.on('add', function(arg, erg, irg){
+                console.info(arg,erg,irg);
+            });
+
+            this.listenTo(collection, 'reset', this.onFetch);
         },
 
         render: function() {
@@ -137,37 +143,41 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         gotoPage: function gotoPage(ev){
-            this._worksView.collection['get'+ ev.target.dataset.goto +'Page']()
-                .done(_.bind(this.onFetch, this, ev));
+            ev.preventDefault();
+            collection['get'+ ev.target.dataset.goto +'Page']();
             return false;
         },
 
-        onFetch: function onFetch(ev, data){
-            var current = this._worksView.collection.state.currentPage;
-
+        onFetch: function onFetch(coll){
+            var current = coll.state.currentPage;
+            // scroll to the top of the list
             window.location.hash = '#works';
-            appRouter.navigate(ev.target.href.replace(ev.target.origin, ''), {trigger: false});
-
-            //update or hide previous button
-            var link = window.location.href;
+            
             var $prev = this.$('[data-goto=Previous]');
             var $first = this.$('[data-goto=First]');
-            if(current === 1){
+            var $next = this.$('[data-goto=Next]');
+
+            //update or hide previous button
+            if(!collection.hasPreviousPage()){
                 $prev.addClass('hidden');
                 $first.addClass('hidden');
             }
             else{
-                link = link.replace(/([^_])page=\d+/, '$1page='+ (current - 1));
-                $prev.attr('href', link);
+                $prev.attr('href', coll.links[(current -1) +'']);
                 $prev.removeClass('hidden');
                 $first.removeClass('hidden');
             }
 
-            //update next button
-            link = link.replace(/([^_])page=\d+/, '$1page='+ (current + 1));
-            this.$('[data-goto=Next]').attr('href', link);
-            //update current
+            //update or hidenext button
+            if(!collection.hasNextPage()){
+                $next.addClass('hidden');
+            }
+            else{
+                $next.attr('href', coll.links[(current +1) +'']);
+                $next.removeClass('hidden');
+            }
 
+            //update current
             this.$('.pagination .current').html(current);
         }
     });
@@ -178,7 +188,12 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
         var data = util.bootstrapData();
 
-        collection = new WorkCollection(data || []);
+        collection = new WorkCollection();
+        collection.links[collection.state.currentPage + ''] = window.location;
+        collection.links[(collection.state.currentPage + 1) + ''] = $('#browseWorks [data-goto=Next]').attr('href');
+        if (data){
+            collection.add(data);
+        }
         collection.on('error', function (obj, response, options) {
             console.error('error syncing %s: %s %s %s',
                           obj.id, response.status, response.statusText,
