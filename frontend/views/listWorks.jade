@@ -17,8 +17,8 @@ mixin workListItemView(work, empty)
             h2: a.title(href=work.href || '#')
                 | #{empty || title}
 
-            if work._perms && work._perms.write
-                span(class="#{work.public ? 'public' : 'private'}")
+            - var showVisibility = work._perms && work._perms.write ? '' : 'hidden';
+                span(class="#{showVisibility} #{work.public ? 'public' : 'private'}")
 
             - isHidden = work._perms && work._perms.admin ? '' : 'hidden'
 

@@ -81,6 +81,7 @@ define(['jquery', 'underscore'],
         },
         visibilityClass: function visibilityClass($el, val, model){
             if(model.get('_perms.write')){
+                $el.removeClass('hidden');
                 if (val){
                     $el.addClass('public');
                     $el.removeClass('private');
@@ -91,7 +92,7 @@ define(['jquery', 'underscore'],
                 }
             }
             else{
-                $el.hide();
+                $el.addClass('hidden');
             }
         }
     };

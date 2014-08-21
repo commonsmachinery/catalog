@@ -34,7 +34,13 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                 update: function($el, val, model){
                     if(val){
                         $el.prop('disabled', false);
-                        $el.siblings('label').removeClass('hidden');
+                        $el.attr('id', 'batchSelect-' + model.id);
+                        $el.attr('name', 'batchSelect-' + model.id);
+
+                        var $label = $el.siblings('label');
+                        $label.removeClass('hidden');
+                        $label.attr('for', 'batchSelect-' + model.id);
+
                     }
                     else{
                         $el.prop('disabled', true);
