@@ -174,6 +174,7 @@ var filterAnnotations = function(object, annotations) {
 var populate = function(object, include, references)
 {
     var incRefs;
+
     if(include === 'all'){
         incRefs = references;
     }
@@ -181,6 +182,9 @@ var populate = function(object, include, references)
         include = include.split(',');
         // By picking the references we ensure that we only process the
         // known fields and only each field once
+        incRefs = _.pick(references, include);
+    }
+    else {
         incRefs = _.pick(references, include);
     }
 
