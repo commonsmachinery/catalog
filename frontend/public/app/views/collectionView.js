@@ -81,11 +81,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
         onReset: function onReset(coll){
             this.empty();
             var models = coll.models;
+            var len = models.length;
             var i;
-            for(i in models){
-                if(models.hasOwnProperty(i)){
-                    this.onAdd(coll.models[i]);
-                }
+            for(i; i < len; i++){
+                this.onAdd(coll.models[i]);
             }
         },
 
