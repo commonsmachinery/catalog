@@ -61,7 +61,6 @@ require(['jquery', 'lib/backbone', 'session',
 			maxTries: 3,
 			statusCode: {
 				408: retry,
-				500: retry,
 				504: retry,
 				522: retry,
 				524: retry,

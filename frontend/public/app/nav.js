@@ -12,15 +12,11 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
         events: {
             'click .createWork': function onCreateWork(){
                 this.showDialog(CreateWorkView, {
-                    model: new WorkModel(null, {wait:true}),
-                    el: '.dialog#workForm',
-                    template: '#workFormTemplate'
+                    model: new WorkModel(null),
+                    el: '.dialog#createWorkForm',
+                    template: '#createWorkTemplate'
                 }).render();
             }
-        },
-
-        initialize: function(){
-            this.delegateEvents();
         },
 
         showDialog: function showDialog(View, opts){
@@ -30,7 +26,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
                 currentDialog.remove();
             }
 
-            $('#content').append('<div class="dialog" id="workForm"></div>');
+            $('#content').append('<div class="dialog" id="createWorkForm"></div>');
 
             this.dialog = new View(opts);
             this.listenToOnce(this.dialog, 'create:cancel', function(){
@@ -38,9 +34,9 @@ define(['jquery', 'underscore', 'lib/backbone', 'views/createWorkView', 'models/
                 this.dialog.remove();
             });
             this.listenToOnce(this.dialog, 'create:success', function(){
-                window.location.assign(this.dialog.model.url());
-            });
+                window.location.assign(this.dialog.model.get('href'));
 
+            });
             return this.dialog;
         }
     });

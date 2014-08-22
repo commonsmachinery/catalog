@@ -17,7 +17,7 @@ clean-dirs += $(frontend-css-dir)
 all: $(frontend-style-css)
 
 $(frontend-style-css): $(frontend-css-dir) $(frontend-css-src)
-	$(STYLUS) $(frontend-styles-dir) -o $(frontend-css-dir)
+	$(STYLUS) $(frontend-styles-dir) -o $(frontend-css-dir) -U
 
 $(frontend-css-dir):
 	mkdir -p $(frontend-css-dir)

@@ -13,6 +13,12 @@ define(['lib/backbone', 'util'], function(Backbone, util) {
             public: true
         },
 
+        initialize: function(){
+            // replace getter and setter with a function to access nested objects and trigger an appropiate event
+            this.get = util.getNested(this);
+            this.set = util.setNested(this);
+        },
+
         validate: function(){
             var attrs = this.attributes;
             var invalid = [];

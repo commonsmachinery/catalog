@@ -121,7 +121,7 @@ var getLimit = function(req) {
 
 /* Get paging links according for a list of works according to RFC 5005.
  */
-var getPagingLinks = function(req) {
+var getPagingLinks = function(req, morePages) {
     var linkUrl = url.parse(req.url, true);
     var linkMap = {};
 
@@ -131,8 +131,10 @@ var getPagingLinks = function(req) {
     linkUrl.query.page = 1;
     linkMap.first = url.format(linkUrl);
 
-    linkUrl.query.page = req.query.page + 1;
-    linkMap.next = url.format(linkUrl);
+    if (morePages) {
+        linkUrl.query.page = req.query.page + 1;
+        linkMap.next = url.format(linkUrl);
+    }
 
     if (req.query.page > 1) {
         linkUrl.query.page = req.query.page - 1;
@@ -217,10 +219,16 @@ exports.listWorks = function listWorks(req, res, next) {
             )
             .then(transformMany(req))
             .then(function(works) {
-                uris.setLinks(res, getPagingLinks(req));
+                // If no works are found, there's no next page.  Ideally we'd
+                // detect this already on the last actual page, but that can
+                // be improved later (and preferably then also getting a last
+                // page link)
+                var linkMap = getPagingLinks(req, works.length > 0);
+                uris.setLinks(res, linkMap);
+                res.locals.pagination = linkMap;
+                res.locals.works = works;
 
-                // TODO: render works view
-                throw new Error("Works view not implemented!");
+                res.render('listWorks');
             })
             .catch(function(err) {
                 next(err);
@@ -237,7 +245,7 @@ exports.listWorks = function listWorks(req, res, next) {
             )
             .then(transformMany(req))
             .then(function(works) {
-                uris.setLinks(res, getPagingLinks(req));
+                uris.setLinks(res, getPagingLinks(req, works.length > 0));
                 res.json(200, works);
             })
             .catch(function(err) {

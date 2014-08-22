@@ -53,7 +53,8 @@
       "require": "http://requirejs.org/docs/release/2.1.9/comments/require.js",
       "underscore": "github:amdjs/underscore/1.5.2",
       "backbone": "github:jashkenas/backbone/1.1.2",
-      "backbone.stickit": "https://raw.githubusercontent.com/NYTimes/backbone.stickit/master/backbone.stickit.js"
+      "backbone.stickit": "https://raw.githubusercontent.com/NYTimes/backbone.stickit/master/backbone.stickit.js",
+      "backbone.paginator": "https://raw.githubusercontent.com/backbone-paginator/backbone.paginator/master/lib/backbone.paginator.js"
     }
   }
 }

@@ -931,6 +931,7 @@ exports.listWorks = function listWorks(context, conditions, sort, skip, limit) {
         }
     )
     .map(function(work) {
+        setWorkPerms(context)(work);
         return db.Work.objectExporter(context)(work);
     });
 };

@@ -13,33 +13,17 @@ define(['jquery', 'lib/backbone', 'util',
 
     var WorkDetailsView = Backbone.View.extend({
         bindings:{
-            '.title': {
+            '.title h1': {
                 observe: 'alias',
-                update: function($el, val, model){
-                    if(val){
-                        $el.find('dd h1').html(val);
-                    }
-                    else{
-                        $el.find('dd').html(model.id);
-                    }
-                },
+                update: util.bind.aliasOrId,
             },
             '.description': {
                 observe: 'description',
-                update: 'renderOrNot'
+                update: util.bind.defOrRemove
             },
             '.public, .private': {
                 observe: 'public',
-                update: function($el, val, model){
-                    var className;
-                    if (val){
-                        className = 'public';
-                    }
-                    else{
-                        className = 'private';
-                    }
-                    $el.attr('class', className);
-                }
+                update: util.bind.visibilityClass
             }
         },
 
@@ -49,22 +33,12 @@ define(['jquery', 'lib/backbone', 'util',
 
         initialize: function(opts) {
             this.template = opts.template;
-            this.delegateEvents();
         },
 
         render: function() {
             this.$el.html($(this.template).html());
             this.stickit();
             return this;
-        },
-
-        renderOrNot: function($el, val, model){
-            if(val){
-                $el.find('dd').html(val);
-            }
-            else{
-                $el.remove();
-            }
         },
 
         onEditWork: function onEditProfile(){

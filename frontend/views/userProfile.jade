@@ -26,9 +26,6 @@ mixin userProfile(profile, showEmpty)
             if user._perms.write === true
         div(class="prefix-10 grid-25 tablet-prefix-5 tablet-grid-25 mobile-grid-40")
             aside
-                if owner
-                    a(href='#{userId}/sources') My stock sources
-
                 div.actions
                     button.edit(data-action="edit") Edit Profile
 

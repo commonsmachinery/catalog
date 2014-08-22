@@ -55,11 +55,12 @@ body
 button, input[type="button"]
     background-color neutral-bg-color
     border solid 1px neutral-fg-color
-    border-radius round-factor * 0.15em
+    border-radius round-factor * 0.15rem
     color neutral-fg-color
-    margin 0.3em 1em 0.3em 0
-    min-height 2em
-    min-width 7em
+    cursor pointer
+    margin 0.3rem 1rem 0.3rem 0
+    height 1.5rem
+    width 5rem
     text-shadow none
 button, input, textarea
     &:disabled
@@ -77,8 +78,8 @@ dt
 
 footer
     display inline-block
-    margin 1.5em 0 0 0
-    padding 0.5em
+    margin 1.5rem 0 0 0
+    padding 0.5rem
     text-align center
     width 100%
 
@@ -87,7 +88,7 @@ form
         border none
         display block
         margin auto
-        max-width 55em
+        max-width 55rem
         text-align center
     .save
         background-color neutral-bg-color
@@ -110,7 +111,7 @@ h2
 header
    background-color app-header-color
    height app-header-height
-   margin-bottom 1em
+   margin-bottom 1rem
    text-align center
    vertical-align middle
    width 100%
@@ -128,7 +129,7 @@ header
         display inline-block
     nav#header
         background-color nav-color
-        border-radius 0  0 (round-factor * 0.3em) (round-factor * 0.3em)
+        border-radius 0  0 (round-factor * 0.3rem) (round-factor * 0.3rem)
         height nav-height
         min-height nav-height
         text-align left
@@ -140,7 +141,7 @@ header
         a:hover, a:focus, a:active
             color nav-hover-text
         > ul#pages
-            border-radius 0  0  0 (round-factor * 0.3em)
+            border-radius 0  0  0 (round-factor * 0.3rem)
             height nav-height
             margin 0
             overflow hidden
@@ -151,8 +152,8 @@ header
                 display inline-block
                 height nav-height
                 line-height nav-height
-                margin-right 0.1em
-                padding 0 0.5em
+                margin-right 0.1rem
+                padding 0 0.5rem
                 transition all 0.2s
                 &:hover 
                     background-color nav-hover
@@ -160,23 +161,23 @@ header
                     background-color nav-click
                 > a
                     display inline-block
-                    height 1.5em
-                    line-height 1.5em
+                    height 1.5rem
+                    line-height 1.5rem
                     vertical-align middle
             .home a:before
-                icon('home', 1.5em)
+                icon('home', 1.5rem)
 
         > ul#nav-user 
             clear none
             float right
             min-height nav-height
-            margin 0.1em 1em
+            margin 0.1rem 1rem
             text-align right
             > li
                 font main-font
                 font-size 80%
                 line-height nav-height
-                margin 0.1em
+                margin 0.1rem
                 vertical-align top
             > li:not(:last-child):after
                 content " | "
@@ -191,7 +192,29 @@ input
     border 1px solid input-border-color
     border-radius (round-factor * 0.1)em
     box-shadow -1px -1px 10px -2px input-shadow-color inset
-    padding 0.4em 0.5em
+    padding 0.4rem 0.5rem
+
+input[type=checkbox]
+    display none!important
+label.checkbox:before
+    background-color: #f5f5f5
+    border 2px solid light-button-fg-color
+    border-radius round-factor * 0.1rem
+    box-sizing border-box
+    color neutral-fg-color
+    content ''
+    cursor pointer
+    display inline-block
+    height 1rem
+    margin 0 0.2em 0.1em 0
+    vertical-align middle
+    width 1rem
+input[type=checkbox]:checked + label.checkbox:before
+    content ""
+    icon('check')
+    background-color #f5f5f5
+    line-height 0.8em
+
 
 .delete
     background-color negative-remark-bg-color
@@ -201,19 +224,23 @@ input
 
 .dialog
     display block
-    padding 1em
+    left 0
+    padding 0
     position absolute
-    top 3em
+    top 3rem
     width 100%
     > div, >form
         background background * 1.2
         display block
         margin auto
-        padding 1.5em
+        min-width 10rem
+        max-width 40rem
+        padding 1rem
+        width 100%
 
 .errorMsg
     animation notification 0.2s ease-out
-    font-size 0.8em
+    font-size 0.8rem
     position absolute
     color negative-remark-fg-color
     li
@@ -221,54 +248,55 @@ input
 
 @keyframes notification
     0%
-        transform translate(0, 2em)
+        transform translate(0, 2rem)
         opacity 0
     100%
         transform none
         opacity 1
 
-.entries
-    float none
-    display: inline-block
-    padding 0.5em
-    h2
-        display inline-block
-        margin 0
-    .info
-        display block
-        font-size 0.7em
-    .seeMeta
-        font-size 0.9em
-        margin 0.5em
-
 .entry, .entries
-    padding 1em
+    display: inline-block
+    padding 1rem
     position relative
     vertical-align top
     h2
-        display inline-block
-        font-size 2em
-        margin 0.5em 0.1em
+        display inline
+        font-size 1.3rem
+        margin 0.5rem
     h3
         display inline-block
-        font-size 1.5em
-        margin 0.2em 0px
+        font-size 1.5rem
+        margin 0.2rem 0px
     .info
         display block
-        font-size 0.9em
+        font-size 0.9rem
 
 .inline-icon
     float left
-    font-size 1em
-    line-height 1.3em
+    font-size 1rem
+    line-height 1.3rem
     padding 0
     text-align center
     vertical-align middle
-    width 1.5em
+    width 1.5rem
 
-.metadata
-    dt
+.pagination
+    clear both
+    display block
+    float right
+    margin 1rem 2rem
+    a
+        background-color dark-button-bg-color
+        border-radius round-factor * 0.15rem
+        color dark-button-fg-color
+        display inline-block
+        font-size 0.9rem
+        margin 0 0.3rem
+        padding 0.4rem 0.5rem
+    .current
+        font-size 1rem
         font-weight bold
+        margin 0.3rem
 
 img.thumbnail
     max-width 200px
@@ -276,14 +304,14 @@ img.thumbnail
 
 .success
     color positive-remark-fg-color 
-    max-width 40em
+    max-width 40rem
     text-align center
     span
         display block
         text-align left
     button
         display inline-block
-        margin-top 1.5em
+        margin-top 1.5rem
 
 .working
     overflow hidden
@@ -291,8 +319,8 @@ img.thumbnail
         display block
         height 0
         left 50%
-        max-width 3.5em
-        min-width 1em
+        max-width 3.5rem
+        min-width 1rem
         position absolute
         top 50%
         width 100%
@@ -319,6 +347,7 @@ img.thumbnail
         position absolute
         top 0px
         width 100%
+        z-index 2
 
 @keyframes spin
     0% 
@@ -361,7 +390,7 @@ img.thumbnail
 #homeHeader
     background home-header-bg
     height home-header-height
-    margin-bottom 1em
+    margin-bottom 1rem
     text-align center
     width 100%
     > #logo
@@ -378,7 +407,7 @@ img.thumbnail
     display block
     width 90%
 
-@media screen and (max-width: 55em)
+@media screen and (max-width: 55rem)
     #wrapper
         width 100%
     header
@@ -387,7 +416,7 @@ img.thumbnail
 
 /* Used by templates to hide some stuff by default */
 .hidden
-    display none
+    display none!important
 
 dl.hideCaption
     vertical-align top
@@ -416,61 +445,62 @@ dl.hideCaption
 #userProfile
     position relative
     h1
+        font-size 1.5rem
         margin 0
     span
         display block
     dl
-        font-size 0.9em
-        line-height 1.3em
-        margin 0 0 1em
+        font-size 0.9rem
+        line-height 1.3rem
+        margin 0 0 1rem
         width 120%
     form
         span
             display inline-block
-            margin 0.5em auto
-            max-width 25em
+            margin 0.5rem auto
+            max-width 25rem
             text-align center
             width 45%
             label
                 display inline-block
-                margin-left -12em
+                margin-left -12rem
                 text-align right
-                width 10em
+                width 10rem
             input
                 display inline-block
                 max-width 100%
-                width 15em
+                width 15rem
 
-            @media screen and (max-width: 35em)
+            @media screen and (max-width: 35rem)
                 display block
                 width 100%
-            @media screen and (max-width: 71.99em)
+            @media screen and (max-width: 71.99rem)
                 text-align left
-                max-width 15em
+                max-width 15rem
                 label
                     display block
                     margin-left 0
                     text-align left
 
     .gravatar
-        font-size 0.8em
+        font-size 0.8rem
         text-align center
         dl, dt, dd
             margin 0
             text-indent none
             width 100%
         img
-            border-radius round-factor*0.2em
+            border-radius round-factor*0.2rem
             max-width 100%
             width 237px
-        @media screen and (max-width: 30em)
+        @media screen and (max-width: 30rem)
             float left
     .user
-        font-size 1.5em
+        font-size 1.5rem
         font-weight bold
         line-height 100%
     .name 
-        margin 0 0 0.7em 0
+        margin 0 0 0.7rem 0
     .email
         &:before
             icon('mail')
@@ -488,15 +518,20 @@ dl.hideCaption
         float none
         position absolute
         text-align left
-        .edit
+        button
             background-color dark-button-bg-color
             border none
             color dark-button-fg-color
+            height 2em
+            width 6rem
 
 #work
     position relative
     header
-        padding 0.5em
+        height 2.5rem
+        position relative
+        h1
+            line-height 2.5rem
     span
         display block
     .actions
@@ -507,40 +542,43 @@ dl.hideCaption
     #workDetails
         position relative
         dl
+            font-size 0.7rem
             margin 0
         dt, dd
             font-size 0.7rem
             font-weight normal
         form
             span
-                margin 0.5em auto
-                max-width 25em
+                display block
+                margin 0.5rem auto
+                max-width 25rem
                 text-align left
                 label
                     display inline-block
                     text-align right
                     vertical-align top
-                    width 10em
+                    width 10rem
+                label.checkbox
+                        width 1em
                 input, textarea
                     display inline-block
                     max-width 100%
+                    padding 0.5em
                     text-align left
-                    width 15em
-                textarea
-                    font-size 1.17em
+                    width 13rem
 
                 #input-public
                     width auto
 
-                @media screen and (max-width: 35em)
-                    width 15em
+                @media screen and (max-width: 35rem)
+                    width 15rem
                     label
                         text-align left
                         width auto
                     input, textarea
-                        width 20em
+                        width 20rem
         h1
-            font-size 2em
+            font-size 2rem
             margin 0
         header
             background none
@@ -556,26 +594,36 @@ dl.hideCaption
                 display inline-block
                 &:after
                     @extend .inline-icon;
-                    font-size 0.9em
+                    font-size 0.9rem
             .title
                 display inline-block
         .details
             text-align left
             padding 0
             span:not(:last-child)
-                margin-right 0.4em
+                margin-right 0.4rem
             span, dt, dd, dl
                 display inline-block
                 vertical-align middle
             dt, dd
                 margin 0
             .gravatar img
-                width 2em
+                width 2rem
         .edit
             float right
             background-color dark-button-bg-color
             border none
             color dark-button-fg-color
+            height 1.5rem
+            width 6rem
+    aside
+        .delete
+            height 1.5rem
+            width 6rem
+
+    #workAnnotations
+        dt
+            font-weight bold
     #workSources
         span, dl
             word-break break-all
@@ -589,18 +637,108 @@ dl.hideCaption
             word-break break-all
         article
             display inline-block
-            header
-                 0.1em 0.5em
-        .entriesList
-            margin -1em
-
-#workForm
-    form
-        width 100%
-        max-width 25em
+            margin -0.3rem 0.7rem 0.3rem 0.7rem
+            padding 0
+            text-align center
+        .public:after
+            icon('eye', 0.7rem)
+        .private:after
+            icon('lock', 0.7rem)
+        .public:after, .private:after
+            display inline
+            vertical-align top
+        .added_by
+            display block
+            line-height 0.9em
+            margin -0.2rem 0
+    dl
         span
             display block
-            margin 0.5em auto
+            line-height 1em
+            margin 0.1em
+    .entry
+        background-color app-header-color
+        background-clip padding-box
+        border solid 1rem transparent
+        label.checkbox:before
+            border-color neutral-fg-color
+            top 0.3rem
+            position absolute
+            left 0.3rem
+    #actions, #filters
+        button
+            width 4rem
+            height 1.5rem
+
+#browseWorks
+    position relative
+    dt, dd
+        display inline-block
+        font-size 0.8rem
+        margin-left 0
+    header
+        background-color none
+        height 4em
+        margin 0.5em
+        .batchSelectItem
+            transform scale(1.5)
+
+        h2
+            display inline-block
+            margin -0.3rem 0.7rem 0.3rem 0.7rem
+            padding 0
+            text-align center
+        .public:after
+            icon('eye', 0.7rem)
+        .private:after
+            icon('lock', 0.7rem)
+        .public:after, .private:after
+            display inline
+            vertical-align top
+        .added_by
+            display block
+            line-height 0.9em
+            margin -0.2rem 0
+    dl
+        span
+            display block
+            line-height 1em
+            margin 0.1em
+    .entry
+        background-color app-header-color
+        background-clip padding-box
+        border solid 1rem transparent
+        label.checkbox:before
+            border-color neutral-fg-color
+            top 0.3rem
+            position absolute
+            left 0.3rem
+    #actions, #filters
+        button
+            width 4rem
+            height 1.5rem
+
+    .delete
+        display block
+        height 1.1rem
+        margin 0 0 0.3rem 0.3rem
+        right 0.3rem
+        position absolute
+        top 0.3rem
+        width 1.1rem
+    .metadata
+        margin 1em 0 0 0
+    #works
+        clear both
+        padding 0
+
+#createWorkForm
+    form
+        width 100%
+        max-width 25rem
+        span
+            display block
+            margin 0.5rem auto
             width 45%
             label
                 display inline-block 
@@ -608,9 +746,9 @@ dl.hideCaption
                 display inline-block
                 max-width 100%
                 text-align left
-                width 15em
+                width 15rem
             textarea
-                font-size 1.17em
+                font-size 1.17rem
 
             #input-public
                 display inline-block

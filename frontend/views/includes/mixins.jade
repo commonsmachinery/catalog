@@ -8,3 +8,7 @@ mixin defTerm(term, caption, className)
                     | #{term}
                 if block
                     block
+
+
+mixin pageNav(url, rel, caption)
+    a(class=attributes.class data-goto=rel href=url): | #{caption}

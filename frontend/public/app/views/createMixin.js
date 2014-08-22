@@ -51,6 +51,7 @@ define(['jquery', 'underscore', 'util'],
                     self.$('.actions').prop('disabled', false);
                 });
                 this.model.save(null, {
+                    wait: true,
                     success: function(model) {
                         console.debug('create success: %s', model.id);
 
