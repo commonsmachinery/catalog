@@ -181,7 +181,7 @@ var populate = function(object, include, references)
         include = include.split(',');
         // By picking the references we ensure that we only process the
         // known fields and only each field once
-        incRefs = _.pick(references, include)
+        incRefs = _.pick(references, include);
     }
 
     var field;

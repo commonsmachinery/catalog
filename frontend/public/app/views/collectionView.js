@@ -80,9 +80,12 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
 
         onReset: function onReset(coll){
             this.empty();
+            var models = coll.models;
             var i;
-            for(i in coll.models){
-                this.onAdd(coll.models[i]);
+            for(i in models){
+                if(models.hasOwnProperty(i)){
+                    this.onAdd(coll.models[i]);
+                }
             }
         },
 
@@ -91,8 +94,10 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
             var i;
             var views = this._items;
             for(i in views){
-                views[i].remove();
-                delete views[i];
+                if(views.hasOwnProperty(i)){
+                    views[i].remove();
+                    delete views[i];
+                }
             }
         },
 
