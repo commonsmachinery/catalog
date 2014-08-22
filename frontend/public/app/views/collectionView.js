@@ -82,7 +82,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util'],
             this.empty();
             var models = coll.models;
             var len = models.length;
-            var i;
+            var i=0;
             for(i; i < len; i++){
                 this.onAdd(coll.models[i]);
             }
