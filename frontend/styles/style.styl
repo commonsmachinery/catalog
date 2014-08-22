@@ -378,6 +378,14 @@ img.thumbnail
     float none
     margin auto
     text-align left
+    header
+        height auto
+        margin 1.5rem 0
+        min-height 0
+        text-align middle
+        h1
+            font-size 0.9rem
+            margin 0
 
 #homeHeader
     background home-header-bg
@@ -417,6 +425,22 @@ dl.hideCaption
         visibility hidden
     dd
         margin-left 0
+
+#media
+    dl span
+        display block
+    header
+        padding 0.5em
+    #mediaDetails
+        dl span
+            display inline-block
+            margin 0.2em
+        header
+            background none
+            padding 0
+            h1
+                font-size 1.2rem
+                text-align left
 
 #userProfile
     position relative
@@ -558,6 +582,7 @@ dl.hideCaption
             margin 0
         header
             background none
+            padding 0
             text-align left
             .public
                 &:after
@@ -610,11 +635,40 @@ dl.hideCaption
             font-size 1.2rem
             margin-bottom 0.5em
             word-break break-all
-        ul
+        article
+            display inline-block
+            margin -0.3rem 0.7rem 0.3rem 0.7rem
             padding 0
-            li
-                display inline-block
-                list-style-type none
+            text-align center
+        .public:after
+            icon('eye', 0.7rem)
+        .private:after
+            icon('lock', 0.7rem)
+        .public:after, .private:after
+            display inline
+            vertical-align top
+        .added_by
+            display block
+            line-height 0.9em
+            margin -0.2rem 0
+    dl
+        span
+            display block
+            line-height 1em
+            margin 0.1em
+    .entry
+        background-color app-header-color
+        background-clip padding-box
+        border solid 1rem transparent
+        label.checkbox:before
+            border-color neutral-fg-color
+            top 0.3rem
+            position absolute
+            left 0.3rem
+    #actions, #filters
+        button
+            width 4rem
+            height 1.5rem
 
 #browseWorks
     position relative
@@ -624,6 +678,8 @@ dl.hideCaption
         margin-left 0
     header
         background-color none
+        height 4em
+        margin 0.5em
         .batchSelectItem
             transform scale(1.5)
 

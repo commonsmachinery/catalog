@@ -12,5 +12,5 @@
 
     "unused": false,
     "node": true,
-    "predef": [ "describe", "it" ]
+    "predef": [ "describe", "it", "-Promise" ]
 }
