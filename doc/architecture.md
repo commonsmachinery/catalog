@@ -1,6 +1,6 @@
 
-Catalog architecture
-====================
+Catalog server architecture
+===========================
 
 The architecture of the catalog is a compromise between something that
 can be built reasonably quickly, but still easily add additional
@@ -26,9 +26,13 @@ Overview
 A frontend handles all requests from clients or third-party users,
 relying on a set of modules to handle each query.
 
-These modules typically consist of:
+There can be more than one frontend, sharing some common library code
+(e.g. the implementation of REST endpoint handlers) but each having
+its own routing and thus its own functionality.
 
-* An interface for the frontend to the stored data, containing any
+The catalog modules typically consist of:
+
+* An interface for the frontends to the stored data, containing any
   business logic
 
 * A data model, stored as a set of collections in a MongoDB database
@@ -38,10 +42,12 @@ These modules typically consist of:
 
 Each module can be tested in isolation.
 
-The backend tasks share common infrastructure to handle event
-processing, so the tasks can focus on the business logic.
+The backend tasks should focus on the business logic, relying on
+common functionality in backend libraries and the event infrastructure.
 
-An event module sits between the frontend and the backend.
+An event transfer component is responsible for persisting events from
+the modules into a long-term event storage, as well as for sending
+them to the message queues that the backend tasks listen to.
 
 
 Data
@@ -64,8 +70,8 @@ metadata between works.
 Events
 ------
 
-All commands in the core module generates events, which are fed into
-the other modules to update their data models.
+All commands in the core module generates events, which background
+tasks in the other modules can listen to update their own data models.
 
 Event sourcing is not used now, but the design is intended to enable
 the core module to be rewritten later to use it.  For now, the update
@@ -75,16 +81,44 @@ emitting secondary.
 The events also serve the purpose of an audit log.
 
 
-Catalog components
-==================
+Server components
+=================
 
-Frontend
---------
+Frontends
+---------
 
-The frontend is responsible for providing an interface to the catalog
-for the surrounding world.  The web pages and the REST API are
-overlaid on the same URIs, using the HTTP Accept header to determine
-what to respond.
+There are several server frontends providing different web and REST
+interfaces to the catalog.
+
+They share some common functionality, such as web page view mixins and
+REST endpoint implementations.  The routing that collects the
+functionality into a single HTTPS endpoint, and thus controls what can
+be done through that endpoint, is unique to each frontend.
+
+In a typical deployment the admin interface would be deployed on
+different servers to the main catalog endpoint.  The index-only
+endpoint can be omitted, or in larger setups a load balancing proxy
+layer can route public search requests to dedicated index endpoint
+servers while sending the rest of the catalog request to the main
+frontend servers.
+
+Since the frontends are responsible for facing the world, they are
+also responsible for creating the URIs that identify the resources
+managed by the catalog.  These URIs include the MongoDB ObjectIDs that
+identify the objects in the main database.  They also translate from
+the internal object representation into an extended structure that
+better supports web apps.
+
+
+### Catalog frontend
+
+The main catalog frontend provide access over web pages and a REST API
+to the full functionality of the catalog.  This includes both
+anonymous browsing of the public catalog content as well as allowing
+access to private content and modification of it after logging in.
+
+The web pages and the REST API are overlaid on the same URIs, using
+the HTTP Accept header to determine what to respond.
 
 A typical request would first check with the auth module that the user
 isn't locked and find out what groups the user belongs to.  The core
@@ -92,14 +126,22 @@ module is then called, with this information, to perform any updates.
 To generate a response, data from the core module is used, potentially
 helped by the view and search modules.
 
-Since the frontend is responsible for facing the world, it is also
-responsible for creating the URIs that identify the resources managed
-by the catalog.  These URIs include the MongoDB ObjectIDs that
-identify the objects in the main database.
+
+### Index frontend
+
+This frontend only supports looking up public resources based on URIs
+or hashes, redirecting to where further information can be found about
+the resource.
+
+This will be the first frontend to be built to support the initial
+elog.io deployment, and as such it will also incorporate a few web
+pages to present resource information.  They should later be replaced
+by simple redirects to the catalog frontend, allowing the index to be
+completely separated from the catalog and potentially spanning
+multiple catalogs or other sites.
 
 
-Admin
------
+### Admin frontend
 
 The admin interface is a separate small web app, which allows site
 administrators to manage users and get access to the catalog data in a
@@ -124,14 +166,21 @@ Auth
 The auth module handles all aspects of user authentication and
 authorization to access the system as a whole.  Authorization to
 access specific data objects are handled by the core module, based on
-identity and group membership information provided by the auth module
-via the frontend.
+identity information provided by the auth module via the frontend.
 
 The auth module generates security-related events, such as logins,
 failed accesses, account locks etc.
 
 Backend tasks consume these events to e.g. lock accounts after
 repeatedly failed accesses.
+
+
+Audit
+-----
+
+The event log also functions as an audit log on all changes made to
+data in the system and other security events.  The audit module
+provide access to these logs for the frontends.
 
 
 View
@@ -154,7 +203,8 @@ Search
 ------
 
 The search module supports locating objects based on URIs or full-text
-searches, relying on MongoDB indexes.
+searches, relying on MongoDB indexes and a HmSearch hash lookup
+database.
 
 Most of the work will be done by background tasks that updates the
 search database based on core events.
@@ -165,6 +215,8 @@ Event
 
 The event module handles the details around event processing to let
 the other modules easily generate and consume events.
+
+### Event generation
 
 Events are generated either as part of a command execution (with
 `command.execute`) or as standalone events (with `command.logEvent`).
@@ -180,23 +232,44 @@ anyway fails, the events are logged to a file instead and an alarm
 raised.  This should trigger a lock on the entire system to prevent
 further modifications to the module data.
 
-A backend process in the event module is responsible for following
-these capped collections with MongoDB tailable cursors, copying the
-event batches into an event log collection.  If this job should stop
-or not catch up, a watchdog function will stop further data
-modifications until the job is up to speed again.
+### Transfer and logging
 
-After an event batch is written to the collection, each event in the
-batch is published on a ZeroMQ PUB socket.  Other backend tasks can
-use `event.Subscriber` to listen to these events and trigger code.
-For best-effort processing this is sufficent, but it is by its nature
-not a reliable transport.  Tasks that must process all events in the
-correct order can only use this as a trigger mechanism, but must query
-the event log to be sure to recieve all events in the right order.
-This will be handled by `event.Subscriber` too.
+A backend event transfer process is responsible for following these
+capped collections with MongoDB tailable cursors, copying the event
+batches into an event log collection.  If this job should stop or not
+catch up, a watchdog function will stop further data modifications
+until the job is up to speed again.
 
 The event log is considered an archival log, partitioned on years or
 even months to avoid building up too big collections.
+
+### Queues and subscriptions
+
+After an event batch is written to the collection, each event in the
+batch will be sent to the backend tasks that subscribes to the event
+type.
+
+This process is important but not critical to the operation of the
+catalog.  It is sufficient that it can be restarted after any failure
+to ensure that all events are processed eventually, but not
+necessarily immediately.  In the meantime, functions such as search
+might be degraded by not returning fully up-to-date results.
+
+The draft solution is to use RabbitMQ with its support for persistent
+queues, event acknowledgement, and synchronisation between multiple
+queue clients.  It would be a single RabbitMQ instance, avoiding the
+complexity of mirrored setups, instead putting effort into tools to
+restart the event processing in case of failure.  Similarly while
+persistent queues will be used, loss of the underlying storage can
+also be handled by the restart tools after getting a new system up and
+running.  This will avoid most of the operational complexities of
+running a high-reliability event broker.
+
+Each task will have its own queue on a topic exchange defining the
+event subscriptions that are relevant to the task.  Typically more
+than one instance of the task would be run, using different event
+acknowledgement and exclusitivity models depending on if parallel
+event processing is possible or not for the task logic.
 
 
 Technology
@@ -217,9 +290,10 @@ Frontend
 Backend tasks
 -------------
 
-To be decided.  Likely Node, to be able to share libraries with the
-frontend.  Either a homegrown simple event-driven task framework, or a
-suitable library.
+Primarily Node, to be able to share libraries and data models with the
+modules used by the frontend.  A plain AMQP library is probably
+sufficient to drive the tasks, but some more sophisticated
+event-driven task library might be involved later.
 
 
 Databases
@@ -233,7 +307,7 @@ datasets.
 Messaging
 ---------
 
-ZeroMQ, or MongoDB capped collection with tailing cursors.
+RabbitMQ in single-node mode without any high-reliability requirements.
 
 
 Caching
