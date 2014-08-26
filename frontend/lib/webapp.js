@@ -11,6 +11,7 @@ var debug = require('debug')('catalog:frontend:webapp'); // jshint ignore:line
 
 // External libs
 var express = require('express');
+var _ = require('underscore');
 
 // Common libs
 var gravatar = require('../../lib/gravatar');
@@ -33,6 +34,7 @@ exports.init = function init(app) {
     app.locals.gravatarEmailURL = gravatar.emailURL;
     app.locals.gravatarHashURL = gravatar.hashURL;
     app.locals.bootstrapData = bootstrapData;
+    app.locals._ = _;
 };
 
 var router = exports.router = express.Router();
