@@ -25,11 +25,11 @@ mixin mediaAnnotations(showEmpty)
     if showEmpty
         - empty = makeEmpty()
 
-    - var fields = empty || _.pluck(work.annotations, 'property')
+    - var fields = empty || _.pluck(media.annotations, 'property')
 
     section
         header
-            h1 Annotations
+            h2 Annotations
 
         dl.metadata
             +printMetadata(fields)

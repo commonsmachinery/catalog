@@ -107,6 +107,11 @@ h2
     color h2-font-color || content-color
     font-family h2-font || main-font
     font-size 1.2rem
+h3
+    color h2-font-color || content-color
+    font-family h2-font || main-font
+    font-size 1rem
+
 
 header
    background-color app-header-color
@@ -377,14 +382,23 @@ img.thumbnail
     display block
     float none
     margin auto
+    position relative
     text-align left
+    article header
+        margin 0 0 0.5em 0
     header
+        background none
         height auto
-        margin 1.5rem 0
-        min-height 0
-        text-align middle
+        margin 2em 0 0 0
         h1
-            font-size 0.9rem
+            font-size 2rem
+            margin 0
+        h2
+            font-size 1.3rem
+            font-weight normal
+            text-align left
+        h3
+            font-size 1rem
             margin 0
 
 #homeHeader
@@ -426,21 +440,44 @@ dl.hideCaption
     dd
         margin-left 0
 
+#annotations
+    h3
+        background-color app-header-color
+        font-size 0.9rem
+        padding 0.5em
+    dt
+        display inline
+        font-family monospace
+        font-size 0.8rem
+        font-weight bold
+        text-align right
+        width 40%
+    dd
+        display inline
+        margin-left 0.5rem
+        width 60%
+    pre
+        display inline
+    .metadata
+        display block
+    .properties
+        @media screen and (min-width: 45rem)
+            -moz-column-count 2
+            -webkit-column-count 2
+            column-count 2
+
+
 #media
     dl span
         display block
-    header
-        padding 0.5em
     #mediaDetails
         dl span
             display inline-block
             margin 0.2em
-        header
-            background none
-            padding 0
-            h1
-                font-size 1.2rem
-                text-align left
+        h1
+            text-align left
+    #mediaAnnotations
+        @extend #annotations
 
 #userProfile
     position relative
@@ -471,7 +508,7 @@ dl.hideCaption
                 max-width 100%
                 width 15rem
 
-            @media screen and (max-width: 35rem)
+            @media screen and (max-width: 34.99rem)
                 display block
                 width 100%
             @media screen and (max-width: 71.99rem)
@@ -527,18 +564,8 @@ dl.hideCaption
 
 #work
     position relative
-    header
-        height 2.5rem
-        position relative
-        h1
-            line-height 2.5rem
     span
         display block
-    .actions
-        position absolute
-        right 0.3rem
-        text-align right
-        top 0.3rem
     #workDetails
         position relative
         dl
@@ -577,9 +604,6 @@ dl.hideCaption
                         width auto
                     input, textarea
                         width 20rem
-        h1
-            font-size 2rem
-            margin 0
         header
             background none
             padding 0
@@ -617,25 +641,29 @@ dl.hideCaption
             height 1.5rem
             width 6rem
     aside
+        .actions
+            position absolute
+            right 0.3rem
+            text-align right
+            top 0.3rem
         .delete
             height 1.5rem
             width 6rem
 
     #workAnnotations
-        dt
-            font-weight bold
+        @extend #annotations
     #workSources
         span, dl
             word-break break-all
         dd, dt
             font-size 0.8rem
             display inline
-        h2
+        h3
             display block
             font-size 1.2rem
             margin-bottom 0.5em
             word-break break-all
-        article
+        &>article
             display inline-block
             margin -0.3rem 0.7rem 0.3rem 0.7rem
             padding 0
@@ -682,7 +710,6 @@ dl.hideCaption
         margin 0.5em
         .batchSelectItem
             transform scale(1.5)
-
         h2
             display inline-block
             margin -0.3rem 0.7rem 0.3rem 0.7rem

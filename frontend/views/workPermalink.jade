@@ -10,7 +10,7 @@ mixin workSourceItem(source, empty)
     article.entry(id="sources-#{empty || source_work.id}", class="grid-25 tablet-grid-33 mobile-grid-100"): article
     
         header
-            h2: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
+            h3: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
 
             // button.remove -
 
@@ -57,14 +57,14 @@ mixin workAnnotations(showEmpty)
 
     section
         header
-            h1 Metadata
+            h2 Metadata
         dl.metadata
             +printMetadata(fields)
 
 mixin workSources()
     section
         header
-            h1 Sources
+            h2 Sources
         div.entriesList
             for i in work.sources
                 +workSourceItem(i)
@@ -72,7 +72,7 @@ mixin workSources()
 mixin workMedia()
     section
         header
-            h1 Media
+            h2 Media
         ul
             for i in work.media
                 li: a(href=i.href) #{i.id}

@@ -44,67 +44,70 @@ mixin printMetadata(fields)
     - var array
     section
         header: h3 Identification Data
+        .properties
 
-        - array = _.where(fields, {propertyName : 'identifier'})
-        for i in array
-            +defTerm(null , 'Identifier')(data-bind="identifier")
-                a(href=i.identifierLink) #{i.identifierLink}
+            - array = _.where(fields, {propertyName : 'identifier'})
+            for i in array
+                +defTerm(null , 'Identifier')(data-bind="identifier")
+                    a(href=i.identifierLink) #{i.identifierLink}
 
-        - array = _.where(fields, {propertyName : 'title'})
-        for i in array
-            +defTerm(null, 'Title')(data-bind='title')
-                +linkOrPlain(i.typeLink)
-                    |  (#{i.typeLabel})
+            - array = _.where(fields, {propertyName : 'title'})
+            for i in array
+                +defTerm(null, 'Title')(data-bind='title')
+                    +linkOrPlain(i.typeLink)
+                        |  (#{i.typeLabel})
 
-        - array = _.where(fields, {propertyName : 'language'})
-        for i in array
-            +defTerm(null, 'Language')(data-bind='language')
-                +linkOrPlain(i.languageLink)
-                    | #{i.languageLabel}
+            - array = _.where(fields, {propertyName : 'language'})
+            for i in array
+                +defTerm(null, 'Language')(data-bind='language')
+                    +linkOrPlain(i.languageLink)
+                        | #{i.languageLabel}
 
-        - array = _.where(fields, {propertyName : 'locator'})
-        for i in array
-            +defTerm(null, 'Link')(data-bind='locator')
-                a(href="#{i.locatorLink}") #{i.locatorLink}
+            - array = _.where(fields, {propertyName : 'locator'})
+            for i in array
+                +defTerm(null, 'Link')(data-bind='locator')
+                    a(href="#{i.locatorLink}") #{i.locatorLink}
 
     section
         header: h3 Creation Data
+        .properties
 
-        - array = _.where(fields, {propertyName : 'contributor'})
-        for i in array
-            +defTerm(null, 'Contributor')(data-bind="contributor")
-                +linkOrPlain(i.contributorLink)
-                    | #{i.contributorLabel}
-                +linkOrPlain(i.roleLink)
-                    |  (#{i.roleLabel})
+            - array = _.where(fields, {propertyName : 'contributor'})
+            for i in array
+                +defTerm(null, 'Contributor')(data-bind="contributor")
+                    +linkOrPlain(i.contributorLink)
+                        | #{i.contributorLabel}
+                    +linkOrPlain(i.roleLink)
+                        |  (#{i.roleLabel})
 
-        - array = _.where(fields, {propertyName : 'creator'})
-        for i in array
-            +defTerm(null, 'Creator')(data-bind="creator")
-                +linkOrPlain(i.creatorLink)
-                    | #{i.creatorLabel}
-                +linkOrPlain(i.roleLink)
-                    |  (#{i.roleLabel})
+            - array = _.where(fields, {propertyName : 'creator'})
+            for i in array
+                +defTerm(null, 'Creator')(data-bind="creator")
+                    +linkOrPlain(i.creatorLink)
+                        | #{i.creatorLabel}
+                    +linkOrPlain(i.roleLink)
+                        |  (#{i.roleLabel})
 
-        - array = _.where(fields, {propertyName : 'MADate'})
-        for i in array
-            - var caption
-                if i.typeLink && i.typeLabel
-                    - caption = '<a href="'+ i.typeLink +'">'+ i.typeLabel +' date </a>'
-                else if i.typeLabel
-                    - caption = i.typeLabel +' date'
-            +defTerm(i.date, caption, ' ')(data-bind="mdate")
+            - array = _.where(fields, {propertyName : 'MADate'})
+            for i in array
+                - var caption
+                    if i.typeLink && i.typeLabel
+                        - caption = '<a href="'+ i.typeLink +'">'+ i.typeLabel +' date </a>'
+                    else if i.typeLabel
+                        - caption = i.typeLabel +' date'
+                +defTerm(i.date, caption, ' ')(data-bind="mdate")
 
-        - array = _.where(fields, {propertyName : 'location'})
-        for i in array
-            +defTerm(null, 'Location')(data-bind="location")
-                +linkOrPlain(i.locationLink)
-                    | #{i.locationLabel || ''} (#{i.latitude +','+ i.longitude +','+ i.altitude})
-                +linkOrPlain(i.coordinateSystemLink)
-                    |  #{i.coordinateSystemLabel}
+            - array = _.where(fields, {propertyName : 'location'})
+            for i in array
+                +defTerm(null, 'Location')(data-bind="location")
+                    +linkOrPlain(i.locationLink)
+                        | #{i.locationLabel || ''} (#{i.latitude +','+ i.longitude +','+ i.altitude})
+                    +linkOrPlain(i.coordinateSystemLink)
+                        |  #{i.coordinateSystemLabel}
 
-        section
-            header: h3 Content Description Data
+    section
+        header: h3 Content Description Data
+        .properties
 
             - array = _.where(fields, {propertyName : 'description'})
             for i in array
@@ -133,8 +136,9 @@ mixin printMetadata(fields)
                     +linkOrPlain(i.ratingSystemLink)
                         |  (#{i.ratingSystemLabel})
 
-        section
-            header: h3 Copyright Data
+    section
+        header: h3 Copyright Data
+        .properties
 
             - array = _.where(fields, {propertyName : 'copyright'})
             for i in array
@@ -151,8 +155,9 @@ mixin printMetadata(fields)
                     +linkOrPlain(i.typeLink)
                         |  (#{i.typeLabel})
 
-        section
-            header: h3 Relational Data
+    section
+        header: h3 Relational Data
+        .properties
 
             - array = _.where(fields, {propertyName : 'relation'})
             for i in array
@@ -167,8 +172,9 @@ mixin printMetadata(fields)
                     +linkOrPlain(i.collectionLink)
                         | #{i.collectionLabel}
 
-        section
-            header: h3 Distribution Data
+    section
+        header: h3 Distribution Data
+        .properties
 
             - array = _.where(fields, {propertyName : 'publisher'})
             for i in array
@@ -184,8 +190,9 @@ mixin printMetadata(fields)
                     +linkOrPlain(i.classificationSystemLink)
                         |  (#{href=i.classificationSystemLabel})
 
-        section
-            header: h3 Fragments
+    section
+        header: h3 Fragments
+        .properties
 
             - array = _.where(fields, {propertyName: 'fragment'})
             for i in array
@@ -199,8 +206,9 @@ mixin printMetadata(fields)
                 +defTerm(null, 'Named fragment')(data-bind='namedFragment')
                     a(href=i.identifier) #{i.label}
 
-        section
-            header: h3 Technical Data
+    section
+        header: h3 Technical Data
+        .properties
 
             - array = _.where(fields, {propertyName: 'frameSize'})
             for i in array
