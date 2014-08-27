@@ -1,13 +1,26 @@
 
 mixin defTerm(term, caption, className)
     if term != null || block
-        span(class="#{className || caption.toLowerCase().replace(' ', '_')}")
-            dt #{caption}
+        //- ToDo: remove unnecessary classes, switch them to data-bind
+        if !attributes.class
+            if !className
+                - attributes.class = caption.toLowerCase().replace(' ', '_')
+            else
+                - attributes.class = className
+
+        - var span = '<span'
+
+        for val, key in attributes
+            - span = span +' '+ key +'="'+ val +'"'
+        - span = span + '>'
+        != span
+            dt: != caption
             dd 
                 if term
                     | #{term}
                 if block
                     block
+        != '</span>'
 
 
 mixin pageNav(url, rel, caption)

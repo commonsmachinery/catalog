@@ -1,0 +1,256 @@
+
+- function makeEmpty(){
+    - var empty = [];
+    - empty[0] = { propertyName: 'identifier', identifierLink: '-' }
+    - empty[1] = {propertyName: 'title', titleLabel: '-', typeLabel: '-', typeLink: '-'}
+    - empty[2] = { propertyName: 'language', languageLabel: '-', languageLink: '-' }
+    - empty[3] = { propertyName: 'locator', locatorLink: '-' }
+    - empty[4] = { propertyName: 'contributor', contributorLink: '-', contributorLabel: '-', roleLabel: '-', roleLink: '-'}
+    - empty[5] = {propertyName: 'creator', creatorLink: '-', creatorLabel: '-', roleLabel: '-', roleLink: '-' }
+    - empty[6] = {propertyName: 'MADate', date: '-', typeLabel: '-', typeLink: '-'}
+    - empty[7] = {propertyName: 'location', latitude: '-', longitude: '-', altitude: '-', coordinateSystemLink: '-', coordinateSystemLabel: '-', locationLink: '-', locationLabel: '-'}
+    - empty[8] = {propertyName: 'description', descriptionLabel: '-'}
+    - empty[9] = {propertyName: 'keyword', keywordLabel: '-', keywordLink: '-'}
+    - empty[10] = {propertyName: 'genre', genreLink: '-', genreLabel: '-'}
+    - empty[11] = {propertyName: 'rating', ratingValue: '-', ratingSystemLink: '-', ratingSystemLabel: '-', maximum: '-', minimum: '-'}
+    - empty[12] = {propertyName: 'relation', targetLink: '-', targetLabel: '', typeLabel: '-', typeLink: '-'}
+    - empty[13] = {propertyName: 'collection', collectionLink: '-', collectionLabel: '-'}
+    - empty[14] = {propertyName: 'copyright', copyrightLabel: '-', holderLink: '-', holderLabel: '-'}
+    - empty[15] = {propertyName: 'policy', statementLink: '-', statementLabel: '-', typeLink: '-', typeLabel: '-'}
+    - empty[16] = {propertyName: 'publisher', publisherLink: '-', publisherLabel: '-'}
+    - empty[17] = {propertyName: 'targetAudience', audienceLink: '-', audienceLabel: '-', classificationSystemLink: '-', classificationSystemLabel: '-'}
+    - empty[18] = {propertyName: 'fragment', identifier: '-', roleLabel: '-', roleLink: '-'}
+    - empty[19] = {propertyName: 'namedFragment', identifier: '-', label: '-'}
+    - empty[20] = {propertyName: 'frameSize', width: '-', height: '-', unit: '-'}
+    - empty[21] = {propertyName: 'compression', compressionLink: '-', compressionLabel: '-'}
+    - empty[22] = {propertyName: 'duration', duration: '-'}
+    - empty[23] = {propertyName: 'format', formatLink: '-', formatLabel: '-'}
+    - empty[24] = {propertyName: 'samplingRate', samplingRate: '-'}
+    - empty[25] = {propertyName: 'frameRate', frameEate: '-'}
+    - empty[26] = {propertyName: 'averageBitRate', averageBitRate: '-'}
+    - empty[27] = {propertyName: 'numTracks', number: '-', typeString: '-'}
+    - empty[28] = {propertyName: 'metadataSource', sourceFormat: '-', metadataSource: '-'}
+    - return empty
+- }
+
+mixin linkOrPlain(link)
+    if link && block
+        a(href=link) 
+            block
+    else if block
+        block
+
+mixin printMetadata(fields)
+    - var array
+    section
+        header: h3 Identification Data
+        .properties
+
+            - array = _.where(fields, {propertyName : 'identifier'})
+            for i in array
+                +defTerm(null , 'Identifier')(data-bind="identifier")
+                    a(href=i.identifierLink) #{i.identifierLink}
+
+            - array = _.where(fields, {propertyName : 'title'})
+            for i in array
+                +defTerm(null, 'Title')(data-bind='title')
+                    +linkOrPlain(i.typeLink)
+                        |  (#{i.typeLabel})
+
+            - array = _.where(fields, {propertyName : 'language'})
+            for i in array
+                +defTerm(null, 'Language')(data-bind='language')
+                    +linkOrPlain(i.languageLink)
+                        | #{i.languageLabel}
+
+            - array = _.where(fields, {propertyName : 'locator'})
+            for i in array
+                +defTerm(null, 'Link')(data-bind='locator')
+                    a(href="#{i.locatorLink}") #{i.locatorLink}
+
+    section
+        header: h3 Creation Data
+        .properties
+
+            - array = _.where(fields, {propertyName : 'contributor'})
+            for i in array
+                +defTerm(null, 'Contributor')(data-bind="contributor")
+                    +linkOrPlain(i.contributorLink)
+                        | #{i.contributorLabel}
+                    +linkOrPlain(i.roleLink)
+                        |  (#{i.roleLabel})
+
+            - array = _.where(fields, {propertyName : 'creator'})
+            for i in array
+                +defTerm(null, 'Creator')(data-bind="creator")
+                    +linkOrPlain(i.creatorLink)
+                        | #{i.creatorLabel}
+                    +linkOrPlain(i.roleLink)
+                        |  (#{i.roleLabel})
+
+            - array = _.where(fields, {propertyName : 'MADate'})
+            for i in array
+                - var caption
+                    if i.typeLink && i.typeLabel
+                        - caption = '<a href="'+ i.typeLink +'">'+ i.typeLabel +' date </a>'
+                    else if i.typeLabel
+                        - caption = i.typeLabel +' date'
+                +defTerm(i.date, caption, ' ')(data-bind="mdate")
+
+            - array = _.where(fields, {propertyName : 'location'})
+            for i in array
+                +defTerm(null, 'Location')(data-bind="location")
+                    +linkOrPlain(i.locationLink)
+                        | #{i.locationLabel || ''} (#{i.latitude +','+ i.longitude +','+ i.altitude})
+                    +linkOrPlain(i.coordinateSystemLink)
+                        |  #{i.coordinateSystemLabel}
+
+    section
+        header: h3 Content Description Data
+        .properties
+
+            - array = _.where(fields, {propertyName : 'description'})
+            for i in array
+                +defTerm(i.descriptionLabel, 'Description')(data-bind='description')
+
+            - array = _.where(fields, {propertyName : 'keyword'})
+            for i in array
+                +defTerm(null, 'Tag')(data-bind='keyword')
+                    +linkOrPlain(i.keywordLink)
+                        | #{i.keywordLabel}
+
+            - array = _.where(fields, {propertyName : 'genre'})
+            for i in array
+                +defTerm(null, 'Genre')(data-bind='genre')
+                    +linkOrPlain(i.genreLink)
+                        | #{i.genreLabel}
+
+            - array = _.where(fields, {propertyName : 'rating'})
+            for i in array
+                +defTerm(null, 'Rating')(data-bind='rating')
+                    | #{i.ratingValue}
+                    if i.maximum && i.minimum
+                        | / #{i.minimum +' - '+ i.maximum}
+                    else if i.maximum
+                        | / #{i.maximum}
+                    +linkOrPlain(i.ratingSystemLink)
+                        |  (#{i.ratingSystemLabel})
+
+    section
+        header: h3 Copyright Data
+        .properties
+
+            - array = _.where(fields, {propertyName : 'copyright'})
+            for i in array
+                +defTerm(null, 'Copyright')(data-bind='copyright')
+                    pre #{i.copyrightLabel}
+                    +linkOrPlain(i.holderLink)
+                        |  (#{i.holderLabel})
+
+            - array = _.where(fields, {propertyName: 'policy'})
+            for i in array
+                +defTerm(null, 'Policy')(data-bind='policy')
+                    +linkOrPlain(i.statementLink)
+                        | #{i.statementLabel}
+                    +linkOrPlain(i.typeLink)
+                        |  (#{i.typeLabel})
+
+    section
+        header: h3 Relational Data
+        .properties
+
+            - array = _.where(fields, {propertyName : 'relation'})
+            for i in array
+                +defTerm(null, 'Relation')(data-bind='relation')
+                    a(href=i.targetLink) #{i.targetLabel || i.targetLink}
+                    +linkOrPlain(i.typeLink)
+                        |  (#{i.typeLabel})
+
+            - array = _.where(fields, {propertyName: 'collection'})
+            for i in array
+                +defTerm(null, 'Collection')(data-bind='collection')
+                    +linkOrPlain(i.collectionLink)
+                        | #{i.collectionLabel}
+
+    section
+        header: h3 Distribution Data
+        .properties
+
+            - array = _.where(fields, {propertyName : 'publisher'})
+            for i in array
+                +defTerm(null, 'Publisher')(data-bind='publisher')
+                    +linkOrPlain(i.publisherLink)
+                        | #{i.publisherLabel}
+
+            - array = _.where(fields, {propertyName : 'targetAudience'})
+            for i in array
+                +defTerm(null, 'Target audience')(data-bind='targetAudience')
+                    +linkOrPlain(i.audienceLink)
+                        | #{i.audienceLabel}
+                    +linkOrPlain(i.classificationSystemLink)
+                        |  (#{href=i.classificationSystemLabel})
+
+    section
+        header: h3 Fragments
+        .properties
+
+            - array = _.where(fields, {propertyName: 'fragment'})
+            for i in array
+                +defTerm(null, 'Fragment')(data-bind='fragment')
+                    a(href=i.identifier) #{i.identifier}
+                    +linkOrPlain(i.roleLink)
+                        |  (#{i.roleLabel})
+
+            - array = _.where(fields, {propertyName: 'namedFragment'})
+            for i in array
+                +defTerm(null, 'Named fragment')(data-bind='namedFragment')
+                    a(href=i.identifier) #{i.label}
+
+    section
+        header: h3 Technical Data
+        .properties
+
+            - array = _.where(fields, {propertyName: 'frameSize'})
+            for i in array
+                +defTerm(i.width + i.unit, 'Width')(data-bind:'width')
+                +defTerm(i.height + i.unit, 'Height')(data-bind:'height')
+
+            - array = _.where(fields, {propertyName: 'compression'})
+            for i in array
+                +defTerm(null, 'Compression')(data-bind='compression')
+                    +linkOrPlain(i.compressionLink)
+                        | #{i.compressionLabel}
+
+            - array = _.where(fields, {propertyName: 'duration'})
+            for i in array
+                +defTerm(i.duration, 'Duration')(data-bind='duration')
+
+            - array = _.where(fields, {propertyName: 'format'})
+            for i in array
+                +defTerm(null, 'Format')(data-bind='format')
+                    +linkOrPlain(i.formatLink)
+                        | #{i.formatLink}
+
+            - array = _.where(fields, {propertyName: 'samplingRate'})
+            for i in array
+                +defTerm(i.samplingRate, 'Sample rate')(data-bind='samplingRate')
+
+            - array = _.where(fields, {propertyName: 'frameRate'})
+            for i in array
+                +defTerm(i.frameRate, 'Frame rate')(data-bind='frameRate')
+
+            - array = _.where(fields, {propertyName: 'averageBitRate'})
+            for i in array
+                +defTerm(i.averageBitRate, 'Avg bit rate')(data-bind='avgBitRate')
+
+            - array = _.where(fields, {propertyName: 'numTracks'})
+            for i in array
+                +defTerm(i.number, 'Tracks')(data-bind='tracks')
+                    if i.typeString
+                        |  (#{i.typeString})
+
+            - array = _.where(fields, {propertyName: 'metadataSource'})
+            for i in array
+                +defTerm(null, 'Sample Rate')(data-bind='metadataSource')
+                    +linkOrPlain(i.metadataSource)
+                        | #{i.sourceFormat || i.metadataSource}
