@@ -79,12 +79,15 @@ include includes/top
     div#work(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
         div#workDetails(class="grid-85 tablet-grid-80 mobile-grid-100")
             +workDetails
-        div#workAnnotations(class="grid-85 tablet-grid-80 mobile-grid-100")
-            +workAnnotations
-        div#workSources(class="grid-85 tablet-grid-80 mobile-grid-100")
-            +workSources
-        div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
-            +workMedia
+        if work.annotations.length
+            div#workAnnotations(class="grid-85 tablet-grid-80 mobile-grid-100")
+                +workAnnotations
+        if work.sources.length
+            div#workSources(class="grid-85 tablet-grid-80 mobile-grid-100")
+                +workSources
+        if work.media.length
+            div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
+                +workMedia
 
         aside
             button.delete(data-action="delete") Delete Work

@@ -38,7 +38,8 @@ include includes/top
     div#media(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
         div#mediaDetails
             +mediaDetails
-        div#mediaAnnotations
-            +mediaAnnotations
+        if media.annotations.length
+            div#mediaAnnotations
+                +mediaAnnotations
 
     include includes/bottom
