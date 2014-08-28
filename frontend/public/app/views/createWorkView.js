@@ -15,9 +15,9 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var CreateWorkView = Backbone.View.extend(_.extend(CreateMixin, {
         bindings:{
-            '#input-alias': 'alias',
-            '#input-public': 'public',
-            '#input-description': 'description'
+            '[data-bind="alias"]': 'alias',
+            '[data-bind="public"]': 'public',
+            '[data-bind="description"]': 'description'
         },
 
         render: function(){

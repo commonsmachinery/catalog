@@ -13,15 +13,14 @@ define(['jquery', 'lib/backbone', 'util',
 
     var WorkDetailsView = Backbone.View.extend({
         bindings:{
-            '.title h1': {
+            '[data-bind="title"]': {
                 observe: 'alias',
                 update: util.bind.aliasOrId,
             },
-            '.description': {
-                observe: 'description',
-                update: util.bind.defOrRemove
+            '[data-bind="description"]': {
+                observe: 'description'
             },
-            '.public, .private': {
+            '[data-bind="public"]': {
                 observe: 'public',
                 update: util.bind.visibilityClass
             }

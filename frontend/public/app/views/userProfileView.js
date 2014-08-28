@@ -13,31 +13,31 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var UserProfileView = Backbone.View.extend({
         bindings:{
-            '.user h1': {
+            '[data-bind="user"]': {
                 observe: 'alias',
                 update: util.bind.aliasOrId,
             },
-            '.name': {
+            '[data-bind="name"]': {
                 observe: 'profile.name',
                 update: util.bind.defOrRemove
             },
-            '.email': {
+            '[data-bind="email"]': {
                 observe: 'profile.email',
                 update: util.bind.defOrRemove
             },
-            '.location': {
+            '[data-bind="location"]': {
                 observe: 'profile.location',
                 update: util.bind.defOrRemove
             },
-            '.website': {
+            '[data-bind="website"]': {
                 observe: 'profile.website',
                 update: util.bind.defOrRemove
             },
-            '.gravatar_email': {
+            '[data-bind="gravatar_email"]': {
                 observe: 'profile.gravatar_email',
                 update: util.bind.defOrRemove
             },
-            '.gravatar': {
+            '[data-bind="gravatar_hash"]': {
                 observe: 'profile.gravatar_hash',
                 update: function($el, val, model){
                     var src = '//www.gravatar.com/avatar/'+ val +'?d=retro&s=237';

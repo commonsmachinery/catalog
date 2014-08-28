@@ -15,9 +15,9 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var EditWorkDetailsView = Backbone.View.extend(_.extend(EditMixin, {
         bindings:{
-            '#input-alias': 'alias',
-            '#input-description': 'description',
-            '#input-public': 'public'
+            '[data-bind="alias"]': 'alias',
+            '[data-bind="description"]': 'description',
+            '[data-bind="public"]': 'public'
         },
 
         render: function(){

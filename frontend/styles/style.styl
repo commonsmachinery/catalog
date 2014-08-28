@@ -608,6 +608,8 @@ dl.hideCaption
             background none
             padding 0
             text-align left
+            h1
+                display inline-block
             .public
                 &:after
                     icon('eye')
@@ -618,10 +620,12 @@ dl.hideCaption
                 display inline-block
                 &:after
                     @extend .inline-icon;
-                    font-size 0.9rem
+                    font-size 0.8rem
+                    line-height 2.5rem
+                    vertical-align top
             .title
                 display inline-block
-        .details
+        footer
             text-align left
             padding 0
             span:not(:last-child)
@@ -726,11 +730,10 @@ dl.hideCaption
             display block
             line-height 0.9em
             margin -0.2rem 0
-    dl
-        span
-            display block
-            line-height 1em
-            margin 0.1em
+    dl span, .addedBy
+        display block
+        line-height 1em
+        margin 0.1em
     .entry
         background-color app-header-color
         background-clip padding-box
@@ -744,7 +747,6 @@ dl.hideCaption
         button
             width 4rem
             height 1.5rem
-
     .delete
         display block
         height 1.1rem
@@ -775,7 +777,7 @@ dl.hideCaption
                 text-align left
                 width 15rem
             textarea
-                font-size 1.17rem
+                font-size 0.8rem
 
             #input-public
                 display inline-block

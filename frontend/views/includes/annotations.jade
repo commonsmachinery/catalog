@@ -48,24 +48,24 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'identifier'})
             for i in array
-                +defTerm(null , 'Identifier')(data-bind="identifier")
+                +defTerm(null , 'Identifier')
                     a(href=i.identifierLink) #{i.identifierLink}
 
             - array = _.where(fields, {propertyName : 'title'})
             for i in array
-                +defTerm(null, 'Title')(data-bind='title')
+                +defTerm(null, 'Title')
                     +linkOrPlain(i.typeLink)
                         |  (#{i.typeLabel})
 
             - array = _.where(fields, {propertyName : 'language'})
             for i in array
-                +defTerm(null, 'Language')(data-bind='language')
+                +defTerm(null, 'Language')
                     +linkOrPlain(i.languageLink)
                         | #{i.languageLabel}
 
             - array = _.where(fields, {propertyName : 'locator'})
             for i in array
-                +defTerm(null, 'Link')(data-bind='locator')
+                +defTerm(null, 'Link')
                     a(href="#{i.locatorLink}") #{i.locatorLink}
 
     section
@@ -74,7 +74,7 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'contributor'})
             for i in array
-                +defTerm(null, 'Contributor')(data-bind="contributor")
+                +defTerm(null, 'Contributor')
                     +linkOrPlain(i.contributorLink)
                         | #{i.contributorLabel}
                     +linkOrPlain(i.roleLink)
@@ -82,7 +82,7 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'creator'})
             for i in array
-                +defTerm(null, 'Creator')(data-bind="creator")
+                +defTerm(null, 'Creator')
                     +linkOrPlain(i.creatorLink)
                         | #{i.creatorLabel}
                     +linkOrPlain(i.roleLink)
@@ -95,11 +95,11 @@ mixin printMetadata(fields)
                         - caption = '<a href="'+ i.typeLink +'">'+ i.typeLabel +' date </a>'
                     else if i.typeLabel
                         - caption = i.typeLabel +' date'
-                +defTerm(i.date, caption, ' ')(data-bind="mdate")
+                +defTerm(i.date, caption)
 
             - array = _.where(fields, {propertyName : 'location'})
             for i in array
-                +defTerm(null, 'Location')(data-bind="location")
+                +defTerm(null, 'Location')
                     +linkOrPlain(i.locationLink)
                         | #{i.locationLabel || ''} (#{i.latitude +','+ i.longitude +','+ i.altitude})
                     +linkOrPlain(i.coordinateSystemLink)
@@ -111,7 +111,7 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'description'})
             for i in array
-                +defTerm(i.descriptionLabel, 'Description')(data-bind='description')
+                +defTerm(i.descriptionLabel, 'Description')
 
             - array = _.where(fields, {propertyName : 'keyword'})
             for i in array
@@ -121,13 +121,13 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'genre'})
             for i in array
-                +defTerm(null, 'Genre')(data-bind='genre')
+                +defTerm(null, 'Genre')
                     +linkOrPlain(i.genreLink)
                         | #{i.genreLabel}
 
             - array = _.where(fields, {propertyName : 'rating'})
             for i in array
-                +defTerm(null, 'Rating')(data-bind='rating')
+                +defTerm(null, 'Rating')
                     | #{i.ratingValue}
                     if i.maximum && i.minimum
                         | / #{i.minimum +' - '+ i.maximum}
@@ -142,14 +142,14 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'copyright'})
             for i in array
-                +defTerm(null, 'Copyright')(data-bind='copyright')
+                +defTerm(null, 'Copyright')
                     pre #{i.copyrightLabel}
                     +linkOrPlain(i.holderLink)
                         |  (#{i.holderLabel})
 
             - array = _.where(fields, {propertyName: 'policy'})
             for i in array
-                +defTerm(null, 'Policy')(data-bind='policy')
+                +defTerm(null, 'Policy')
                     +linkOrPlain(i.statementLink)
                         | #{i.statementLabel}
                     +linkOrPlain(i.typeLink)
@@ -161,14 +161,14 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'relation'})
             for i in array
-                +defTerm(null, 'Relation')(data-bind='relation')
+                +defTerm(null, 'Relation')
                     a(href=i.targetLink) #{i.targetLabel || i.targetLink}
                     +linkOrPlain(i.typeLink)
                         |  (#{i.typeLabel})
 
             - array = _.where(fields, {propertyName: 'collection'})
             for i in array
-                +defTerm(null, 'Collection')(data-bind='collection')
+                +defTerm(null, 'Collection')
                     +linkOrPlain(i.collectionLink)
                         | #{i.collectionLabel}
 
@@ -178,13 +178,13 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName : 'publisher'})
             for i in array
-                +defTerm(null, 'Publisher')(data-bind='publisher')
+                +defTerm(null, 'Publisher')
                     +linkOrPlain(i.publisherLink)
                         | #{i.publisherLabel}
 
             - array = _.where(fields, {propertyName : 'targetAudience'})
             for i in array
-                +defTerm(null, 'Target audience')(data-bind='targetAudience')
+                +defTerm(null, 'Target audience')
                     +linkOrPlain(i.audienceLink)
                         | #{i.audienceLabel}
                     +linkOrPlain(i.classificationSystemLink)
@@ -196,14 +196,14 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName: 'fragment'})
             for i in array
-                +defTerm(null, 'Fragment')(data-bind='fragment')
+                +defTerm(null, 'Fragment')
                     a(href=i.identifier) #{i.identifier}
                     +linkOrPlain(i.roleLink)
                         |  (#{i.roleLabel})
 
             - array = _.where(fields, {propertyName: 'namedFragment'})
             for i in array
-                +defTerm(null, 'Named fragment')(data-bind='namedFragment')
+                +defTerm(null, 'Named fragment')
                     a(href=i.identifier) #{i.label}
 
     section
@@ -212,9 +212,8 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName: 'frameSize'})
             for i in array
-                +defTerm(i.width + i.unit, 'Width')(data-bind:'width')
-                +defTerm(i.height + i.unit, 'Height')(data-bind:'height')
-
+                +defTerm(i.width + i.unit, 'Width')
+                +defTerm(i.height + i.unit, 'Height')
             - array = _.where(fields, {propertyName: 'compression'})
             for i in array
                 +defTerm(null, 'Compression')(data-bind='compression')
@@ -223,34 +222,34 @@ mixin printMetadata(fields)
 
             - array = _.where(fields, {propertyName: 'duration'})
             for i in array
-                +defTerm(i.duration, 'Duration')(data-bind='duration')
+                +defTerm(i.duration, 'Duration')
 
             - array = _.where(fields, {propertyName: 'format'})
             for i in array
-                +defTerm(null, 'Format')(data-bind='format')
+                +defTerm(null, 'Format')
                     +linkOrPlain(i.formatLink)
                         | #{i.formatLink}
 
             - array = _.where(fields, {propertyName: 'samplingRate'})
             for i in array
-                +defTerm(i.samplingRate, 'Sample rate')(data-bind='samplingRate')
+                +defTerm(i.samplingRate, 'Sample rate')(data-bind='sampling-rate')
 
             - array = _.where(fields, {propertyName: 'frameRate'})
             for i in array
-                +defTerm(i.frameRate, 'Frame rate')(data-bind='frameRate')
+                +defTerm(i.frameRate, 'Frame rate')
 
             - array = _.where(fields, {propertyName: 'averageBitRate'})
             for i in array
-                +defTerm(i.averageBitRate, 'Avg bit rate')(data-bind='avgBitRate')
+                +defTerm(i.averageBitRate, 'Avg bit rate')
 
             - array = _.where(fields, {propertyName: 'numTracks'})
             for i in array
-                +defTerm(i.number, 'Tracks')(data-bind='tracks')
+                +defTerm(i.number, 'Tracks')
                     if i.typeString
                         |  (#{i.typeString})
 
             - array = _.where(fields, {propertyName: 'metadataSource'})
             for i in array
-                +defTerm(null, 'Sample Rate')(data-bind='metadataSource')
+                +defTerm(null, 'Metadata source')
                     +linkOrPlain(i.metadataSource)
                         | #{i.sourceFormat || i.metadataSource}

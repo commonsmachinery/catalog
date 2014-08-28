@@ -15,19 +15,19 @@ mixin userProfile(profile, showEmpty)
             if owner
                 dl: +defTerm(showEmpty || profile.gravatar_email, 'Gravatar email')
         div(class="grid-45 tablet-grid-45 mobile-grid-60")
-            dl.hideCaption
+            header
                 - var displayName = user.alias || user.id
-                +defTerm(null, 'User')
-                    h1 #{displayName}
-                +defTerm(showEmpty || profile.name, 'Name')
-                +defTerm(showEmpty || profile.email, 'Email')
-                +defTerm(showEmpty || profile.location, 'Location')
-                +defTerm(showEmpty || profile.website, 'Website')
+                h1(data-bind="user") #{displayName}
+            dl.hideCaption
+                +defTerm(showEmpty || profile.name, 'Name')(class="name")
+                +defTerm(showEmpty || profile.email, 'Email')(class="email")
+                +defTerm(showEmpty || profile.location, 'Location')(class="location")
+                +defTerm(showEmpty || profile.website, 'Website')(class="website")
             if user._perms.write === true
         div(class="prefix-10 grid-25 tablet-prefix-5 tablet-grid-25 mobile-grid-40")
             aside
                 div.actions
-                    button.edit(data-action="edit") Edit Profile
+                    button(data-action="edit") Edit Profile
 
 include includes/top
     div#user
@@ -41,22 +41,22 @@ include includes/top
             fieldset#fields
                 span
                     label(for="input-alias") User alias: 
-                    input#input-alias(type="text", tabindex=1)
+                    input#input-alias(type="text", tabindex=1, data-bind="alias")
                 span
                     label(for="input-alias") Name: 
-                    input#input-name(type="text", tabindex=1)
+                    input#input-name(type="text", tabindex=1, data-bind="name")
                 span
                     label(for="input-email") Email: 
-                    input#input-email(type="text", tabindex=1)
+                    input#input-email(type="text", tabindex=1, data-bind="email")
                 span
                     label(for="location") Location: 
-                    input#input-location(type="text", tabindex=1)
+                    input#input-location(type="text", tabindex=1, data-bind="location")
                 span
                     label(for="input-website") Website: 
-                    input#input-website(type="url", tabindex=1)
+                    input#input-website(type="url", tabindex=1, data-bind="website")
                 span
                     label(for="input-gravatar_email") Gravatar email: 
-                    input#input-gravatar_email(type="email", tabindex=1)
+                    input#input-gravatar_email(type="email", tabindex=1, data-bind="gravatar_email")
             fieldset.actions
                 button.save(data-action="save") Save
                 button.cancel(data-action="cancel") Cancel

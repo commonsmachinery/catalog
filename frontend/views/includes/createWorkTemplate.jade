@@ -3,14 +3,14 @@ script#createWorkTemplate(type="text/template")
     form
         span
             label(for="input-alias") Alias:
-            input#input-alias(type="text")
+            input#input-alias(type="text", tabindex=1, data-bind="alias")
         span
             label(for="input-description") Description:
-            textarea#input-description(cols="25", rows="3")
+            textarea#input-description(cols="30", rows="3", tabindex=1, data-bind="description")
         span.public
             label(for="input-public") Make it public
-            input#input-public(type="checkbox")
+            input#input-public(type="checkbox", tabindex=1, data-bind="public")
             label.checkbox(for="input-public")
         fieldset.actions
-            button.save(data-action="save") Save
-            button.cancel(data-action="cancel") Cancel
+            button.save(data-action="save", tabindex=1) Save
+            button.cancel(data-action="cancel", tabindex=1) Cancel
