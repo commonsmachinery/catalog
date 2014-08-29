@@ -194,7 +194,7 @@ describe('Works', function() {
         });
 
         it('should allow including referenced users', function(done) {
-            req.get(workURI + '?include=owner.user,added_by,updated_by')
+            req.get(workURI + '?include=owner,added_by,updated_by')
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)
@@ -638,7 +638,7 @@ describe('Works', function() {
 
         it('should allow including fields', function(done) {
             var req = request(config.frontend.baseURL);
-            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&include=owner.user")
+            req.get('/works?filter=owner.user:' + ownerIDs[0] + "&include=owner")
                 .set('Accept', 'application/json')
                 .set('Authorization', owner1)
                 .expect(200)

@@ -56,9 +56,7 @@ exports.transformUser = function(user) {
  */
 exports.transformWork = function(work) {
     objectToID(work.owner, 'user');
-    if (work.owner && work.owner.org) {
-        objectToID(work.owner, 'org');
-    }
+    objectToID(work.owner, 'org');
 
     objectToID(work, 'added_by');
     objectToID(work, 'updated_by');

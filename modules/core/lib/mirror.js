@@ -70,7 +70,7 @@ var handlers = exports.handlers = {
     },
 
     'core.work.created': function(event) {
-        var organisation = event.param.work.owner.organisation;
+        var organisation = event.param.work.owner.org;
         if (organisation) {
             return new db.CoreEvent({
                 user: event.user,
@@ -86,7 +86,7 @@ var handlers = exports.handlers = {
     },
 
     'core.work.deleted': function(event) {
-        var organisation = event.param.work.owner.organisation;
+        var organisation = event.param.work.owner.org;
         if (organisation) {
             return new db.CoreEvent({
                 user: event.user,

@@ -58,6 +58,7 @@ describe('Organisations', function() {
             .set('Authorization', util.auth(util.testUser))
             .send({
                 alias: 'work-' + Date.now(),
+                public: true,
                 owner: {
                     org: orgId,
                 },
@@ -156,9 +157,9 @@ describe('Organisations', function() {
                 .end(done);
         });
 
-        it('GET /work should include owner.org', function(done) {
+        it('GET /work should include owner.org if owned by org', function(done) {
             var req = request('');
-            req.get(workURI + '?include=owner.org')
+            req.get(workURI + '?include=owner')
                 .set('Accept', 'application/json')
                 .set('Authorization', util.auth(util.testUser))
                 .expect(200)

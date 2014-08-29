@@ -224,7 +224,7 @@ var populateUser = function(context, referenceObj) {
         });
 };
 
-/* Helper method to populate a User reference. */
+/* Helper method to populate Organisation reference. */
 var populateOrganisation = function(context, referenceObj) {
     if (!referenceObj) {
         debug('nothing to populate - this is OK if field was filtered out');
@@ -276,10 +276,8 @@ exports.transformWork = function(work, context, options) {
     work = filterFields(work, options);
 
     // Transform object references
-    if (work.owner) {
-        idToObject(work.owner, 'user', uris.buildUserURI);
-        idToObject(work.owner, 'org', uris.buildOrganisationURI);
-    }
+    idToObject(work.owner, 'user', uris.buildUserURI);
+    idToObject(work.owner, 'org', uris.buildOrganisationURI);
 
     idToObject(work, 'added_by', uris.buildUserURI);
     idToObject(work, 'updated_by', uris.buildUserURI);
@@ -304,8 +302,13 @@ exports.transformWork = function(work, context, options) {
     }
 
     return populate(work, options.include, {
-        'owner.user': function() { return populateUser(context, work.owner && work.owner.user); },
-        'owner.org': function() { return populateOrganisation(context, work.owner && work.owner.org); },
+        'owner': function() {
+            if (work.owner.user) {
+                return populateUser(context, work.owner.user);
+            } else {
+                return populateOrganisation(context, work.owner.org);
+            }
+        },
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
         'annotations.updated_by': function() {

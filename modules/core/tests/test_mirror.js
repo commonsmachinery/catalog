@@ -101,11 +101,11 @@ describe('Mirroring event', function() {
     });
 
     describe('core.work.created', function() {
-        it('should generate core.org.work.created', function() {
+        it('should generate core.org.work.created if owned by org', function() {
             var e = mirrorEvent('core.work.created', {
                 work: {
                     owner: {
-                        organisation: target
+                        org: target
                     }
                 }
             });
@@ -123,11 +123,11 @@ describe('Mirroring event', function() {
     });
 
     describe('core.work.deleted', function() {
-        it('should generate core.org.work.deleted', function() {
+        it('should generate core.org.work.deleted if owned by org', function() {
             var e = mirrorEvent('core.work.deleted', {
                 work: {
                     owner: {
-                        organisation: target
+                        org: target
                     }
                 }
             });

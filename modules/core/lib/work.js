@@ -39,15 +39,22 @@ var setWorkPerms = exports.setWorkPerms = function(context) {
             perms = context.perms[work.id] = {};
         }
 
-        // Owner can read, modify, admin the object
-        if (context.userId && context.userId.toString() === work.owner.user.toString()) {
-            perms.read = perms.write = perms.admin = true;
+        if (work.owner.user) {
+            // Owner can read, modify, admin the object
+            if (context.userId && context.userId.toString() === work.owner.user.toString()) {
+                perms.read = perms.write = perms.admin = true;
+            }
+            // collabs.users can read, modify, admin the object
+            else if (context.userId && work.collabs && work.collabs.users.indexOf(context.userId.toString()) > -1) {
+                perms.read = perms.write = perms.admin = true;
+            }
+            else {
+                perms.read = work.public;
+            }
         }
-        // collabs.users can read, modify, admin the object
-        else if (context.userId && work.collabs && work.collabs.users.indexOf(context.userId.toString()) > -1) {
-            perms.read = perms.write = perms.admin = true;
-        }
-        else {
+        else if (work.owner.org) {
+            // TODO: we don't solve org-owned works right now,
+            // since the dataset is readonly in the first phase
             perms.read = work.public;
         }
 
@@ -138,16 +145,29 @@ cmd.create = function commandCreateWork(context, src) {
     var dest = {
         added_by: context.userId,
         updated_by: context.userId,
-        owner: {
-            user: context.userId,
-        }
     };
 
     command.copyIfSet(src, dest, 'alias');
     command.copyIfSet(src, dest, 'description');
     command.copyIfSet(src, dest, 'public');
-    if (src.owner) {
-        command.copyIfSet(src.owner, dest.owner, 'org');
+
+    // TODO: extend the context so this code can check that the user
+    // is an owner of that organisation before allowing to assign it as owner.
+    // Or check that in the function calling the command
+    if (src.owner && src.owner.org) {
+        dest.owner = {
+            org: src.owner.org
+        };
+    }
+    else if (src.owner && src.owner.user) {
+        dest.owner = {
+            user: src.owner.user
+        };
+    }
+    else {
+        dest.owner = {
+            user: context.userId
+        };
     }
 
     var work = new db.Work(dest);
