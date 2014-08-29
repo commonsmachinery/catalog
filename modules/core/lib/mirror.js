@@ -69,6 +69,37 @@ var handlers = exports.handlers = {
         }
     },
 
+    'core.work.created': function(event) {
+        var organisation = event.param.work.owner.organisation;
+        if (organisation) {
+            return new db.CoreEvent({
+                user: event.user,
+                date: event.date,
+                type: 'core.Organisation',
+                object: organisation,
+                events: [{
+                    event: 'core.org.work.created',
+                    param: { work_id: event.object }
+                }]
+            });
+        }
+    },
+
+    'core.work.deleted': function(event) {
+        var organisation = event.param.work.owner.organisation;
+        if (organisation) {
+            return new db.CoreEvent({
+                user: event.user,
+                date: event.date,
+                type: 'core.Organisation',
+                object: organisation,
+                events: [{
+                    event: 'core.org.work.deleted',
+                    param: { work_id: event.object }
+                }]
+            });
+        }
+    },
 };
 
 

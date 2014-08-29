@@ -209,6 +209,33 @@ setExportMethods(User, function transformUser(doc, obj, options) {
 });
 
 
+var Organisation = mongo.schema(_.extend({}, entry, {
+    alias: {
+        type: String,
+        index: {
+            unique: true,
+        }
+    },
+
+    profile: profile,
+    owners: [{ type: ObjectId, ref: 'User' }],
+}));
+
+setExportMethods(Organisation, function transformOrganisation(doc, obj, options) {
+    transformObject(doc, obj, options);
+
+    if (options.context) {
+        if (!options.context.userId ||
+            doc.owners.indexOf(options.context.userId.toString()) === -1) {
+            // Only owners may see the gravatar_email
+            delete obj.profile.gravatar_email;
+        }
+    }
+});
+
+Organisation.index('owners');
+
+
 var Work = mongo.schema(_.extend({}, entry, {
     owner: {
         user: { type: ObjectId, ref: 'User' },
@@ -225,7 +252,7 @@ var Work = mongo.schema(_.extend({}, entry, {
     },
     public: { type: Boolean, default: false },
     collabs: {
-        users: [{ type: ObjectId, ref: 'Organisation' }],
+        users: [{ type: ObjectId, ref: 'User' }],
         groups: [{ type: ObjectId, ref: 'Group' }],
     },
     annotations: [WorkAnnotation],
@@ -253,6 +280,7 @@ exports.Media = conn.model('Media', Media);
 exports.Work = conn.model('Work', Work);
 exports.WorkAnnotation = conn.model('WorkAnnotation', WorkAnnotation);
 exports.Source = conn.model('Source', Source);
+exports.Organisation = conn.model('Organisation', Organisation);
 
 // Connect, returning a promise that resolve when connected
 

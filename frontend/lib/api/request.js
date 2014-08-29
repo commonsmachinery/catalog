@@ -55,8 +55,9 @@ exports.transformUser = function(user) {
  * to plain IDs.
  */
 exports.transformWork = function(work) {
-    if (work.owner) {
-        objectToID(work.owner, 'user');
+    objectToID(work.owner, 'user');
+    if (work.owner && work.owner.org) {
+        objectToID(work.owner, 'org');
     }
 
     objectToID(work, 'added_by');
@@ -96,4 +97,12 @@ exports.transformAnnotation = function(annotation) {
 exports.transformSource = function(source) {
     objectToID(source, 'added_by');
     objectToID(source, 'source_work');
+};
+
+/* Transform an organisation object for a request, changing included objects
+ * to plain IDs.
+ */
+exports.transformOrganisation = function(org) {
+    objectToID(org, 'added_by');
+    objectsToIDs(org.owners, null);
 };

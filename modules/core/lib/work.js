@@ -146,6 +146,9 @@ cmd.create = function commandCreateWork(context, src) {
     command.copyIfSet(src, dest, 'alias');
     command.copyIfSet(src, dest, 'description');
     command.copyIfSet(src, dest, 'public');
+    if (src.owner) {
+        command.copyIfSet(src.owner, dest.owner, 'org');
+    }
 
     var work = new db.Work(dest);
     var event = new db.CoreEvent({
@@ -188,8 +191,6 @@ exports.updateWork = function updateWork(context, workId, src) {
 
 
 cmd.update = function commandUpdateWork(context, work, src) {
-    var i, collabsUsersChanged = false;
-
     // Check permissions set with setWorkPerms()
     if (!(context.perms[work.id] && context.perms[work.id].write)) {
         throw new command.PermissionError(context.userId, work.id);
@@ -214,33 +215,9 @@ cmd.update = function commandUpdateWork(context, work, src) {
         src, work, ['alias', 'description', 'public'],
         event, 'core.work.changed');
 
-    if (src.collabs) {
-        if (src.collabs.users) {
-            for (i = 0; i < src.collabs.users.length; i++) {
-                if (work.collabs.users.indexOf(src.collabs.users[i]) === -1) {
-                    event.events.push({
-                        event: 'core.work.collabs.users.added',
-                        param: { user_id: src.collabs.users[i] }
-                    });
-                    collabsUsersChanged = true;
-                }
-            }
-
-            for (i = 0; i < work.collabs.users.length; i++) {
-                if (src.collabs.users.indexOf(work.collabs.users[i]) === -1) {
-                    event.events.push({
-                        event: 'core.work.collabs.users.removed',
-                        param: { user_id: work.collabs.users[i] }
-                    });
-
-                    collabsUsersChanged = true;
-                }
-            }
-
-            if (collabsUsersChanged) {
-                work.collabs = src.collabs;
-            }
-        }
+    if (src.collabs && src.collabs.users) {
+        command.updateUserArrayProperty(src.collabs, work.collabs, 'users', event,
+            'core.work.collabs.users.added', 'core.work.collabs.users.removed', 'user_id');
     }
 
     return { save: work, event: event };

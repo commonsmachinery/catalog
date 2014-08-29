@@ -23,6 +23,11 @@ function buildUserURI(userID) {
 }
 exports.buildUserURI = buildUserURI;
 
+function buildOrganisationURI(orgID) {
+    return buildURI('org', orgID);
+}
+exports.buildOrganisationURI = buildOrganisationURI;
+
 function buildWorkURI(workID) {
     return buildURI('works', workID);
 }

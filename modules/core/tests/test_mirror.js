@@ -100,4 +100,48 @@ describe('Mirroring event', function() {
         });
     });
 
+    describe('core.work.created', function() {
+        it('should generate core.org.work.created', function() {
+            var e = mirrorEvent('core.work.created', {
+                work: {
+                    owner: {
+                        organisation: target
+                    }
+                }
+            });
+
+            expect( e.user.toString() ).to.be( user );
+            expect( Date(e.date) ).to.be( Date(now) );
+            expect( e.type ).to.be( 'core.Organisation' );
+            expect( e.object.toString() ).to.be( target );
+            expect( e.events ).to.have.length( 1 );
+
+            expect( e.events[0].event ).to.be( 'core.org.work.created' );
+            expect( e.events[0].param ).to.have.property( 'work_id' );
+            expect( e.events[0].param.work_id.toString() ).to.be( source );
+        });
+    });
+
+    describe('core.work.deleted', function() {
+        it('should generate core.org.work.deleted', function() {
+            var e = mirrorEvent('core.work.deleted', {
+                work: {
+                    owner: {
+                        organisation: target
+                    }
+                }
+            });
+
+            expect( e.user.toString() ).to.be( user );
+            expect( Date(e.date) ).to.be( Date(now) );
+            expect( e.type ).to.be( 'core.Organisation' );
+            expect( e.object.toString() ).to.be( target );
+            expect( e.events ).to.have.length( 1 );
+
+            expect( e.events[0].event ).to.be( 'core.org.work.deleted' );
+            expect( e.events[0].param ).to.have.property( 'work_id' );
+            expect( e.events[0].param.work_id.toString() ).to.be( source );
+        });
+    });
+
 });
