@@ -224,6 +224,22 @@ var populateUser = function(context, referenceObj) {
         });
 };
 
+/* Helper method to populate Organisation reference. */
+var populateOrganisation = function(context, referenceObj) {
+    if (!referenceObj) {
+        debug('nothing to populate - this is OK if field was filtered out');
+        return Promise.resolve(null);
+    }
+
+    return core.getOrganisation(context, referenceObj.id)
+        .then(function(org) {
+            _.extend(referenceObj, org);
+        })
+        .catch(function(err) {
+            console.error('error populating Organisation %s: %s', referenceObj.id, err);
+        });
+};
+
 /* Helper method to populate a Media reference. */
 var populateMedia = function(context, referenceObj) {
     if (!referenceObj) {
@@ -255,15 +271,13 @@ exports.transformUser = function(user) {
  * require additional objects to be fetched from the core DB.
  */
 exports.transformWork = function(work, context, options) {
-
     work.href = uris.buildWorkURI(work.id);
 
     work = filterFields(work, options);
 
     // Transform object references
-    if (work.owner) {
-        idToObject(work.owner, 'user', uris.buildUserURI);
-    }
+    idToObject(work.owner, 'user', uris.buildUserURI);
+    idToObject(work.owner, 'org', uris.buildOrganisationURI);
 
     idToObject(work, 'added_by', uris.buildUserURI);
     idToObject(work, 'updated_by', uris.buildUserURI);
@@ -288,7 +302,13 @@ exports.transformWork = function(work, context, options) {
     }
 
     return populate(work, options.include, {
-        'owner': function() { return populateUser(context, work.owner && work.owner.user); },
+        'owner': function() {
+            if (work.owner.user) {
+                return populateUser(context, work.owner.user);
+            } else {
+                return populateOrganisation(context, work.owner.org);
+            }
+        },
         'added_by': function() { return populateUser(context, work.added_by); },
         'updated_by': function() { return populateUser(context, work.updated_by); },
         'annotations.updated_by': function() {
@@ -390,6 +410,30 @@ exports.transformSource = function(workId, source, context, options) {
 
     return populate(source, options.include, {
         'added_by': function() { return populateUser(context, source.added_by); },
+    });
+};
+
+/* Transform an organisation object for a response, using fields and include
+ * from option. This always return a promise, since include may
+ * require additional objects to be fetched from the core DB.
+ */
+exports.transformOrganisation = function(org, context, options) {
+    org.href = uris.buildOrganisationURI(org.id);
+
+    idToObject(org, 'added_by', uris.buildUserURI);
+
+    // Add referenced objects, when requested.
+    if (!options || !options.include) {
+        return Promise.resolve(org);
+    }
+
+    return populate(org, options.include, {
+        'added_by': function() { return populateUser(context, org.added_by); },
+        'owners': function() {
+            return Promise.map(org.owners, function(u) {
+                return populateUser(context, u);
+            });
+        }
     });
 };
 

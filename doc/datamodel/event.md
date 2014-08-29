@@ -118,6 +118,7 @@ Object events:
 
     core.org.created(organisation)
     core.org.changed(property, old_value, new_value)
+    core.org.changed.profile(property, old, new)
     core.org.owner.added(user_id)
     core.org.owner.removed(user_id)
 

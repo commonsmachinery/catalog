@@ -42,6 +42,7 @@ exports.NotFoundError = common.NotFoundError;
 //
 
 var user = require('./lib/user');
+var organisation = require('./lib/organisation');
 var work = require('./lib/work');
 var media = require('./lib/media');
 
@@ -49,6 +50,11 @@ exports.UserNotFoundError = user.UserNotFoundError;
 exports.getUser = user.getUser;
 exports.createUser = user.createUser;
 exports.updateUser = user.updateUser;
+
+exports.OrganisationNotFoundError = organisation.OrganisationNotFoundError;
+exports.getOrganisation = organisation.getOrganisation;
+exports.createOrganisation = organisation.createOrganisation;
+exports.updateOrganisation = organisation.updateOrganisation;
 
 exports.MediaNotFoundError = media.MediaNotFoundError;
 exports.getMedia = media.getMedia;

@@ -22,6 +22,7 @@ var core = require('../../modules/core/core');
 
 // Frontend libs
 var users = require('./api/users');
+var organisations = require('./api/organisations');
 var works = require('./api/works');
 var media = require('./api/media');
 var annotations = require('./api/annotations');
@@ -152,3 +153,8 @@ router.route('/works/:workId/sources').all(setContext)
 router.route('/works/:workId/sources/:sourceId').all(setContext)
     .get(sources.getWorkSource)
     .delete(sources.removeWorkSource).all(handleErrors);
+
+router.route('/org').all(setContext)
+    .post(organisations.createOrganisation).all(handleErrors);
+router.route('/org/:orgId').all(setContext)
+    .get(organisations.getOrganisation).all(handleErrors);
