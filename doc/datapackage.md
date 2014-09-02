@@ -93,27 +93,32 @@ such as frame size etc.
             {
                 "propertyName": "title",
                 "titleLabel": "Example title",
-                "language": "en"
+                "language": "en",
+                "value": "Example title"
             },
             {
                 "propertyName": "title",
                 "titleLabel": "Exampeltitel",
-                "language": "sv"
+                "language": "sv",
+                "value": "Exampeltitel"
             },
             {
                 "propertyName": "identifier",
-                "identifierLink": "http://some.institute/some/collection/object"
+                "identifierLink": "http://some.institute/some/collection/object",
+                "value": "http://some.institute/some/collection/object"
             },
             {
                 "propertyName": "locator",
-                "locatorLink": "http://some.institute/some/collection/object"
+                "locatorLink": "http://some.institute/some/collection/object",
+                "value": "http://some.institute/some/collection/object"
             },
             {
                 "propertyName": "policy",
                 "statementLabel": "CC BY-SA 4.0",
                 "statementLink": "http://creativecommons.org/licenses/by-sa/4.0/",
                 "typeLabel": "license",
-                "typeLink": "http://www.w3.org/1999/xhtml/vocab#license"
+                "typeLink": "http://www.w3.org/1999/xhtml/vocab#license",
+                "value": "http://creativecommons.org/licenses/by-sa/4.0/"
             }
         ],
     
@@ -122,16 +127,19 @@ such as frame size etc.
                 "annotations": [
                     {
                         "propertyName": "identifier",
-                        "identifierLink": "urn:bmvhash:34ac907fb1..."
+                        "identifierLink": "urn:bmvhash:34ac907fb1...",
+                        "value": "urn:bmvhash:34ac907fb1..."
                     },
                     {
                         "propertyName": "locator",
                         "locatorLink": "http://some.cdn.com/32423/23423.jpg",
+                        "value": "http://some.cdn.com/32423/23423.jpg"
                     },
                     {
                         "propertyName": "frameSize",
                         "width": 1800,
                         "height": 2400,
+                        "value": "1800,2400"
                     }
                 ]
             },
@@ -139,16 +147,19 @@ such as frame size etc.
                 "annotations": [
                     {
                         "propertyName": "identifier",
-                        "identifierLink": "urn:bmvhash:2310cda2190..."
+                        "identifierLink": "urn:bmvhash:2310cda2190...",
+                        "value": "urn:bmvhash:2310cda2190..."
                     },
                     {
                         "propertyName": "locator",
                         "locatorLink": "http://some.cdn.com/thumbnails/32423/23423.jpg",
+                        "value": "http://some.cdn.com/thumbnails/32423/23423.jpg"
                     },
                     {
                         "propertyName": "frameSize",
                         "width": 120,
                         "height": 120,
+                        "value": "120,120"
                     }
                 ]
             }
