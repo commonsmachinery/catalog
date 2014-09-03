@@ -4,10 +4,11 @@ Data load script
 This script is used to load large collections of works into Elog.io. Make sure
 the catalog database is running and start it like following:
 
-    node load.js --userId 54051c3d21595b8a2e228b9a package.txt
+    node load.js --user 54051c3d21595b8a2e228b9a package.txt
 
-Other available options are:
+Available options are:
 
+* --user: Alias or ID of the user to run the script as;
 * --verbose: Print progress messages as works are created;
 * --private: Create private works;
 * --format: Collection format. The only format supported at the moment is "datapackage",

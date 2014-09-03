@@ -5,12 +5,12 @@
    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
+'use strict';
+
 var debug = require('debug')('catalog:core:scripts:load');
 
 // Core libs
 var core = require('../core');
-var common = require('../lib/common.js');
-var mirror = require('../lib/mirror');
 
 // Script libs
 var Promise = require('bluebird');
@@ -18,7 +18,7 @@ var fs = require('fs');
 var ldj = require('ldjson-stream');
 var argv = require('yargs')
     .boolean('verbose').default('verbose', false)
-    .string('userId').demand('userId')
+    .string('user').demand('user')
     .boolean('private').default('private', false)
     .string('format').default('format', 'datapackage')
     .string('ownerOrg').default('ownerOrg', undefined)
@@ -26,7 +26,7 @@ var argv = require('yargs')
     .argv;
 
 
-var processDataPackage = function(fn, context, owner, private, verbose, done) {
+var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
 
     stream.on('data', function(obj) {
@@ -41,10 +41,7 @@ var processDataPackage = function(fn, context, owner, private, verbose, done) {
         }
 
         core.createWork(context, {
-            // TODO: disable indexing by alias so we don't have
-            // to create aliases here and now
-            alias: 'work-' + Date.now(),
-            public: !private,
+            public: !priv,
             owner: owner,
         })
         .then(function(work) {
@@ -75,12 +72,12 @@ var processDataPackage = function(fn, context, owner, private, verbose, done) {
                 for (var j = 0; j < origAnnotations.length; j++) {
                     createAnnotations.push({
                         property: origAnnotations[i]
-                    })
+                    });
                 }
 
                 var mediaObj = {
                     annotations: createAnnotations
-                }
+                };
 
                 promiseStack.push(core.createWorkMedia(context, workId, mediaObj));
             }
@@ -89,7 +86,7 @@ var processDataPackage = function(fn, context, owner, private, verbose, done) {
         .then(function() {
             // resume stream processing
             if (verbose) {
-                console.log('done.')
+                console.log('done.');
             }
             workId = null;
             stream.resume();
@@ -103,60 +100,83 @@ var processDataPackage = function(fn, context, owner, private, verbose, done) {
     stream.on('end', function() {
         done(null);
     });
-}
+};
 
 var main = function() {
-    var context;
-    var owner;
-    var private;
+    var priv;
     var fn;
     var processPackage;
+    var userId, ownerOrgId;
 
-    common.checkId(argv.userId, core.UserNotFoundError);
+    //common.checkId(argv.user, core.UserNotFoundError);
 
-    context = {
-        userId: argv.userId
-    }
+    priv = argv.private;
 
-    if (argv.ownerOrg) {
-        common.checkId(argv.ownerOrg, core.OrganisationNotFoundError);
-        owner = {
-            org: argv.ownerOrg
-        }
-    } else {
-        owner = {
-            user: argv.userId
-        }
-    }
-
-    private = argv.private;
-
-    if (argv.format && argv.format == 'datapackage') {
+    if (argv.format && argv.format === 'datapackage') {
         processPackage = processDataPackage;
     } else {
-        throw new Error('Unknown format: ' + format);
+        throw new Error('Unknown format: ' + argv.format);
     }
 
-    if (argv._.length == 0) {
+    if (argv._.length === 0) {
         throw new Error('Package filename not given');
     }
 
     fn = argv._[0];
 
     core.init()
-        .then(function(obj1) {
+        .then(function() {
             console.log('core backend started');
-            mirror.start();
 
-            processPackage(fn, context, owner, private, argv.verbose, function() {
+            if (! /^[0-9a-fA-F]{24}$/.test(argv.user)) {
+                return core.getUserByAlias({}, argv.user);
+            } else {
+                return core.getUser({}, argv.user);
+            }
+        })
+        .then(function(user) {
+            userId = user.id;
+        })
+        .then(function() {
+            if (argv.ownerOrg) {
+                if (! /^[0-9a-fA-F]{24}$/.test(argv.ownerOrg)) {
+                    return core.getOrgByAlias({}, argv.ownerOrg);
+                } else {
+                    return core.getOrganisation({}, argv.ownerOrg);
+                }
+            }
+        })
+        .then(function(org) {
+            if (org) {
+                ownerOrgId = org.id;
+            }
+        })
+        .then(function() {
+            var context;
+            var owner;
+
+            context = { userId: userId };
+
+            if (argv.ownerOrg) {
+                owner = { org: ownerOrgId };
+            } else {
+                owner = { user: userId };
+            }
+
+            processPackage(fn, context, owner, priv, argv.verbose, function(err) {
                 // wait 1s to make sure the process chain catches up
                 setTimeout(function() {
-                    process.exit(0);
+                    if (err) {
+                        process.exit(1);
+                    } else {
+                        process.exit(0);
+                    }
                 }, 1000);
             });
         })
         .catch(function(err) {
             console.error('error starting core backend: %s', err);
+            process.exit(1);
         });
 };
 

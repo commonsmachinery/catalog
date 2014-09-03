@@ -262,8 +262,9 @@ var Work = mongo.schema(_.extend({}, entry, {
 
 setExportMethods(Work);
 
-Work.index({ 'owner.user': 1, 'alias': 1 }, { unique: true, sparse: true });
-Work.index({ 'owner.org': 1, 'alias': 1 }, { unique: true, sparse: true });
+//Work.index({ 'owner.user': 1, 'alias': 1 }, { unique: true, sparse: true });
+//Work.index({ 'owner.org': 1, 'alias': 1 }, { unique: true, sparse: true });
+Work.index('alias', { unique: true, sparse: true });
 Work.index('owner.user', { sparse: true });
 Work.index('owner.org', { sparse: true });
 Work.index('collabs.users');

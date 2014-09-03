@@ -27,7 +27,7 @@ var transform = function() {
     };
 };
 
-exports.getOrganisation = function getUser(req, res, next) {
+exports.getOrganisation = function getOrganisation(req, res, next) {
     var htmlResponse = function() {
         core.getOrganisation(req.context, req.params.orgId)
             .then(transform())

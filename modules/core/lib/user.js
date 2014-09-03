@@ -87,6 +87,25 @@ exports.getUser = function getUser(context, userId) {
         .then(db.User.objectExporter(context));
 };
 
+/* Get a User object by alias.
+ *
+ * Returns a promise that resolves to the user or null if not found.
+ */
+exports.getUserByAlias = function getUserByAlias(context, alias) {
+    return db.User.findAsync({ alias: alias })
+        .then(function(result) {
+            if (result.length === 0) {
+                debug('core.User not found by alias: %s', alias);
+                throw new command.CommandError('User not found by alias: ' + alias);
+            }
+
+            return result[0];
+        })
+        .then(setUserPerms(context))
+        .then(db.User.objectExporter(context));
+};
+
+
 
 /* Create a new User object from a source object with the same
  * properties.

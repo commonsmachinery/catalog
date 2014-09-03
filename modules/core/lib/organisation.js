@@ -87,6 +87,24 @@ exports.getOrganisation = function getOrganisation(context, orgId) {
         .then(db.Organisation.objectExporter(context));
 };
 
+/* Get a Organisation object by alias.
+ *
+ * Returns a promise that resolves to the organisation or null if not found.
+ */
+exports.getOrgByAlias = function getOrgByAlias(context, alias) {
+    return db.Organisation.findAsync({ alias: alias })
+        .then(function(result) {
+            if (result.length === 0) {
+                debug('core.Organisation not found by alias: %s', alias);
+                throw new command.CommandError('Organisation not found by alias: ' + alias);
+            }
+
+            return result[0];
+        })
+        .then(setOrganisationPerms(context))
+        .then(db.Organisation.objectExporter(context));
+};
+
 /* Create a new Organisation object from a source object with the same
  * properties.
  *
