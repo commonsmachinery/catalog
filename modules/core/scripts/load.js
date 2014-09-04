@@ -13,7 +13,6 @@ var debug = require('debug')('catalog:core:scripts:load');
 var core = require('../core');
 
 // Script libs
-var Promise = require('bluebird');
 var fs = require('fs');
 var ldj = require('ldjson-stream');
 var argv = require('yargs')
@@ -50,38 +49,59 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             workId = work.id;
         })
         .then(function() {
-            // add work annotations
-            debug('creating annotations for work %s', workId);
-            var promiseStack = [];
-            for (var i = 0; i < annotations.length; i++) {
-                var annotationObj = {
-                    property: annotations[i]
-                };
-                promiseStack.push(core.createWorkAnnotation(context, workId, annotationObj));
-            }
-            return Promise.settle(promiseStack);
+            // Process one annotation at a time, since
+            // core doesn't (currently) allow concurrent
+            // modifications to a Work.
+
+            // This is done by recursing via promises, so that the
+            // function isn't called for the next annotation until the
+            // database operation for the previous one has been
+            // completed.
+
+            var i = 0;
+            var addAnnotation = function() {
+                if (i < annotations.length) {
+                    debug('creating annotation %s for work %s', i, workId);
+
+                    var annotationObj = { property: annotations[i] };
+                    ++i;
+
+                    return core.createWorkAnnotation(context, workId, annotationObj)
+                        .then(addAnnotation);
+                }
+            };
+
+            return addAnnotation();
         })
         .then(function() {
-            // add work media
-            debug('creating media for work %s', workId);
-            var promiseStack = [];
-            for (var i = 0; i < media.length; i++) {
-                var origAnnotations = media[i].annotations;
-                var createAnnotations = [];
+            // Same kind of recursion as above
 
-                for (var j = 0; j < origAnnotations.length; j++) {
-                    createAnnotations.push({
-                        property: origAnnotations[i]
-                    });
+            var i = 0;
+            var addMedia = function() {
+                if (i < media.length) {
+                    debug('creating media %s for work %s', i, workId);
+
+                    var origAnnotations = media[i].annotations;
+                    var createAnnotations = [];
+
+                    for (var j = 0; j < origAnnotations.length; j++) {
+                        createAnnotations.push({
+                            property: origAnnotations[i]
+                        });
+                    }
+
+                    var mediaObj = {
+                        annotations: createAnnotations
+                    };
+
+                    ++i;
+
+                    return core.createWorkMedia(context, workId, mediaObj)
+                        .then(addMedia);
                 }
+            };
 
-                var mediaObj = {
-                    annotations: createAnnotations
-                };
-
-                promiseStack.push(core.createWorkMedia(context, workId, mediaObj));
-            }
-            return Promise.settle(promiseStack);
+            return addMedia();
         })
         .then(function() {
             // resume stream processing
