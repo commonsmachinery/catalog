@@ -56,6 +56,9 @@ var setWorkPerms = exports.setWorkPerms = function(context) {
             // TODO: we don't solve org-owned works right now,
             // since the dataset is readonly in the first phase
             perms.read = work.public;
+            // Fallback to added_by to allow work modification for data load script.
+            // TODO: remove this when organisation support is complete.
+            perms.write = perms.admin = context.userId && context.userId.toString() === work.added_by.toString();
         }
 
         return work;

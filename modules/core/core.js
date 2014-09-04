@@ -48,11 +48,13 @@ var media = require('./lib/media');
 
 exports.UserNotFoundError = user.UserNotFoundError;
 exports.getUser = user.getUser;
+exports.getUserByAlias = user.getUserByAlias;
 exports.createUser = user.createUser;
 exports.updateUser = user.updateUser;
 
 exports.OrganisationNotFoundError = organisation.OrganisationNotFoundError;
 exports.getOrganisation = organisation.getOrganisation;
+exports.getOrgByAlias = organisation.getOrgByAlias;
 exports.createOrganisation = organisation.createOrganisation;
 exports.updateOrganisation = organisation.updateOrganisation;
 

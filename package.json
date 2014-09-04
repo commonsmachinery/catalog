@@ -33,7 +33,9 @@
     "redis": "0.10.0",
     "then-redis": "0.3.x",
     "uid2": "0.0.x",
-    "zmq": "2.x"
+    "zmq": "2.x",
+    "ldjson-stream": "*",
+    "yargs": "*"
   },
   "devDependencies": {
     "jshint": "*",
