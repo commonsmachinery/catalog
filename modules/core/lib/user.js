@@ -96,7 +96,7 @@ exports.getUserByAlias = function getUserByAlias(context, alias) {
         .then(function(result) {
             if (result.length === 0) {
                 debug('core.User not found by alias: %s', alias);
-                throw new command.CommandError('User not found by alias: ' + alias);
+                throw new UserNotFoundError(alias);
             }
 
             return result[0];

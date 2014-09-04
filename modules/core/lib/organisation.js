@@ -96,7 +96,7 @@ exports.getOrgByAlias = function getOrgByAlias(context, alias) {
         .then(function(result) {
             if (result.length === 0) {
                 debug('core.Organisation not found by alias: %s', alias);
-                throw new command.CommandError('Organisation not found by alias: ' + alias);
+                throw new OrganisationNotFoundError(alias);
             }
 
             return result[0];
