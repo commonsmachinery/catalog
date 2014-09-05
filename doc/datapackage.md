@@ -118,7 +118,7 @@ such as frame size etc.
                 "statementLink": "http://creativecommons.org/licenses/by-sa/4.0/",
                 "typeLabel": "license",
                 "typeLink": "http://www.w3.org/1999/xhtml/vocab#license",
-                "value": "http://creativecommons.org/licenses/by-sa/4.0/"
+                "value": "CC BY-SA 4.0"
             }
         ],
     
