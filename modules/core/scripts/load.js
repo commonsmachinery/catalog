@@ -86,7 +86,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
 
                     for (var j = 0; j < origAnnotations.length; j++) {
                         createAnnotations.push({
-                            property: origAnnotations[i]
+                            property: origAnnotations[j]
                         });
                     }
 
