@@ -7,7 +7,7 @@
     - empty[3] = { propertyName: 'locator', locatorLink: '-' }
     - empty[4] = { propertyName: 'contributor', contributorLink: '-', contributorLabel: '-', roleLabel: '-', roleLink: '-'}
     - empty[5] = {propertyName: 'creator', creatorLink: '-', creatorLabel: '-', roleLabel: '-', roleLink: '-' }
-    - empty[6] = {propertyName: 'MADate', date: '-', typeLabel: '-', typeLink: '-'}
+    - empty[6] = {propertyName: 'date', date: '-', typeLabel: '-', typeLink: '-'}
     - empty[7] = {propertyName: 'location', latitude: '-', longitude: '-', altitude: '-', coordinateSystemLink: '-', coordinateSystemLabel: '-', locationLink: '-', locationLabel: '-'}
     - empty[8] = {propertyName: 'description', descriptionLabel: '-'}
     - empty[9] = {propertyName: 'keyword', keywordLabel: '-', keywordLink: '-'}
@@ -37,7 +37,7 @@
     - if (['identifier','title','language','locator'].indexOf(field.propertyName) >= 0){
         - return 'identification'
     - }
-    - if (['contributor','creator','MADate','location'].indexOf(field.propertyName) >= 0){
+    - if (['contributor','creator','date','location'].indexOf(field.propertyName) >= 0){
         - return 'creation'
     - }
     - if (['description','Description','keyword','genre','rating'].indexOf(field.propertyName) >= 0){
@@ -78,24 +78,24 @@ mixin printMetadata(fields)
             header: h3 Identification Data
             .properties
 
-                - array = group.identifier
+                - array = group.identifier || []
                 for i in array
                     +defTerm(null , 'Identifier')
                         a(href=i.identifierLink) #{i.identifierLink}
 
-                - array = group.title
+                - array = group.title || []
                 for i in array
                     +defTerm(null, 'Title')
-                        +linkOrPlain(i.typeLink)
-                            |  (#{i.typeLabel})
+                        +linkOrPlain(i.titleLink)
+                            |  #{i.titleLabel || i.value}
 
-                - array = group.language
+                - array = group.language || []
                 for i in array
                     +defTerm(null, 'Language')
                         +linkOrPlain(i.languageLink)
-                            | #{i.languageLabel}
+                            | #{i.languageLabel || i.value}
 
-                - array = group.locator
+                - array = group.locator || []
                 for i in array
                     +defTerm(null, 'Link')
                         a(href="#{i.locatorLink}") #{i.locatorLink}
@@ -106,36 +106,36 @@ mixin printMetadata(fields)
             header: h3 Creation Data
             .properties
 
-                - array = group.contributor
+                - array = group.contributor || []
                 for i in array
                     +defTerm(null, 'Contributor')
                         +linkOrPlain(i.contributorLink)
-                            | #{i.contributorLabel}
+                            | #{i.contributorLabel || i.value}
                         +linkOrPlain(i.roleLink)
                             |  (#{i.roleLabel})
 
-                - array = group.creator
+                - array = group.creator || []
                 for i in array
                     +defTerm(null, 'Creator')
                         +linkOrPlain(i.creatorLink)
-                            | #{i.creatorLabel}
+                            | #{i.creatorLabel || i.value}
                         +linkOrPlain(i.roleLink)
                             |  (#{i.roleLabel})
 
-                - array = group.MADate
+                - array = group.date || []
                 for i in array
                     - var caption
                         if i.typeLink && i.typeLabel
                             - caption = '<a href="'+ i.typeLink +'">'+ i.typeLabel +' date </a>'
                         else if i.typeLabel
                             - caption = i.typeLabel +' date'
-                    +defTerm(i.date, caption)(data-bind="MADate")
+                    +defTerm(i.date, caption)(data-bind="date")
 
-                - array = group.location
+                - array = group.location || []
                 for i in array
                     +defTerm(null, 'Location')
                         +linkOrPlain(i.locationLink)
-                            | #{i.locationLabel || ''} (#{i.latitude +','+ i.longitude +','+ i.altitude})
+                            | #{i.locationLabel || i.value} (#{i.latitude +','+ i.longitude +','+ i.altitude})
                         +linkOrPlain(i.coordinateSystemLink)
                             |  #{i.coordinateSystemLabel}
 
@@ -145,26 +145,26 @@ mixin printMetadata(fields)
             header: h3 Content Description Data
             .properties
 
-                - array = group.description
+                - array = group.description || []
                 for i in array
-                    +defTerm(i.descriptionLabel, 'Description')
+                    +defTerm((i.descriptionLabel || i.value), 'Description')
 
-                - array = group.keyword
+                - array = group.keyword || []
                 for i in array
                     +defTerm(null, 'Tag')(data-bind='keyword')
                         +linkOrPlain(i.keywordLink)
-                            | #{i.keywordLabel}
+                            | #{i.keywordLabel || i.value}
 
-                - array = group.genre
+                - array = group.genre || []
                 for i in array
                     +defTerm(null, 'Genre')
                         +linkOrPlain(i.genreLink)
-                            | #{i.genreLabel}
+                            | #{i.genreLabel || i.value}
 
-                - array = group.rating
+                - array = group.rating || []
                 for i in array
                     +defTerm(null, 'Rating')
-                        | #{i.ratingValue}
+                        | #{i.ratingValue || i.value}
                         if i.maximum && i.minimum
                             | / #{i.minimum +' - '+ i.maximum}
                         else if i.maximum
@@ -178,18 +178,18 @@ mixin printMetadata(fields)
             header: h3 Copyright Data
             .properties
 
-                - array = group.copyright
+                - array = group.copyright || []
                 for i in array
                     +defTerm(null, 'Copyright')
-                        pre #{i.copyrightLabel}
+                        pre #{i.copyrightLabel || i.value}
                         +linkOrPlain(i.holderLink)
                             |  (#{i.holderLabel})
 
-                - array = group.policy
+                - array = group.policy || []
                 for i in array
                     +defTerm(null, 'Policy')
                         +linkOrPlain(i.statementLink)
-                            | #{i.statementLabel}
+                            | #{i.statementLabel || i.value}
                         +linkOrPlain(i.typeLink)
                             |  (#{i.typeLabel})
 
@@ -199,35 +199,35 @@ mixin printMetadata(fields)
             header: h3 Relational Data
             .properties
 
-                - array = group.relation
+                - array = group.relation || []
                 for i in array
                     +defTerm(null, 'Relation')
-                        a(href=i.targetLink) #{i.targetLabel || i.targetLink}
+                        a(href=i.targetLink) #{i.targetLabel || i.targetLink || i.value}
                         +linkOrPlain(i.typeLink)
                             |  (#{i.typeLabel})
 
-                - array = group.collection
+                - array = group.collection || []
                 for i in array
                     +defTerm(null, 'Collection')
                         +linkOrPlain(i.collectionLink)
-                            | #{i.collectionLabel}
+                            | #{i.collectionLabel || i.value}
     if fields.distribution
         - group = _.groupBy(fields.distribution, 'propertyName')
         section
             header: h3 Distribution Data
             .properties
 
-                - array = group.publisher
+                - array = group.publisher || []
                 for i in array
                     +defTerm(null, 'Publisher')
                         +linkOrPlain(i.publisherLink)
-                            | #{i.publisherLabel}
+                            | #{i.publisherLabel || i.value}
 
-                - array = group.targetAudience
+                - array = group.targetAudience || []
                 for i in array
                     +defTerm(null, 'Target audience')
                         +linkOrPlain(i.audienceLink)
-                            | #{i.audienceLabel}
+                            | #{i.audienceLabel || i.value}
                         +linkOrPlain(i.classificationSystemLink)
                             |  (#{href=i.classificationSystemLabel})
 
@@ -237,14 +237,14 @@ mixin printMetadata(fields)
             header: h3 Fragments
             .properties
 
-                - array = group.fragment
+                - array = group.fragment || []
                 for i in array
                     +defTerm(null, 'Fragment')
                         a(href=i.identifier) #{i.identifier}
                         +linkOrPlain(i.roleLink)
                             |  (#{i.roleLabel})
 
-                - array = group.namedFragment
+                - array = group.namedFragment || []
                 for i in array
                     +defTerm(null, 'Named fragment')
                         a(href=i.identifier) #{i.label}
@@ -255,46 +255,46 @@ mixin printMetadata(fields)
             header: h3 Technical Data
             .properties
 
-                - array = group.frameSize
+                - array = group.frameSize || []
                 for i in array
-                    +defTerm(i.width + i.unit, 'Width')
-                    +defTerm(i.height + i.unit, 'Height')
+                    +defTerm(i.width + (i.unit || ''), 'Width')
+                    +defTerm(i.height + (i.unit || ''), 'Height')
 
-                - array = group.compression
+                - array = group.compression || []
                 for i in array
                     +defTerm(null, 'Compression')(data-bind='compression')
                         +linkOrPlain(i.compressionLink)
-                            | #{i.compressionLabel}
+                            | #{i.compressionLabel || i.value}
 
-                - array = group.duration
+                - array = group.duration || []
                 for i in array
                     +defTerm(i.duration, 'Duration')
 
-                - array = group.format
+                - array = group.format || []
                 for i in array
                     +defTerm(null, 'Format')
                         +linkOrPlain(i.formatLink)
-                            | #{i.formatLink}
+                            | #{i.formatLabel || i.value}
 
-                - array = group.samplingRate
+                - array = group.samplingRate || []
                 for i in array
                     +defTerm(i.samplingRate, 'Sample rate')(data-bind='sampling-rate')
 
-                - array = group.frameRate
+                - array = group.frameRate || []
                 for i in array
                     +defTerm(i.frameRate, 'Frame rate')
 
-                - array = group.averageBitRate
+                - array = group.averageBitRate || []
                 for i in array
                     +defTerm(i.averageBitRate, 'Avg bit rate')
 
-                - array = group.numTracks
+                - array = group.numTracks || []
                 for i in array
                     +defTerm(i.number, 'Tracks')
                         if i.typeString
                             |  (#{i.typeString})
 
-                - array = group.metadataSource
+                - array = group.metadataSource || []
                 for i in array
                     +defTerm(null, 'Metadata source')
                         +linkOrPlain(i.metadataSource)
