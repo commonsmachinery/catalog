@@ -10,33 +10,33 @@ mixin workListItemView(work, empty)
         header
             - var disabled = work._perms && work._perms.write ? false : true 
             - var isHidden = disabled ? 'hidden' : ''
-            input.batchSelectItem(name='batchSelect-#{work.id}', id='batchSelect-#{work.id}', type='checkbox', disabled=disabled)
+            input.batchSelectItem(name='batchSelect-#{work.id}', id='batchSelect-#{work.id}', type='checkbox', disabled=disabled, data-bind="batch-select-item")
             label.checkbox(class=isHidden, for='batchSelect-#{work.id}')
 
             - var title = empty || work.alias || work.id
-            h2: a.title(href=work.href || '#')
+            h2: a(href=work.href || '#', data-bind="title")
                 | #{empty || title}
 
-            - var showVisibility = work._perms && work._perms.write ? '' : 'hidden';
-                span(class="#{showVisibility} #{work.public ? 'public' : 'private'}")
+            - isHidden = work._perms && work._perms.write ? '' : 'hidden';
+                span(class="#{isHidden} #{work.public ? 'public' : 'private'}", data-bind="public")
 
             - isHidden = work._perms && work._perms.admin ? '' : 'hidden'
 
-            button.delete(class=isHidden) X
+            button.delete(class=isHidden, data-action="delete") X
 
             - var added_by = work && work.added_by ? work.added_by.alias || work.added_by.id : empty
-            +defTerm(null, 'Added By')
-                a(href="#{empty || work.added_by.href}") #{added_by}
+            +defTerm(null, 'Added By')(data-bind="", class="addedBy")
+                a(href="#{empty || work.added_by.href}", data-bind="added_by") #{added_by}
             div.oembed
         dl
             -var date = work.added_at ? work.added_at.toDateString() : '';
-            +defTerm(empty || date.substring(3, date.length), 'Added on')
+            +defTerm(empty || date.substring(3, date.length), 'Added on')(data-bind="work-added_on")
             +defTerm(null, 'URL')
                 a(href="#{empty || work.href}") #{empty || work.href}
             +defTerm('-- collections', 'Used in')
             span.metadata
-                +defTerm('???' || work.annotations.title, 'Original Title', 'meta-title')
-                +defTerm('???' || work.annotations.creator, 'Creator/Author', 'meta-author')
+                +defTerm(empty || work.annotations.title, 'Original Title')(data-bind="meta-title")
+                +defTerm(empty || work.annotations.creator, 'Creator/Author')(data-bind="meta-author")
 
 include includes/top
     if works
@@ -44,22 +44,21 @@ include includes/top
             if userId
                 //- this is a place holder for the template for easier layout
                 div#actions(class="prefix-5 grid-90 tablet prefix-5 tablet-grid-90 mobile-grid 100"): script#actionsTemplate(type="text/template")
-                    span.visibility
-                        label(for="input-visibility") Visibility
-                        select#input-public
+                    span
+                        label(for="input-public") Visibility
+                        select#input-public(data-set="public")
                             option(default) ---
                             option(value="true") Public
                             option(value="false") Private
-                    button.apply-batch-update Apply
+                    button(data-action="apply-batch-update") Apply
 
                 div#filters(class="prefix-5 grid-90 tablet prefix-5 tablet-grid-90 mobile-grid 100"): script#filtersTemplate(type="text/template")
                         //- toDo: text-field for added_by
-                        //- data-filter could help to iterate every active filter and value instead of adding each manually when multiple filters are supported
                         span(data-filter='owner.user')
-                            input#input-by(type="checkbox")
+                            input#input-by(type="checkbox", data-filter-by="mine")
                             label.checkbox(for="input-by") By me
-                            input(type="hidden", value=userId)
-                        button.apply-filters Filter
+                            input(type="hidden", value=userId, data-filter-field="mine")
+                        button(data-action="filter") Filter
 
             ul#works
                 for work in works
@@ -70,8 +69,9 @@ include includes/top
                 - isHidden = curr == 1 ? 'hidden' : ''
                 +pageNav(pagination.first, 'First', '1°')(class=isHidden)
                 +pageNav(pagination.previous, 'Previous', '<-')(class=isHidden)
-                span.current #{curr}
-                +pageNav(pagination.next, 'Next', '->')
+                span.current(data-bind="current-page") #{curr}
+                if pagination.next
+                    +pageNav(pagination.next, 'Next', '->')
 
     else
         b There are no visible works.

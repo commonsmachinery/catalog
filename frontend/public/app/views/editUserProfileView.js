@@ -15,12 +15,12 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var EditUserProfileView = Backbone.View.extend(_.extend(EditMixin, {
         bindings:{
-            '#input-alias': 'alias',
-            '#input-name': 'profile.name',
-            '#input-email': 'profile.email',
-            '#input-website': 'profile.website',
-            '#input-location': 'profile.location',
-            '#input-gravatar_email': 'profile.gravatar_email'
+            '[data-bind="alias"]': 'alias',
+            '[data-bind="name"]': 'profile.name',
+            '[data-bind="email"]': 'profile.email',
+            '[data-bind="website"]': 'profile.website',
+            '[data-bind="location"]': 'profile.location',
+            '[data-bind="gravatar_email"]': 'profile.gravatar_email'
         },
 
         render: function(){

@@ -10,32 +10,30 @@ mixin workSourceItem(source, empty)
     article.entry(id="sources-#{empty || source_work.id}", class="grid-25 tablet-grid-33 mobile-grid-100"): article
     
         header
-            h3: a.title(href="#{empty || source_work.href}") #{empty || source_work.alias || source_work.id}
+            h3: a(href="#{empty || source_work.href}", data-bind="source-title") #{empty || source_work.alias || source_work.id}
 
-            // button.remove -
+            //- button.remove -
 
         dl
-            +defTerm('', 'Added By')
+            +defTerm('', 'Added By')(data-bind="source-added_by")
                 a(href="#{empty || source.added_by.href}") #{empty || source.added_by.id}
             -var date = empty ? empty : work.added_at.toDateString();
-            +defTerm(date.substring(3, date.length), 'Added on')
-            +defTerm(null, 'URL')
+            +defTerm(date.substring(3, date.length), 'Added on')(data-bind="source-added_at")
+            +defTerm(null, 'URL')(data-bind="source-href")
                 a(href="#{emty || source_work.href}") #{empty || source_work.href}
 
 mixin workDetails()
     section
-        - var displayTitle = work.alias || work.id
         header
-            dl.hideCaption 
-                +defTerm(null, 'Title')
-                    h1 #{displayTitle}
+            - var displayTitle = work.alias || work.id
+            h1(data-bind="title") #{displayTitle}
             if work._perms.write
-                span(class="#{work.public ? 'public' : 'private'}")
+                span(class="#{work.public ? 'public' : 'private'}", data-bind="public")
                 span.actions
                     button.edit(data-action="edit") Edit Details
-        span.embed #{'- no embed -'}
-        span.description #{work.description}
-        footer.details(class="grid-100 tablet-grid-100 mobile-grid-100")
+        span(data-bind="oembed") #{'- no embed -'}
+        span(data-bind="description") #{work.description}
+        footer(class="grid-100 tablet-grid-100 mobile-grid-100")
             dl
                 span.gravatar
                     img(src=gravatarHashURL(work.added_by.profile.gravatar_hash, 50))
@@ -44,9 +42,9 @@ mixin workDetails()
                 +defTerm(null, 'on', 'added_at')
                     -var date = work.added_at.toDateString();
                     | #{date.substring(3, date.length)}
-                +defTerm('--th time' , 'for the', 'forks')
-                +defTerm('--' , 'from', 'media')
-                +defTerm('-- collections', 'and currently part of', 'collections')
+                +defTerm('--th time' , 'for the')(data-bind="forks")
+                +defTerm('--' , 'from')(data-bind="media")
+                +defTerm('-- collections', 'and currently part of')(data-bind="collections")
 
 mixin workAnnotations(showEmpty)
     - var empty
@@ -81,12 +79,15 @@ include includes/top
     div#work(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
         div#workDetails(class="grid-85 tablet-grid-80 mobile-grid-100")
             +workDetails
-        div#workAnnotations(class="grid-85 tablet-grid-80 mobile-grid-100")
-            +workAnnotations
-        div#workSources(class="grid-85 tablet-grid-80 mobile-grid-100")
-            +workSources
-        div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
-            +workMedia
+        if work.annotations.length
+            div#workAnnotations(class="grid-85 tablet-grid-80 mobile-grid-100")
+                +workAnnotations
+        if work.sources.length
+            div#workSources(class="grid-85 tablet-grid-80 mobile-grid-100")
+                +workSources
+        if work.media.length
+            div#workMedia(class="grid-85 tablet-grid-80 mobile-grid-100")
+                +workMedia
 
         aside
             button.delete(data-action="delete") Delete Work
@@ -100,17 +101,17 @@ include includes/top
             fieldset#fields
                 span
                     label(for="input-alias") Alias:
-                    input#input-alias(type="text")
+                    input#input-alias(type="text", tabindex="1", data-bind="alias")
                 span
                     label(for="input-description") Description:
-                    textarea#input-description(rows="4", cols="24")
+                    textarea#input-description(rows="4", cols="24", tabindex="1", data-bind="description")
                 span.public
                     label(for="input-public") Make it public
-                    input#input-public(type="checkbox")
+                    input#input-public(type="checkbox", tabindex="1", data-bind="public")
                     label.checkbox(for="input-public")
             fieldset.actions
-                button.save(data-action="save") Save
-                button.cancel(data-action="cancel") Cancel
+                button.save(tabindex="1", data-action="save") Save
+                button.cancel(tabindex="1", data-action="cancel") Cancel
 
     script#workDetailsTemplate(type="text/template")
         +workDetails()

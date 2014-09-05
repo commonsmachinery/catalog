@@ -13,10 +13,10 @@ mixin mediaDetails()
         span.embed #{'- no embed -'}
         footer.details(class="grid-100 tablet-grid-100 mobile-grid-100")
             dl
-                +defTerm(media.version + ',' , 'Version', 'version')
-                +defTerm(null, 'added by')
+                +defTerm(media.version + ',' , 'Version')(data-bind="version")
+                +defTerm(null, 'added by')(data-bind="added-by")
                     a(href=media.added_by.href) #{media.added_by.id}
-                +defTerm(null, 'on', 'added_at')
+                +defTerm(null, 'on', 'added_at')(data-bind="added-at")
                     -var date = media.added_at.toDateString();
                     | #{date.substring(3, date.length)}
 
@@ -38,7 +38,8 @@ include includes/top
     div#media(class="prefix-5 grid-90 tablet-grid-100 mobile-grid-100")
         div#mediaDetails
             +mediaDetails
-        div#mediaAnnotations
-            +mediaAnnotations
+        if media.annotations.length
+            div#mediaAnnotations
+                +mediaAnnotations
 
     include includes/bottom

@@ -15,21 +15,21 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var WorkListItemView = Backbone.View.extend(_.extend(DeleteMixin, {
         bindings: {
-            '.added_by a': {
+            '[data-bind="added_by"]': {
                 observe: 'added_by',
                 update: function ($el, val, model){
                     // override model by added_by subobject
                     util.bind.aliasOrId($el, val.alias, val);
                 }
             },
-            '.added_on dd': {
+            '[data-bind="added_on"] dd': {
                 observe: 'added_at',
                 onGet: function(val){
                     var date = new Date(val).toDateString();
                     return date.substring(3, date.length);
                 }
             },
-            '.batchSelectItem': {
+            '[data-bind="batch-select-item"]': {
                 observe: '_perms.write',
                 update: function($el, val, model){
                     if(val){
@@ -50,7 +50,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                     this.unstickit(model, '.batchSelectItem');
                 },
             },
-            '.delete': {
+            '[data-action="delete"]': {
                 observe: '_perms.admin',
                 update: function($el, val, model){
                     if(val){
@@ -58,16 +58,17 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
                     }
                 }
             },
-            '.meta-author dd': 'annotations.creator' || '???',
-            '.public, .private': {
+            '[data-bind="meta-author"] dd': 'annotations.creator',
+            '[data-bind="meta-title"] dd': 'annotations.title',
+            '[data-bind="public"]': {
                 observe: 'public',
                 update: util.bind.visibilityClass
             },
-            '.title': {
+            '[data-bind="title"]': {
                 observe: 'alias',
                 update: util.bind.aliasOrId
             },
-            '.url a': {
+            '[data-bind="url"] a': {
                 observe: 'href',
                 update: function($el, val, model){
                     $el.attr('href', val);
@@ -94,19 +95,19 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         },
 
         onBatchUpdate: function onBatchUpdate(changes) {
-            if (this._perms.write && this.$('.batchSelectItem').prop('checked')) {
+            if (this._perms.write && this.$('[data-bind="batch-select-item"]').prop('checked')) {
                 this.model.save(changes, { wait: true });
             }
         },
 
         onRequest: function onRequest(){
             util.working('start', this.el);
-            $(this.el).find('.batchSelectItem').prop('disabled', true);
+            $(this.el).find('[data-bind="batch-select-item"]').prop('disabled', true);
         },
 
         onSync: function onSync(){
             util.working('stop', this.el);
-            $(this.el).find('.batchSelectItem').prop('disabled', false);
+            $(this.el).find('[data-bind="batch-select-item"]').prop('disabled', false);
         }
     }));
 

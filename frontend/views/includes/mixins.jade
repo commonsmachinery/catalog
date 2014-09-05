@@ -1,13 +1,8 @@
 
-mixin defTerm(term, caption, className)
+mixin defTerm(term, caption)
+    if attributes['data-bind'] == null
+        - attributes['data-bind'] = caption.toLowerCase().replace(' ', '_')
     if term != null || block
-        //- ToDo: remove unnecessary classes, switch them to data-bind
-        if !attributes.class
-            if !className
-                - attributes.class = caption.toLowerCase().replace(' ', '_')
-            else
-                - attributes.class = className
-
         - var span = '<span'
 
         for val, key in attributes
@@ -24,4 +19,4 @@ mixin defTerm(term, caption, className)
 
 
 mixin pageNav(url, rel, caption)
-    a(class=attributes.class data-goto=rel href=url): | #{caption}
+    a(class=attributes.class, data-goto=rel, href=url): | #{caption}

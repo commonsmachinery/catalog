@@ -22,7 +22,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
     var WorkActionsView = Backbone.View.extend({
         
         events: {
-            'click .apply-batch-update': "onBatchUpdate",
+            'click [data-action="apply-batch-update"]': "onBatchUpdate",
         },
 
         initialize: function(opts) {
@@ -40,7 +40,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             var changes = {};
             var trigger = false;
 
-            var setPublic = this.$('#input-public').val();
+            var setPublic = this.$('[data-set="public"]').val();
             if (setPublic) {
                 if(setPublic === 'true'){
                     changes.public = true;
@@ -60,7 +60,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
     var WorkFiltersView = Backbone.View.extend({
         
         events: {
-            'click .apply-filters': "onApplyFilters"
+            'click [data-action="filter"]': "onApplyFilters"
         },
 
         initialize: function(opts) {
@@ -79,12 +79,12 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             var collection = this.collection;
             var query = collection.queryParams;
             var trigger = false;
-
             // toggle the inclusion of filter
-            var $byMe = this.$('#input-by');
-            var attr = $byMe.parent().data('filter');
+            var $byMe = this.$('[data-filter-by="mine"]').eq(0);
+            var $parent = $byMe.parent();
+            var attr = $parent.data('filter');
             if($byMe.is(':checked')){
-                var val = $byMe.siblings('input').eq(0).val();
+                var val = $parent.find('[data-filter-field="mine"]').eq(0).val();
                 query.filter = attr + ':' + val;
                 trigger = true;
             }
@@ -101,7 +101,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
 
     var WorksBrowseView = Backbone.View.extend({
         events: {
-            'click .pagination a': 'gotoPage'
+            'click [data-goto]': 'gotoPage'
         },
 
         initialize: function() {
@@ -175,7 +175,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
             }
 
             //update current
-            this.$('.pagination .current').html(current);
+            this.$('[data-bind="current-page"]').html(current);
         }
     });
 
@@ -186,7 +186,7 @@ define(['jquery', 'underscore', 'lib/backbone', 'util',
         var data = util.bootstrapData();
 
         collection = new WorkCollection();
-        collection.links[collection.state.currentPage + ''] = window.location;
+        collection.links[collection.state.currentPage + ''] = window.location.toString();
         collection.links[(collection.state.currentPage + 1) + ''] = $('#browseWorks [data-goto=Next]').attr('href');
         if (data){
             collection.add(data);
