@@ -11,7 +11,6 @@
 var debug = require('debug')('catalog:frontend:api:works'); // jshint ignore:line
 
 // External libs
-var url = require('url');
 var _ = require('underscore');
 var Promise = require('bluebird');
 
@@ -21,7 +20,6 @@ var core = require('../../../modules/core/core');
 // Frontend libs
 var respond = require('./respond');
 var request = require('./request');
-var uris = require('../uris');
 
 /* Return promise handler to transform the work object for JSON responses.
  */
@@ -107,42 +105,7 @@ var convertSort = function(req) {
     return sort;
 };
 
-/* Calculate number of skipped records from query parameters.
- */
-var getSkip = function(req) {
-    return req.query.per_page * (req.query.page - 1);
-};
 
-/* Calculate limit of records from query parameters.
- */
-var getLimit = function(req) {
-    return req.query.per_page;
-};
-
-/* Get paging links according for a list of works according to RFC 5005.
- */
-var getPagingLinks = function(req, morePages) {
-    var linkUrl = url.parse(req.url, true);
-    var linkMap = {};
-
-    delete linkUrl.search;
-    linkUrl.query.per_page = req.query.per_page;
-
-    linkUrl.query.page = 1;
-    linkMap.first = url.format(linkUrl);
-
-    if (morePages) {
-        linkUrl.query.page = req.query.page + 1;
-        linkMap.next = url.format(linkUrl);
-    }
-
-    if (req.query.page > 1) {
-        linkUrl.query.page = req.query.page - 1;
-        linkMap.previous = url.format(linkUrl);
-    }
-
-    return linkMap;
-};
 
 exports.createWork = function createWork(req, res, next) {
     request.transformWork(req.body);
@@ -214,17 +177,12 @@ exports.listWorks = function listWorks(req, res, next) {
         core.listWorks(req.context,
                 convertFilter(req),
                 convertSort(req),
-                getSkip(req),
-                getLimit(req)
+                request.getSkip(req),
+                request.getLimit(req)
             )
             .then(transformMany(req))
             .then(function(works) {
-                // If no works are found, there's no next page.  Ideally we'd
-                // detect this already on the last actual page, but that can
-                // be improved later (and preferably then also getting a last
-                // page link)
-                var linkMap = getPagingLinks(req, works.length > 0);
-                uris.setLinks(res, linkMap);
+                var linkMap = respond.setPagingLinks(req, res, works);
                 res.locals.pagination = linkMap;
                 res.locals.works = works;
 
@@ -240,12 +198,12 @@ exports.listWorks = function listWorks(req, res, next) {
         core.listWorks(req.context,
                 convertFilter(req),
                 convertSort(req),
-                getSkip(req),
-                getLimit(req)
+                request.getSkip(req),
+                request.getLimit(req)
             )
             .then(transformMany(req))
             .then(function(works) {
-                uris.setLinks(res, getPagingLinks(req, works.length > 0));
+                respond.setPagingLinks(req, res, works);
                 res.json(200, works);
             })
             .catch(function(err) {

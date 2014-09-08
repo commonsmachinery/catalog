@@ -47,6 +47,10 @@ module.exports = {
             // Size of staging collections, in bytes.  This number
             // need to be tuned for a particular instance.
             stagingSize: 1024 * 1024,
-        }
+        },
+
+        search: {
+            db: 'search'
+        },
     },
 };

@@ -74,34 +74,36 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             return addAnnotation();
         })
         .then(function() {
-            // Same kind of recursion as above
+            var resourceAnnotations = [];
+            var i;
 
-            var i = 0;
-            var addMedia = function() {
-                if (i < media.length) {
-                    debug('creating media %s for work %s', i, workId);
+            // Pick locator and identifier annotations from work media
+            for (i = 0; i < media.length; i++) {
+                var mediaAnnotations = media[i].annotations;
 
-                    var origAnnotations = media[i].annotations;
-                    var createAnnotations = [];
-
-                    for (var j = 0; j < origAnnotations.length; j++) {
-                        createAnnotations.push({
-                            property: origAnnotations[i]
-                        });
+                for (var j = 0; j < mediaAnnotations.length; j++) {
+                    if (mediaAnnotations[j].propertyName === 'identifier' ||
+                        mediaAnnotations[j].propertyName === 'locator') {
+                        resourceAnnotations.push(mediaAnnotations[j]);
                     }
+                }
+            }
 
-                    var mediaObj = {
-                        annotations: createAnnotations
-                    };
+            // Same kind of recursion as above
+            i = 0;
+            var addResourceAnnotation = function() {
+                if (i < resourceAnnotations.length) {
+                    debug('creating resource annotation %s for work %s', i, workId);
 
+                    var annotationObj = { property: resourceAnnotations[i] };
                     ++i;
 
-                    return core.createWorkMedia(context, workId, mediaObj)
-                        .then(addMedia);
+                    return core.createWorkAnnotation(context, workId, annotationObj)
+                        .then(addResourceAnnotation);
                 }
             };
 
-            return addMedia();
+            return addResourceAnnotation();
         })
         .then(function() {
             // resume stream processing
@@ -147,7 +149,8 @@ var main = function() {
     core.init()
         .then(function() {
             console.log('core backend started');
-
+        })
+        .then(function() {
             if (! /^[0-9a-fA-F]{24}$/.test(argv.user)) {
                 return core.getUserByAlias({}, argv.user);
             } else {

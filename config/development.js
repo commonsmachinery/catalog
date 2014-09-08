@@ -19,5 +19,9 @@ module.exports = {
         event: {
             db: 'event-dev',
         },
+
+        search: {
+            db: 'search-dev'
+        },
     },
 };
