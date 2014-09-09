@@ -49,6 +49,8 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             workId = work.id;
         })
         .then(function() {
+            // Create work annotations
+
             // Process one annotation at a time, since
             // core doesn't (currently) allow concurrent
             // modifications to a Work.
@@ -74,6 +76,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             return addAnnotation();
         })
         .then(function() {
+            // Add identifier and locator media annotations to work for simple search
             var resourceAnnotations = [];
             var i;
 
@@ -106,6 +109,35 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             return addResourceAnnotation();
         })
         .then(function() {
+            // Create media using same kind of recursion as above
+            var i = 0;
+            var addMedia = function() {
+                if (i < media.length) {
+                    debug('creating media %s for work %s', i, workId);
+
+                    var origAnnotations = media[i].annotations;
+                    var createAnnotations = [];
+
+                    for (var j = 0; j < origAnnotations.length; j++) {
+                        createAnnotations.push({
+                            property: origAnnotations[j]
+                        });
+                    }
+
+                    var mediaObj = {
+                        annotations: createAnnotations
+                    };
+
+                    ++i;
+
+                    return core.createWorkMedia(context, workId, mediaObj)
+                        .then(addMedia);
+                }
+            };
+
+            return addMedia();
+        })
+        .then(function() {
             // resume stream processing
             if (verbose) {
                 console.log('done.');
@@ -129,8 +161,6 @@ var main = function() {
     var fn;
     var processPackage;
     var userId, ownerOrgId;
-
-    //common.checkId(argv.user, core.UserNotFoundError);
 
     priv = argv.private;
 
