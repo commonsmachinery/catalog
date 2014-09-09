@@ -48,13 +48,6 @@ var processProperty = function processProperty(property) {
         result.uri = property.holderLink;
         result.text = property.holderLabel;
     }
-    else if (pn === 'policy') {
-        result.uri = property.statementLink;
-        result.text = property.statementLabel;
-    }
-    else {
-        result.text = property.value;
-    }
     return result;
 };
 
@@ -67,39 +60,26 @@ var processEventStream = function processEventStream(startDate, done) {
     stream.on('data', function(eventBatch) {
         stream.pause();
 
-        Promise.resolve().then(function () {
-            // Process one event at a time by recursing via promises
-            var i = 0;
-            var events = eventBatch.events;
+        Promise.all(eventBatch.events)
+        .map(function(e) {
+            debug('processing event %s', e);
 
-            var processEvent = function() {
-                if (i < events.length) {
-                    var e = events[i];
-                    debug('processing event %s', i);
+            if (e.event === 'core.work.annotation.added') {
+                var property = e.param.annotation.property;
+                var src = processProperty(property);
 
-                    if (e.event === 'core.work.annotation.added') {
-                        var property = e.param.annotation.property;
-                        var src = processProperty(property);
-                        _.extend(src, {
-                            object_type: eventBatch.type,
-                            object_id: eventBatch.object,
-                            property_type: property.propertyName,
-                            property_id: e.param.annotation.id,
-                        });
+                if (src.uri || src.text) {
+                    _.extend(src, {
+                        object_type: eventBatch.type,
+                        object_id: eventBatch.object,
+                        property_type: property.propertyName,
+                        property_id: e.param.annotation.id,
+                        score: e.param.annotation.score,
+                    });
 
-                        ++i;
-                        return search.createLookup(src)
-                            .then(processEvent);
-                    }
-                    else {
-                        // just continue processing if the event type is unknown
-                        ++i;
-                        return processEvent;
-                    }
+                    return search.createLookup(src);
                 }
-            };
-
-            return processEvent();
+            }
         })
         .then(function() {
             stream.resume();
