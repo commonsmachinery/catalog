@@ -113,8 +113,13 @@ var validatePaging = function(req, res, next) {
  */
 var validateLookupURI = function validateLookupURI(req, res, next) {
     if (!req.query.uri) {
-        res.send(400);
+        return res.send(400);
     }
+
+    if (req.query.context && typeof req.query.context !== 'string') {
+        return res.send(400);
+    }
+
     return next();
 };
 
@@ -122,7 +127,7 @@ var validateLookupURI = function validateLookupURI(req, res, next) {
  */
 var validateLookupHash = function validateLookupHash(req, res, next) {
     if (!req.query.hash) {
-        res.send(400);
+        return res.send(400);
     }
     return next();
 };

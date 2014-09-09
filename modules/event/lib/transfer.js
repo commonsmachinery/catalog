@@ -28,10 +28,11 @@ var db = require('./db');
  *
  * Emits `event` on successful transfer.
  */
-var Transfer = function(sourceCollection) {
+var Transfer = function(sourceCollection, destCollection) {
     EventEmitter.call(this);
 
     this.sourceCollection = sourceCollection;
+    this.destCollection = destCollection;
     this.cursor = null;
     this.lastEvent = null;
 };
@@ -44,7 +45,7 @@ Transfer.prototype.start = function() {
     // Find the last event, or something close enough.  Since
     // ObjectIds start with a timestamp, this get us something at the
     // very end of the event log.
-    db.EventBatch.findOne({}).sort({ _id: -1 }).exec()
+    this.destCollection.findOne({}).sort({ _id: -1 }).exec()
         .then(
             function(ev) {
                 if (ev) {
@@ -127,7 +128,7 @@ Transfer.prototype._handleEvent = function(sourceEvent) {
     }
 
     // Create an event log version and store it.
-    db.EventBatch.create(sourceEvent)
+    this.destCollection.create(sourceEvent)
         .then(
             function onResolve(logEvent) {
                 self.lastEvent = logEvent;
@@ -190,15 +191,23 @@ exports.start = function() {
     Promise.props({
         core: mongo.createConnection(config.core.db),
         event: db.connect(),
+        search: mongo.createConnection(config.search.db),
         pub: pub.open(),
     })
     .then(function(conns) {
         console.log('event transfer starting');
 
-        var coreTransfer = new Transfer(conns.core.collection('coreevents'));
+        var coreTransfer = new Transfer(conns.core.collection('coreevents'), db.EventBatch);
         coreTransfer.start();
 
         coreTransfer.on('event', function(batch) {
+            pub.publish(batch);
+        });
+
+        var searchTransfer = new Transfer(conns.search.collection('searchevents'), db.SearchEventBatch);
+        searchTransfer.start();
+
+        searchTransfer.on('event', function(batch) {
             pub.publish(batch);
         });
     })

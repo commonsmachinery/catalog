@@ -172,8 +172,16 @@ Mirrored from other objects:
     core.group.collection.collaborator.removed(work_id)
 
 
+Search Events
+===========
+
+### Search events (work):
+
+    search.uri.found(context, uri)
+    search.uri.notfound(context, uri)
+
+
 Security events
 ===============
 
 TODO
-

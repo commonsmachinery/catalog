@@ -15,7 +15,6 @@ var Promise = require('bluebird');
 
 // Components
 var search = require('../../../modules/search/search');
-var core = require('../../../modules/core/core');
 
 // Frontend libs
 var respond = require('./respond');
@@ -25,22 +24,17 @@ var uris = require('../uris');
 var transformSearchResult = function(lookup, context) {
     if (lookup.object_type === 'core.Work') {
         var workId = lookup.object_id;
-        var annotationId = lookup.property_id;
-        var result = {};
+        var result;
 
-        result.href = uris.buildWorkURI(workId);
-        result.uri = lookup.uri;
-        result.text = lookup.text;
-        result.property = lookup.property_type;
+        result = {
+            href: uris.buildWorkURI(workId),
+            uri: lookup.uri,
+            text: lookup.text,
+            property: lookup.property_type,
+            score: lookup.score,
+        };
 
-        return core.getWorkAnnotation(context, workId, annotationId)
-            .then(function(annotation) {
-                result.score = annotation.score;
-                return result;
-            })
-            .catch(function(err) {
-                console.error('Could not transform search result %s: %s', lookup.id, err);
-            });
+        return result;
     }
     else {
         throw new Error('Unable to transform search result for %s', lookup.object_type);
@@ -59,27 +53,10 @@ var transformResults = function(req) {
     };
 };
 
-/* Convert query parameters to mongodb search conditions.
- */
-var getConditions = function(req) {
-    var conditions = {};
-
-    if (typeof req.query.uri === 'string') {
-        conditions = {
-            uri: req.query.uri
-        };
-    } else {
-        conditions = {
-            uri: { $in: req.query.uri }
-        };
-    }
-
-    return conditions;
-};
-
 exports.lookupURI = function lookupURI(req, res, next) {
     var jsonResponse = function() {
-        search.lookupURI(getConditions(req),
+        search.lookupURI(req.query.uri,
+                req.query.context,
                 request.getSkip(req),
                 request.getLimit(req))
             .then(transformResults(req))
@@ -100,7 +77,8 @@ exports.lookupURI = function lookupURI(req, res, next) {
 
 exports.lookupHash = function lookupURI(req, res, next) {
     var jsonResponse = function() {
-        search.lookupHash(getConditions(req),
+        search.lookupHash(req.query.hash,
+                req.query.context,
                 request.getSkip(req),
                 request.getLimit(req))
             .then(transformResults(req))

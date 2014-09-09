@@ -13,6 +13,8 @@ var debug = require('debug')('catalog:search:db'); // jshint ignore:line
 var mongo = require('../../../lib/mongo');
 var config = require('../../../lib/config');
 
+// Modules
+var event = require('../../event/event');
 
 var ObjectId = mongo.Schema.Types.ObjectId;
 
@@ -24,6 +26,7 @@ var Lookup = mongo.schema(
         object_id: ObjectId,
         property_type: 'string',
         property_id: ObjectId,
+        score: Number,
     }
 );
 
@@ -35,6 +38,7 @@ Lookup.index({ 'object_id': 1, 'property_id': 1 }); // TODO: unique?
 // Define the search model
 var conn = mongo.connection();
 exports.Lookup = conn.model('Lookup', Lookup);
+exports.SearchEvent = conn.model('SearchEvent', event.EventStagingSchema);
 
 // Connect, returning a promise that resolve when connected
 
