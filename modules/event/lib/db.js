@@ -74,7 +74,7 @@ searchEventBatchProps.date = {
     type: Date,
     required: true,
     default: Date.now,
-    expires: 3600,
+    expires: config.event.searchEventExpires,
 };
 
 var SearchEventBatch = mongo.schema(

@@ -12,6 +12,9 @@ var debug = require('debug')('catalog:search:lookup'); // jshint ignore:line
 // Search libs
 var db = require('./db');
 
+// Common modules
+var command = require('../../../lib/command');
+
 // External libs
 var Promise = require('bluebird');
 
@@ -36,27 +39,6 @@ exports.createLookup = function createLookup(src) {
     });
 };
 
-/* Log an event batch into a module-local collection, resorting to
- * logging to file if it fails.
- *
- * Returns a promise that resolves to the logged events.
- */
-var logEvent = exports.logEvent = function(event) {
-    return new Promise(function(resolve, reject) {
-        event.save(function(err, saved, numberAffected) {
-            if (err || numberAffected !== 1) {
-                // TODO: log this to file
-                console.error('failed to save event: %s (%s)', err, numberAffected);
-                console.error('failed event: %j', event);
-                reject(err || 'no events were saved');
-            }
-            else {
-                resolve(event);
-            }
-        });
-    });
-};
-
 /* Search for URI(s) in lookup database.
  *
  * Returns a Promise which resolves to an array of Lookup objects.
@@ -67,12 +49,12 @@ exports.lookupURI = function lookupURI(uris, context, skip, limit) {
     var results;
 
     if (typeof uris === 'string') {
-        notFound = [uris];
+        notFound = [decodeURI(uris)];
         conditions = {
             uri: uris
         };
     } else {
-        notFound = uris.slice();
+        notFound = uris.map(decodeURI);
         conditions = {
             uri: { $in: uris }
         };
@@ -137,7 +119,7 @@ exports.lookupURI = function lookupURI(uris, context, skip, limit) {
         results = found;
         return events;
     })
-    .map(logEvent)
+    .map(command.logEvent)
     .then(function() {
         return results;
     });

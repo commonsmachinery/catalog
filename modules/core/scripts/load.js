@@ -15,6 +15,7 @@ var core = require('../core');
 // Script libs
 var fs = require('fs');
 var ldj = require('ldjson-stream');
+
 var argv = require('yargs')
     .boolean('verbose').default('verbose', false)
     .string('user').demand('user')
@@ -24,6 +25,21 @@ var argv = require('yargs')
     .demand('_')
     .argv;
 
+// Decode media properties known to be URIs in-place
+var decodeURIProperties = function decodeURIProperties(p) {
+    if (p.propertyName === 'identifier') {
+        p.identifierLink = p.identifierLink && decodeURI(p.identifierLink);
+    }
+    else if (p.propertyName === 'locator') {
+        p.locatorLink = p.locatorLink && decodeURI(p.locatorLink);
+    }
+    else if (p.propertyName === 'creator') {
+        p.creatorLink = p.creatorLink && decodeURI(p.creatorLink);
+    }
+    else if (p.propertyName === 'copyright') {
+        p.holderLink = p.holderLink && decodeURI(p.holderLink);
+    }
+};
 
 var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
@@ -65,6 +81,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                 if (i < annotations.length) {
                     debug('creating annotation %s for work %s', i, workId);
 
+                    decodeURIProperties(annotations[i]);
                     var annotationObj = { property: annotations[i] };
                     ++i;
 
@@ -98,6 +115,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                 if (i < resourceAnnotations.length) {
                     debug('creating resource annotation %s for work %s', i, workId);
 
+                    decodeURIProperties(resourceAnnotations[i]);
                     var annotationObj = { property: resourceAnnotations[i] };
                     ++i;
 
@@ -119,6 +137,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     var createAnnotations = [];
 
                     for (var j = 0; j < origAnnotations.length; j++) {
+                        decodeURIProperties(origAnnotations[j]);
                         createAnnotations.push({
                             property: origAnnotations[j]
                         });
