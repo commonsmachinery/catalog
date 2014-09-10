@@ -13,6 +13,7 @@ var debug = require('debug')('catalog:frontend:api:respond'); // jshint ignore:l
 // External libs
 var Promise = require('bluebird');
 var _ = require('underscore');
+var url = require('url');
 
 // Components
 var core = require('../../../modules/core/core');
@@ -451,6 +452,37 @@ var setObjectHeaders = exports.setObjectHeaders = function(res, object) {
     }
 };
 
+/* Set paging links for a list of search result objects according to RFC 5005.
+ * Additionally returns a {first, next, previous} URL dictionary, which is
+ * currently used in the web frontend.
+ */
+exports.setPagingLinks = function(req, res, objs) {
+    var linkUrl = url.parse(req.url, true);
+    var linkMap = {};
+
+    delete linkUrl.search;
+    linkUrl.query.per_page = req.query.per_page;
+
+    linkUrl.query.page = 1;
+    linkMap.first = url.format(linkUrl);
+
+    // If no works are found, there's no next page.  Ideally we'd
+    // detect this already on the last actual page, but that can
+    // be improved later (and preferably then also getting a last
+    // page link)
+    if (objs.length > 0) {
+        linkUrl.query.page = req.query.page + 1;
+        linkMap.next = url.format(linkUrl);
+    }
+
+    if (req.query.page > 1) {
+        linkUrl.query.page = req.query.page - 1;
+        linkMap.previous = url.format(linkUrl);
+    }
+
+    uris.setLinks(res, linkMap);
+    return linkMap;
+};
 
 /* Return a JSON response handler for a promise chain.
  *

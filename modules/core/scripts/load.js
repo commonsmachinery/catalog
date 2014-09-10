@@ -15,6 +15,7 @@ var core = require('../core');
 // Script libs
 var fs = require('fs');
 var ldj = require('ldjson-stream');
+
 var argv = require('yargs')
     .boolean('verbose').default('verbose', false)
     .string('user').demand('user')
@@ -24,6 +25,21 @@ var argv = require('yargs')
     .demand('_')
     .argv;
 
+// Decode media properties known to be URIs in-place
+var decodeURIProperties = function decodeURIProperties(p) {
+    if (p.propertyName === 'identifier') {
+        p.identifierLink = p.identifierLink && decodeURI(p.identifierLink);
+    }
+    else if (p.propertyName === 'locator') {
+        p.locatorLink = p.locatorLink && decodeURI(p.locatorLink);
+    }
+    else if (p.propertyName === 'creator') {
+        p.creatorLink = p.creatorLink && decodeURI(p.creatorLink);
+    }
+    else if (p.propertyName === 'copyright') {
+        p.holderLink = p.holderLink && decodeURI(p.holderLink);
+    }
+};
 
 var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
@@ -49,6 +65,8 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             workId = work.id;
         })
         .then(function() {
+            // Create work annotations
+
             // Process one annotation at a time, since
             // core doesn't (currently) allow concurrent
             // modifications to a Work.
@@ -63,6 +81,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                 if (i < annotations.length) {
                     debug('creating annotation %s for work %s', i, workId);
 
+                    decodeURIProperties(annotations[i]);
                     var annotationObj = { property: annotations[i] };
                     ++i;
 
@@ -74,8 +93,41 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             return addAnnotation();
         })
         .then(function() {
-            // Same kind of recursion as above
+            // Add identifier and locator media annotations to work for simple search
+            var resourceAnnotations = [];
+            var i;
 
+            // Pick locator and identifier annotations from work media
+            for (i = 0; i < media.length; i++) {
+                var mediaAnnotations = media[i].annotations;
+
+                for (var j = 0; j < mediaAnnotations.length; j++) {
+                    if (mediaAnnotations[j].propertyName === 'identifier' ||
+                        mediaAnnotations[j].propertyName === 'locator') {
+                        resourceAnnotations.push(mediaAnnotations[j]);
+                    }
+                }
+            }
+
+            // Same kind of recursion as above
+            i = 0;
+            var addResourceAnnotation = function() {
+                if (i < resourceAnnotations.length) {
+                    debug('creating resource annotation %s for work %s', i, workId);
+
+                    decodeURIProperties(resourceAnnotations[i]);
+                    var annotationObj = { property: resourceAnnotations[i] };
+                    ++i;
+
+                    return core.createWorkAnnotation(context, workId, annotationObj)
+                        .then(addResourceAnnotation);
+                }
+            };
+
+            return addResourceAnnotation();
+        })
+        .then(function() {
+            // Create media using same kind of recursion as above
             var i = 0;
             var addMedia = function() {
                 if (i < media.length) {
@@ -85,6 +137,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     var createAnnotations = [];
 
                     for (var j = 0; j < origAnnotations.length; j++) {
+                        decodeURIProperties(origAnnotations[j]);
                         createAnnotations.push({
                             property: origAnnotations[j]
                         });
@@ -128,8 +181,6 @@ var main = function() {
     var processPackage;
     var userId, ownerOrgId;
 
-    //common.checkId(argv.user, core.UserNotFoundError);
-
     priv = argv.private;
 
     if (argv.format && argv.format === 'datapackage') {
@@ -147,7 +198,8 @@ var main = function() {
     core.init()
         .then(function() {
             console.log('core backend started');
-
+        })
+        .then(function() {
             if (! /^[0-9a-fA-F]{24}$/.test(argv.user)) {
                 return core.getUserByAlias({}, argv.user);
             } else {

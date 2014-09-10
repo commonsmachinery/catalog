@@ -27,6 +27,7 @@ var works = require('./api/works');
 var media = require('./api/media');
 var annotations = require('./api/annotations');
 var sources = require('./api/sources');
+var search = require('./api/search');
 var etag = require('./etag');
 
 
@@ -108,6 +109,29 @@ var validatePaging = function(req, res, next) {
     return next();
 };
 
+/* Validate lookup parameters
+ */
+var validateLookupURI = function validateLookupURI(req, res, next) {
+    if (!req.query.uri) {
+        return res.send(400);
+    }
+
+    if (req.query.context && typeof req.query.context !== 'string') {
+        return res.send(400);
+    }
+
+    return next();
+};
+
+/* Validate lookup parameters
+ */
+var validateLookupHash = function validateLookupHash(req, res, next) {
+    if (!req.query.hash) {
+        return res.send(400);
+    }
+    return next();
+};
+
 // Define the routes
 
 var router = exports.router = express.Router();
@@ -158,3 +182,9 @@ router.route('/org').all(setContext)
     .post(organisations.createOrganisation).all(handleErrors);
 router.route('/org/:orgId').all(setContext)
     .get(organisations.getOrganisation).all(handleErrors);
+
+router.route('/lookup/uri').all(setContext)
+    .get(validatePaging, validateLookupURI, search.lookupURI).all(handleErrors);
+
+router.route('/lookup/blockhash').all(setContext)
+    .get(validatePaging, validateLookupHash, search.lookupHash).all(handleErrors);

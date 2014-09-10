@@ -12,7 +12,13 @@ var debug = require('debug')('catalog:event'); // jshint ignore:line
 // Event libs
 var db = require('./lib/db');
 var subscriber = require('./lib/subscriber');
-
+var process = require('./lib/process');
 
 exports.EventStagingSchema = db.EventStagingSchema;
 exports.Subscriber = subscriber.Subscriber;
+
+exports.getEventStream = process.getEventStream;
+
+exports.init = function() {
+    return db.connect();
+};

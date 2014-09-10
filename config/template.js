@@ -47,6 +47,13 @@ module.exports = {
             // Size of staging collections, in bytes.  This number
             // need to be tuned for a particular instance.
             stagingSize: 1024 * 1024,
-        }
+
+            // Search events expire time, in seconds.
+            searchEventExpires: 86400,
+        },
+
+        search: {
+            db: 'search'
+        },
     },
 };

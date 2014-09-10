@@ -9,7 +9,9 @@
 var frontend = require('./frontend/main');
 var core = require('./modules/core/main');
 var event = require('./modules/event/main');
+var search = require('./modules/search/main');
 
 frontend();
 core();
 event();
+search();

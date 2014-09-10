@@ -28,6 +28,8 @@ or `profile.name`.
 `property_id`: The ID of the property, if applicable
 (e.g. `Annotation._id`), otherwise the same as `property_type`.
 
+`score`: The score of annotation used to create Lookup record, if applicable.
+
 
 ### Index
 

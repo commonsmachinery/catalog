@@ -104,3 +104,15 @@ exports.transformOrganisation = function(org) {
     objectToID(org, 'added_by');
     objectsToIDs(org.owners, null);
 };
+
+/* Calculate number of skipped records from query parameters.
+ */
+exports.getSkip = function(req) {
+    return req.query.per_page * (req.query.page - 1);
+};
+
+/* Calculate limit of records from query parameters.
+ */
+exports.getLimit = function(req) {
+    return req.query.per_page;
+};
