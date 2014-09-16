@@ -52,7 +52,9 @@ exports.init = function init(app, sessionstore, db) {
     sessions = sessionstore;
     app.use(expressSession({
         secret: config.frontend.secret,
-        store: sessionstore
+        store: sessionstore,
+        resave: true,
+        saveUninitialized: false
     }));
 
     if (dev) {

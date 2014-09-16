@@ -43,7 +43,7 @@ exports.getCurrentUser = function getCurrentUser(req, res) {
         res.redirect(uris.buildUserURI(req.context.userId));
     }
     else {
-        res.send(403);
+        res.status(403).end();
     }
 };
 

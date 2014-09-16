@@ -95,7 +95,7 @@ exports.getAllAnnotations = function getAllAnnotations(req, res, next) {
         core.getAllAnnotations(req.context, req.params.workId)
             .then(transformMany(req))
             .then(function(annotations) {
-                return res.json(200, annotations);
+                return res.status(200).json(annotations);
             })
             .catch(function(err) {
                 next(err);

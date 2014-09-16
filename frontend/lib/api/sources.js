@@ -95,7 +95,7 @@ exports.getAllSources = function getAllSources(req, res, next) {
         core.getAllSources(req.context, req.params.workId)
             .then(transformMany(req))
             .then(function(sources) {
-                return res.json(200, sources);
+                return res.status(200).json(sources);
             })
             .catch(function(err) {
                 next(err);

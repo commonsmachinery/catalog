@@ -65,22 +65,22 @@ var handleErrors = function handleErrors(err, req, res, next) {
     if (err instanceof command.ConflictError) {
         if (req.context.version !== undefined) {
             debug('client requested object version not current: %j', req.context);
-            res.send(412); // precondition failed
+            res.status(412).end(); // precondition failed
         }
         else {
             debug('conflict while updating: %s', err);
-            res.send(503); // internal service error
+            res.status(503).end(); // internal service error
         }
     }
     else if (err instanceof command.PermissionError) {
         debug('%s: %s', req.path, err);
-        res.send(403); // forbidden
+        res.status(403).end(); // forbidden
     }
     else if (err instanceof command.DuplicateKeyError) {
-        res.json(409, { collection: err.collection, property: err.property });
+        res.status(409).json({ collection: err.collection, property: err.property });
     }
     else if (err instanceof core.NotFoundError) {
-        res.send(404);
+        res.status(404).end();
     }
     else {
         // Hand it on to next error handler
@@ -95,11 +95,11 @@ var validatePaging = function(req, res, next) {
     req.query.per_page = req.query.per_page ? parseInt(req.query.per_page) : config.frontend.defaultWorksPerPage;
 
     if (!req.query.page || req.query.page < 1) {
-        return res.send(400);
+        return res.status(400).end();
     }
 
     if (!req.query.per_page  || req.query.per_page  < 1) {
-        return res.send(400);
+        return res.status(400).end();
     }
 
     if (req.query.per_page  > config.frontend.maxWorksPerPage) {
@@ -113,11 +113,11 @@ var validatePaging = function(req, res, next) {
  */
 var validateLookupURI = function validateLookupURI(req, res, next) {
     if (!req.query.uri) {
-        return res.send(400);
+        return res.status(400).end();
     }
 
     if (req.query.context && typeof req.query.context !== 'string') {
-        return res.send(400);
+        return res.status(400).end();
     }
 
     return next();
@@ -127,7 +127,7 @@ var validateLookupURI = function validateLookupURI(req, res, next) {
  */
 var validateLookupHash = function validateLookupHash(req, res, next) {
     if (!req.query.hash) {
-        return res.send(400);
+        return res.status(400).end();
     }
     return next();
 };

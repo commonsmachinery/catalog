@@ -51,7 +51,7 @@ exports.createWorkMedia = function createWorkMedia(req, res, next) {
                     next(err);
                 });
         } else {
-            res.send(400, { error: 'Invalid media URL' });
+            res.status(400).json({ error: 'Invalid media URL' });
         }
     } else {
         core.createWorkMedia(req.context, req.params.workId, req.body)

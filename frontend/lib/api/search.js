@@ -62,7 +62,7 @@ exports.lookupURI = function lookupURI(req, res, next) {
             .then(transformResults(req))
             .then(function(results) {
                 respond.setPagingLinks(req, res, results);
-                res.json(200, results);
+                res.status(200).json(results);
             })
             .catch(function(err) {
                 next(err);
@@ -84,7 +84,7 @@ exports.lookupHash = function lookupURI(req, res, next) {
             .then(transformResults(req))
             .then(function(results) {
                 respond.setPagingLinks(req, res, results);
-                res.json(200, results);
+                res.status(200).json(results);
             })
             .catch(function(err) {
                 next(err);

@@ -204,7 +204,7 @@ exports.listWorks = function listWorks(req, res, next) {
             .then(transformMany(req))
             .then(function(works) {
                 respond.setPagingLinks(req, res, works);
-                res.json(200, works);
+                res.status(200).json(works);
             })
             .catch(function(err) {
                 next(err);

@@ -60,9 +60,9 @@ function main() {
     app.use(serveStatic(__dirname + config.frontend.static));
     app.use(serveStatic(__dirname + config.frontend.static_lib));
 
-    app.use(morgan());
+    app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
     app.use(bodyParser.json());
-    app.use(bodyParser());
+    app.use(bodyParser.urlencoded({extended: false}));
     app.use(cookieParser());
 
     // Templating
