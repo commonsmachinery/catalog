@@ -1,4 +1,4 @@
 
 lib = $(top)/lib
 
-jshint-files = $(lib)/*.js
+jshint-files += $(lib)/*.js

@@ -15,12 +15,12 @@ var express = require('express');
 
 // Common libs
 var command = require('../../lib/command');
-var config = require('../../lib/config');
 
 // Modules
 var core = require('../../modules/core/core');
 
 // Frontend libs
+var request = require('./api/request');
 var users = require('./api/users');
 var organisations = require('./api/organisations');
 var works = require('./api/works');
@@ -28,38 +28,11 @@ var media = require('./api/media');
 var annotations = require('./api/annotations');
 var sources = require('./api/sources');
 var search = require('./api/search');
-var etag = require('./etag');
 
 
 // REST-specific middlewares
 
-/* Populate the context to be passed into the
- * core functions from the request.
- */
-var setContext = function setContext(req, res, next) {
-    req.context = {};
-    if (req.session && req.session.uid) {
-        req.context.userId = req.session.uid;
-    }
-
-    if (req.get('if-match')) {
-        var t = etag.parse(req.get('if-match'));
-
-        if (t) {
-            debug('setting version from If-Match: %j', t);
-            req.context.objectId = t.id;
-            req.context.version = t.version;
-        }
-    }
-
-    // Map from object IDs to permissions, collected during processing
-    // (e.g. picking up access tokens)
-    req.context.perms = {};
-
-    next();
-};
-
-/* Handle all general core errors
+/* Handle all general core errors in a REST API kind of way
  */
 var handleErrors = function handleErrors(err, req, res, next) {
     if (err instanceof command.ConflictError) {
@@ -88,26 +61,34 @@ var handleErrors = function handleErrors(err, req, res, next) {
     }
 };
 
-/* Validate paging parameters
+/* Validate that a REST GET endpoint is being called, and not a web
+ * page one.  This mut be part of the route.VERB() middleware stack,
+ * since it uses next('route').
  */
-var validatePaging = function(req, res, next) {
-    req.query.page = req.query.page ? parseInt(req.query.page) : 1;
-    req.query.per_page = req.query.per_page ? parseInt(req.query.per_page) : config.frontend.defaultWorksPerPage;
-
-    if (!req.query.page || req.query.page < 1) {
-        return res.status(400).end();
+var validateAccept = function(req, res, next) {
+    // By including HTML, it will be handled as a preference
+    // when the client doesn't specify anything or says */*
+    if (req.accepts('text/html', 'application/json') === 'application/json') {
+        next();
     }
-
-    if (!req.query.per_page  || req.query.per_page  < 1) {
-        return res.status(400).end();
+    else {
+        next('route');
     }
-
-    if (req.query.per_page  > config.frontend.maxWorksPerPage) {
-        req.query.per_page = config.frontend.maxWorksPerPage;
-    }
-
-    return next();
 };
+
+
+/* Validate that a PUT or POST has a JSON body.  This mut be part of
+ * the route.VERB() middleware stack, since it uses next('route').
+ */
+var validateBody = function(req, res, next) {
+    if (req.is('json')) {
+        next();
+    }
+    else {
+        next('route');
+    }
+};
+
 
 /* Validate lookup parameters
  */
@@ -134,57 +115,119 @@ var validateLookupHash = function validateLookupHash(req, res, next) {
 
 // Define the routes
 
-var router = exports.router = express.Router();
+var read = exports.readRouter = express.Router();
+var write = exports.writeRouter = express.Router();
 
-router.route('/users/current').all(setContext)
-    .get(users.getCurrentUser).all(handleErrors);
-
-router.route('/users/:userId').all(setContext)
+read.route('/users/:userId')
+    .all(validateAccept, request.setContext)
     .get(users.getUser)
-    .put(users.updateUser)
-    .patch(users.updateUser).all(handleErrors);
+    .all(handleErrors);
 
-router.route('/works').all(setContext)
-    .get(validatePaging, works.listWorks)
-    .post(works.createWork).all(handleErrors);
-router.route('/works/:workId').all(setContext)
+write.route('/users/:userId')
+    .all(request.setContext)
+    .put(validateBody, users.updateUser)
+    .patch(validateBody, users.updateUser)
+    .all(handleErrors);
+
+read.route('/works')
+    .all(validateAccept, request.setContext)
+    .get(request.validatePaging, works.listWorks)
+    .all(handleErrors);
+
+write.route('/works')
+    .all(request.setContext)
+    .post(validateBody, works.createWork)
+    .all(handleErrors);
+
+read.route('/works/:workId')
+    .all(validateAccept, request.setContext)
     .get(works.getWork)
-    .put(works.updateWork)
-    .patch(works.updateWork)
-    .delete(works.deleteWork).all(handleErrors);
+    .all(handleErrors);
 
-router.route('/works/:workId/media').all(setContext)
-    .post(media.createWorkMedia)
-    .delete(media.unlinkAllMedia).all(handleErrors);
-router.route('/works/:workId/media/:mediaId').all(setContext)
+write.route('/works/:workId')
+    .all(request.setContext)
+    .put(validateBody, works.updateWork)
+    .patch(validateBody, works.updateWork)
+    .delete(works.deleteWork)
+    .all(handleErrors);
+
+write.route('/works/:workId/media')
+    .all(request.setContext)
+    .post(validateBody, media.createWorkMedia)
+    .delete(media.unlinkAllMedia)
+    .all(handleErrors);
+
+read.route('/works/:workId/media/:mediaId')
+    .all(validateAccept, request.setContext)
     .get(media.getWorkMedia)
-    .delete(media.removeMediaFromWork).all(handleErrors);
+    .all(handleErrors);
 
-router.route('/works/:workId/annotations').all(setContext)
+write.route('/works/:workId/media/:mediaId')
+    .all(request.setContext)
+    .delete(media.removeMediaFromWork)
+    .all(handleErrors);
+
+read.route('/works/:workId/annotations')
+    .all(validateAccept, request.setContext)
     .get(annotations.getAllAnnotations)
-    .post(annotations.createWorkAnnotation)
-    .delete(annotations.removeAllAnnotations).all(handleErrors);
-router.route('/works/:workId/annotations/:annotationId').all(setContext)
-    .get(annotations.getWorkAnnotation)
-    .put(annotations.updateWorkAnnotation)
-    .patch(annotations.updateWorkAnnotation)
-    .delete(annotations.removeWorkAnnotation).all(handleErrors);
+    .all(handleErrors);
 
-router.route('/works/:workId/sources').all(setContext)
+write.route('/works/:workId/annotations')
+    .all(request.setContext)
+    .post(validateBody, annotations.createWorkAnnotation)
+    .delete(annotations.removeAllAnnotations)
+    .all(handleErrors);
+
+read.route('/works/:workId/annotations/:annotationId')
+    .all(request.setContext)
+    .get(validateAccept, annotations.getWorkAnnotation)
+    .all(handleErrors);
+
+write.route('/works/:workId/annotations/:annotationId')
+    .all(request.setContext)
+    .put(validateBody, annotations.updateWorkAnnotation)
+    .patch(validateBody, annotations.updateWorkAnnotation)
+    .delete(annotations.removeWorkAnnotation)
+    .all(handleErrors);
+
+read.route('/works/:workId/sources')
+    .all(validateAccept, request.setContext)
     .get(sources.getAllSources)
-    .post(sources.createWorkSource)
-    .delete(sources.removeAllSources).all(handleErrors);
-router.route('/works/:workId/sources/:sourceId').all(setContext)
+    .all(handleErrors);
+
+write.route('/works/:workId/sources')
+    .all(request.setContext)
+    .post(validateBody, sources.createWorkSource)
+    .delete(sources.removeAllSources)
+    .all(handleErrors);
+
+read.route('/works/:workId/sources/:sourceId')
+    .all(validateAccept, request.setContext)
     .get(sources.getWorkSource)
-    .delete(sources.removeWorkSource).all(handleErrors);
+    .all(handleErrors);
 
-router.route('/org').all(setContext)
-    .post(organisations.createOrganisation).all(handleErrors);
-router.route('/org/:orgId').all(setContext)
-    .get(organisations.getOrganisation).all(handleErrors);
+write.route('/works/:workId/sources/:sourceId')
+    .all(request.setContext)
+    .delete(sources.removeWorkSource)
+    .all(handleErrors);
 
-router.route('/lookup/uri').all(setContext)
-    .get(validatePaging, validateLookupURI, search.lookupURI).all(handleErrors);
+write.route('/org')
+    .all(request.setContext)
+    .post(validateBody, organisations.createOrganisation)
+    .all(handleErrors);
 
-router.route('/lookup/blockhash').all(setContext)
-    .get(validatePaging, validateLookupHash, search.lookupHash).all(handleErrors);
+read.route('/org/:orgId')
+    .all(validateAccept, request.setContext)
+    .get(organisations.getOrganisation)
+    .all(handleErrors);
+
+read.route('/lookup/uri')
+    .all(validateAccept, request.setContext)
+    .get(request.validatePaging, validateLookupURI, search.lookupURI)
+    .all(handleErrors);
+
+read.route('/lookup/blockhash')
+    .all(validateAccept, request.setContext)
+    .get(request.validatePaging, validateLookupHash, search.lookupHash)
+    .all(handleErrors);
+

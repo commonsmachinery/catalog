@@ -15,12 +15,15 @@ var Promise = require('bluebird');
 var expressSession = require('express-session');
 var persona = require('express-persona');
 
-// Common modules
-var config = require('../../lib/config');
+// Common libs
+var config = require('../../../lib/config');
 
-var core = require('../../modules/core/core');
+// Modules
+var core = require('../../../modules/core/core');
 
 // Frontend modules
+var uris = require('../../lib/uris');
+
 
 /* Module globals */
 var env;
@@ -32,7 +35,8 @@ var User;
 var useTestAccount,
 	checkUserSession,
 	setLocals,
-	personaAudience,
+    personaAudience,
+    getCurrentUser,
 	loginScreen,
 	logout;
 
@@ -77,6 +81,9 @@ exports.init = function init(app, sessionstore, db) {
 
     /* Screens */
     app.get('/login', loginScreen);
+
+    // Redirect to help clients know who's logged in
+    app.get('/users/current', getCurrentUser);
 
     if (dev) {
         // Handle test account logins by generating an email from the
@@ -313,6 +320,14 @@ personaAudience = function personaAudience() {
 };
 
 
+getCurrentUser = function(req, res) {
+    if (req.session && req.session.uid) {
+        res.redirect(uris.buildUserURI(req.session.uid));
+    }
+    else {
+        res.status(403).end();
+    }
+};
 
 /* ========================== REST Functions =============================== */
 

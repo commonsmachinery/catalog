@@ -54,45 +54,32 @@ var transformResults = function(req) {
 };
 
 exports.lookupURI = function lookupURI(req, res, next) {
-    var jsonResponse = function() {
-        search.lookupURI(req.query.uri,
-                req.query.context,
-                request.getSkip(req),
-                request.getLimit(req))
-            .then(transformResults(req))
-            .then(function(results) {
-                respond.setPagingLinks(req, res, results);
-                res.status(200).json(results);
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        default: jsonResponse,
-        json: jsonResponse
-    });
+    search.lookupURI(req.query.uri,
+                     req.query.context,
+                     request.getSkip(req),
+                     request.getLimit(req))
+        .then(transformResults(req))
+        .then(function(results) {
+            respond.setPagingLinks(req, res, results);
+            res.status(200).json(results);
+        })
+        .catch(function(err) {
+            next(err);
+        });
 };
 
-exports.lookupHash = function lookupURI(req, res, next) {
-    var jsonResponse = function() {
-        search.lookupHash(req.query.hash,
-                req.query.context,
-                request.getSkip(req),
-                request.getLimit(req))
-            .then(transformResults(req))
-            .then(function(results) {
-                respond.setPagingLinks(req, res, results);
-                res.status(200).json(results);
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
 
-    res.format({
-        default: jsonResponse,
-        json: jsonResponse
-    });
+exports.lookupHash = function lookupURI(req, res, next) {
+    search.lookupHash(req.query.hash,
+                      req.query.context,
+                      request.getSkip(req),
+                      request.getLimit(req))
+        .then(transformResults(req))
+        .then(function(results) {
+            respond.setPagingLinks(req, res, results);
+            res.status(200).json(results);
+        })
+        .catch(function(err) {
+            next(err);
+        });
 };

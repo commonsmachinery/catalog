@@ -16,8 +16,6 @@ var debug = require('debug')('catalog:frontend:api:users'); // jshint ignore:lin
 var core = require('../../../modules/core/core');
 
 // Frontend libs
-var uris = require('../uris');
-
 var respond = require('./respond');
 var request = require('./request');
 
@@ -38,43 +36,13 @@ var updateGravatarHash = function updateGravatarHash(req){
     };
 };
 
-exports.getCurrentUser = function getCurrentUser(req, res) {
-    if (req.context.userId) {
-        res.redirect(uris.buildUserURI(req.context.userId));
-    }
-    else {
-        res.status(403).end();
-    }
-};
-
 exports.getUser = function getUser(req, res, next) {
-    var htmlResponse = function() {
-        core.getUser(req.context, req.params.userId)
-            .then(transform())
-            .then(function(user) {
-                respond.setObjectHeaders(res, user);
-                res.locals.user = user;
-                res.render('userProfile');
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getUser(req.context, req.params.userId)
-            .then(transform())
-            .then(respond.asJSON(res))
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse
-    });
+    core.getUser(req.context, req.params.userId)
+        .then(transform())
+        .then(respond.asJSON(res))
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 

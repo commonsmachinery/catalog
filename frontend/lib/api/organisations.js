@@ -28,34 +28,12 @@ var transform = function() {
 };
 
 exports.getOrganisation = function getOrganisation(req, res, next) {
-    var htmlResponse = function() {
-        core.getOrganisation(req.context, req.params.orgId)
-            .then(transform())
-            .then(function(org) {
-                respond.setObjectHeaders(res, org);
-
-                // TODO: render org view
-                throw new Error("Organisation view not implemented!");
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getOrganisation(req.context, req.params.orgId)
-            .then(transform())
-            .then(respond.asJSON(res))
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse
-    });
+    core.getOrganisation(req.context, req.params.orgId)
+        .then(transform())
+        .then(respond.asJSON(res))
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 exports.createOrganisation = function createOrganisation(req, res, next) {

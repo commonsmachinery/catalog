@@ -46,67 +46,23 @@ var transformMany = function(req) {
 };
 
 exports.getWorkAnnotation = function getWorkAnnotation(req, res, next) {
-    var htmlResponse = function() {
-        core.getWorkAnnotation(req.context, req.params.workId, req.params.annotationId)
-            .then(transform(req))
-            .then(function(annotation) {
-                respond.setObjectHeaders(res, annotation);
-
-                // TODO: render work view
-                throw new Error("Annotation view not implemented!");
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getWorkAnnotation(req.context, req.params.workId, req.params.annotationId)
-            .then(transform(req))
-            .then(respond.asJSON(res))
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse,
-    });
+    core.getWorkAnnotation(req.context, req.params.workId, req.params.annotationId)
+        .then(transform(req))
+        .then(respond.asJSON(res))
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 exports.getAllAnnotations = function getAllAnnotations(req, res, next) {
-    var htmlResponse = function() {
-        core.getAllAnnotations(req.context, req.params.workId)
-            .then(transformMany(req))
-            .then(function(annotations) {
-                respond.setObjectHeaders(res, annotations);
-
-                // TODO: render annotations view
-                throw new Error("Annotations view not implemented!");
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getAllAnnotations(req.context, req.params.workId)
-            .then(transformMany(req))
-            .then(function(annotations) {
-                return res.status(200).json(annotations);
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse,
-    });
+    core.getAllAnnotations(req.context, req.params.workId)
+        .then(transformMany(req))
+        .then(function(annotations) {
+            return res.status(200).json(annotations);
+        })
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 

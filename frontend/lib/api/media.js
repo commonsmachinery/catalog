@@ -64,33 +64,12 @@ exports.createWorkMedia = function createWorkMedia(req, res, next) {
 };
 
 exports.getWorkMedia = function getWorkMedia(req, res, next) {
-    var htmlResponse = function() {
-        core.getWorkMedia(req.context, req.params.workId, req.params.mediaId)
-            .then(transform(req))
-            .then(function(media) {
-                respond.setObjectHeaders(res, media);
-                res.locals.media = media;
-                res.render('media');
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getWorkMedia(req.context, req.params.workId, req.params.mediaId)
-            .then(transform(req))
-            .then(respond.asJSON(res))
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse,
-    });
+    core.getWorkMedia(req.context, req.params.workId, req.params.mediaId)
+        .then(transform(req))
+        .then(respond.asJSON(res))
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 exports.removeMediaFromWork = function removeMediaFromWork(req, res, next) {

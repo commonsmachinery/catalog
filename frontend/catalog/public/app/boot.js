@@ -14,8 +14,7 @@ requirejs.config({
 		views: '../app/views',
 		collections: '../app/collections',
 		underscore: '../lib/underscore',
-		jquery : '../lib/jquery',
-        rdflib : '../lib/rdflib',
+        jquery : '../lib/jquery'
         },
 	map: {
 		'lib': {
@@ -85,11 +84,8 @@ require(['jquery', 'lib/backbone', 'session',
 		routes: {
 			"": 'home',
 			"admin(/)": 'admin',
-            "users/:id/sources(/)": 'userSources',
-			"works(?:filters)(/)": 'works',
+            "works(?:filters)(/)": 'works',
 			"works/:id(/)": 'work',
-			"works/:id/posts(/)": 'posts',
-            "works/:id/sources(/)": 'workSources',
             "users/:id(/)": 'userProfile',
 			"login(/)": 'login'
 		},
@@ -108,17 +104,11 @@ require(['jquery', 'lib/backbone', 'session',
 		userProfile: function(id){
 			require(['userProfile'], function(view){ view(router); });
 		},
-        userSources: function(userId){
-            require(['sources'], function(view) { view(router, '/users/' + userId); });
-        },
         works: function(filters) {
 			require(['browseWorks'], function(view) { view(router, filters); });
 		},
 		work: function (id) {
 			require(['workPermalink'], function(view) { view(router, id); });
-        },
-        workSources: function(workId){
-            require(['sources'], function(view) { view(router, '/works/' + workId); });
         },
     });
 
