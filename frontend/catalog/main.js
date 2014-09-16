@@ -21,17 +21,19 @@ var Promise = require('bluebird');
 var serveStatic = require('serve-static');
 
 // Common libs
-var config = require('../lib/config');
-var mongo = require('../lib/mongo');
-var sessionStore = require('../lib/sessionStore');
+var config = require('../../lib/config');
+var mongo = require('../../lib/mongo');
+var sessionStore = require('../../lib/sessionStore');
 
 // Modules
-var core = require('../modules/core/core');
+var core = require('../../modules/core/core');
 
 // Frontend libs
-var sessions = require('./lib/sessions');
-var rest = require('./lib/rest');
-var webapp = require('./lib/webapp');
+var rest = require('../lib/rest');
+
+// Catalog frontend libs
+var sessions = require('./sessions');
+var webapp = require('./webapp');
 
 
 function main() {
