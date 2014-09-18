@@ -13,7 +13,7 @@ Installing prerequisites
 
 On Ubuntu 14.04:
 
-    sudo apt-get install build-essential nodejs libzmq3-dev
+    sudo apt-get install build-essential nodejs npm libzmq3-dev
 
 Docker
 ------
