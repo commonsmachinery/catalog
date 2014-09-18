@@ -22,6 +22,7 @@ var argv = require('yargs')
     .boolean('private').default('private', false)
     .string('format').default('format', 'datapackage')
     .string('ownerOrg').default('ownerOrg', undefined)
+    .boolean('keepgoing').default('keepgoing', false)
     .demand('_')
     .argv;
 
@@ -43,6 +44,7 @@ var decodeURIProperties = function decodeURIProperties(p) {
 
 var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
+    var count = 0;
 
     stream.on('data', function(obj) {
         stream.pause();
@@ -52,7 +54,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
         var workId;
 
         if (verbose) {
-            console.log('creating work...');
+            console.log('creating work %s...', count++);
         }
 
         core.createWork(context, {
@@ -82,7 +84,9 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     debug('creating annotation %s for work %s', i, workId);
 
                     decodeURIProperties(annotations[i]);
-                    var annotationObj = { property: annotations[i] };
+
+                    // Assume work annotations are very good
+                    var annotationObj = { property: annotations[i], score: 99 };
                     ++i;
 
                     return core.createWorkAnnotation(context, workId, annotationObj)
@@ -116,7 +120,11 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     debug('creating resource annotation %s for work %s', i, workId);
 
                     decodeURIProperties(resourceAnnotations[i]);
-                    var annotationObj = { property: resourceAnnotations[i] };
+
+                    // Annotations copied from media get a lower score, since
+                    // they just identify an instance of the work, not the work
+                    // as a whole
+                    var annotationObj = { property: resourceAnnotations[i], score: 90 };
                     ++i;
 
                     return core.createWorkAnnotation(context, workId, annotationObj)
@@ -165,8 +173,13 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             stream.resume();
         })
         .catch(function(err) {
-            console.error('error %s', err);
-            done(err);
+            console.error('error %s: %j', err, obj);
+            if (argv.keepgoing) {
+                stream.resume();
+            }
+            else {
+                done(err);
+            }
         });
     });
 
