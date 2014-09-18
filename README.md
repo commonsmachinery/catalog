@@ -3,28 +3,24 @@ This is very early proof-of-concept work on the Commons Machinery metadata catal
 Requirements
 ============
 
-* Python 2.7, virtualenv, pip
-* RabbitMQ
 * Node.js
-* GCC (to build Redis)
-* Redland
+* MongoDB
+* ZeroMQ
 
-The catalog uses celery and redis internally. Those are built and installed locally under build/backend
 
 Installing prerequisites
 ------------------------
 
-On Ubuntu:
+On Ubuntu 14.04:
 
-    sudo apt-get install rabbitmq-server python-virtualenv build-essential python2.7-dev librdf0-dev librdf-storage-sqlite swig autoconf automake libtool curl
-
-Make sure that Node.js is installed to run the frontend.
-
+    sudo apt-get install build-essential nodejs libzmq3-dev
 
 Docker
 ------
 
-There are docker images to help run the catalog.  For details, see `doc/docker.html`.
+It is recommended to run at least MongoDB in a Docker image during
+development.  In production all parts should be run in Docker (or on a
+PaaS).  For details, see `doc/docker.html`.
 
 Configuration
 -------------
@@ -32,49 +28,22 @@ Configuration
 See `doc/config.md` for documentation. Default settings currently work
 for local/development setups.
 
-Deploying locally
-=================
-
-Run the following command to setup virtualenv under build/backend with all the required dependencies.
-
-    sh ./bootstrap.sh
-
-Local store (sqlite) can be initialized by running:
-
-    backend/init_db.sh
-
-The script will create an empty SQLite database in ./data.
-
-Running
--------
-
-All the components can be started by just running `./run_local.sh`.
-
-Data and event log will be saved under `./data/db` which is created by
-`run_local.sh` if it doesn't already exist.
-
-To run the backend manually:
-
-    mkdir -p data
-    export CATALOG_DATA_DIR="$PWD/data"
-    
-    cd backend
-    ../build/backend/bin/celery -A catalog worker --loglevel=info
-
-To run the frontend manually:
-
-    cd frontend
-    node server.js
-
-
 Using
 =====
 
-Note: to make the css styles, if you haven't run ```make```, then you need to run
-```
-cd frontend
-make style
-```
+Run `./setup_devenv.sh` in the top dir to install all dependencies.
+
+Run `make` to build the CSS files necessary for the web interface.
+
+There are a number of entry points to different parts of the system,
+see `doc/codestructure.md`.
+
+To just run the full catalog frontend and all backend tasks, run
+`main.js` in the top directory.  It can be started with suitable env
+vars for development like this:
+
+    BLUEBIRD_DEBUG=1 DEBUG='catalog:*' NODE_ENV=development nodejs main.js
+
 
 User accounts
 -------------
