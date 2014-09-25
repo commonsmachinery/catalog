@@ -57,7 +57,7 @@ build
 .grunt
 
 node_modules
-frontend/public/css/*
+frontend/catalog/public/css/*
 frontend/public/lib/*
 
 # Catalog-specific directories

@@ -46,67 +46,23 @@ var transformMany = function(req) {
 };
 
 exports.getWorkSource = function getWorkSource(req, res, next) {
-    var htmlResponse = function() {
-        core.getWorkSource(req.context, req.params.workId, req.params.sourceId)
-            .then(transform(req))
-            .then(function(source) {
-                respond.setObjectHeaders(res, source);
-
-                // TODO: render work view
-                throw new Error("Source view not implemented!");
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getWorkSource(req.context, req.params.workId, req.params.sourceId)
-            .then(transform(req))
-            .then(respond.asJSON(res))
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse,
-    });
+    core.getWorkSource(req.context, req.params.workId, req.params.sourceId)
+        .then(transform(req))
+        .then(respond.asJSON(res))
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 exports.getAllSources = function getAllSources(req, res, next) {
-    var htmlResponse = function() {
-        core.getAllSources(req.context, req.params.workId)
-            .then(transformMany(req))
-            .then(function(sources) {
-                respond.setObjectHeaders(res, sources);
-
-                // TODO: render sources view
-                throw new Error("Sources view not implemented!");
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    var jsonResponse = function() {
-        core.getAllSources(req.context, req.params.workId)
-            .then(transformMany(req))
-            .then(function(sources) {
-                return res.json(200, sources);
-            })
-            .catch(function(err) {
-                next(err);
-            });
-    };
-
-    res.format({
-        html: htmlResponse,
-        default: htmlResponse,
-        json: jsonResponse,
-    });
+    core.getAllSources(req.context, req.params.workId)
+        .then(transformMany(req))
+        .then(function(sources) {
+            return res.status(200).json(sources);
+        })
+        .catch(function(err) {
+            next(err);
+        });
 };
 
 

@@ -7,7 +7,7 @@
 
 'use strict';
 
-var mongo = require('../../../lib/mongo');
+var mongo = require('../../../../lib/mongo');
 
 var schema = mongo.schema(
     {

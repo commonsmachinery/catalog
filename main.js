@@ -6,12 +6,12 @@
   Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
 */
 
-var frontend = require('./frontend/main');
+var catalog = require('./frontend/catalog/main');
 var core = require('./modules/core/main');
 var event = require('./modules/event/main');
 var search = require('./modules/search/main');
 
-frontend();
+catalog();
 core();
 event();
 search();

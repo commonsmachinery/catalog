@@ -10,7 +10,11 @@
 
 var debug = require('debug')('catalog:frontend:api:request'); // jshint ignore:line
 
+// Common libs
+var config = require('../../../lib/config');
+
 // Frontend libs
+var etag = require('../etag');
 
 /* Change an { id: x, href: y } object in place to ID property.
  */
@@ -42,6 +46,56 @@ var objectsToIDs = function(array, itemProp) {
         }
     }
 };
+
+/* Populate the context to be passed into the
+ * core functions from the request.
+ */
+exports.setContext = function(req, res, next) {
+    req.context = {};
+    if (req.session && req.session.uid) {
+        req.context.userId = req.session.uid;
+    }
+
+    if (req.get('if-match')) {
+        var t = etag.parse(req.get('if-match'));
+
+        if (t) {
+            debug('setting version from If-Match: %j', t);
+            req.context.objectId = t.id;
+            req.context.version = t.version;
+        }
+    }
+
+    // Map from object IDs to permissions, collected during processing
+    // (e.g. picking up access tokens)
+    req.context.perms = {};
+
+    next();
+};
+
+
+/* Validate paging parameters
+ */
+exports.validatePaging = function(req, res, next) {
+    req.query.page = req.query.page ? parseInt(req.query.page) : 1;
+    req.query.per_page = req.query.per_page ? parseInt(req.query.per_page) : config.frontend.defaultWorksPerPage;
+
+    if (!req.query.page || req.query.page < 1) {
+        return res.status(400).end();
+    }
+
+    if (!req.query.per_page  || req.query.per_page  < 1) {
+        return res.status(400).end();
+    }
+
+    if (req.query.per_page  > config.frontend.maxWorksPerPage) {
+        req.query.per_page = config.frontend.maxWorksPerPage;
+    }
+
+    return next();
+};
+
+
 
 /* Transform a user object for a request. Simply returns the user
  * even though nothing is changed.
@@ -103,6 +157,67 @@ exports.transformSource = function(source) {
 exports.transformOrganisation = function(org) {
     objectToID(org, 'added_by');
     objectsToIDs(org.owners, null);
+};
+
+/* Convert filter query parameter to mongodb search conditions.
+ */
+exports.convertWorkFilter = function(req) {
+    var conditions = {};
+    if (!req.query.filter) {
+        return conditions;
+    }
+
+    var filterFields = req.query.filter.split(',');
+
+    for (var i=0; i<filterFields.length; i++) {
+        var filterField = filterFields[i].split(':');
+        if (filterField.length !== 2) {
+            throw new Error('Invalid filter parameter');
+        }
+
+        var key = filterField[0];
+        var value = filterField[1];
+
+        if (key === 'owner.user' ||
+            key === 'owner.org' ||
+            key === 'collabs.users' ||
+            key === 'collabs.groups' ||
+            key === 'sources.source_work' ||
+            key === 'forked_from' ||
+            key === 'media') {
+            conditions[key] = value;
+        }
+    }
+
+    return conditions;
+};
+
+/* Convert sort query parameter to mongodb sort option.
+ */
+exports.convertWorkSort = function(req) {
+    var sort = {};
+    var sortKey;
+    var sortValue;
+
+    if (!req.query.sort) {
+        return sort;
+    }
+
+    if (req.query.sort[0] === '-') {
+        sortKey = req.query.sort.slice(1);
+        sortValue = -1;
+
+    } else {
+        sortKey = req.query.sort;
+        sortValue = 1;
+    }
+
+    if (sortKey === 'added_at' ||
+        sortKey === 'updated_at') {
+        sort[sortKey] = sortValue;
+    }
+
+    return sort;
 };
 
 /* Calculate number of skipped records from query parameters.

@@ -1,5 +1,5 @@
 /* 
-  Catalog web/REST frontend - main script
+  Catalog index frontend - main script
 
   Copyright 2014 Commons Machinery http://commonsmachinery.se/
 
@@ -8,36 +8,27 @@
 
 'use strict';
 
-var debug = require('debug')('frontend:main'); // jshint ignore:line
+var debug = require('debug')('frontend:index:main'); // jshint ignore:line
 
 // External libs
 var bodyParser = require('body-parser');
-var cookieParser = require('cookie-parser');
-var cons = require('consolidate');
 var express = require('express');
 var errorhandler = require('errorhandler');
 var morgan = require('morgan');
 var Promise = require('bluebird');
-var serveStatic = require('serve-static');
 
 // Common libs
-var config = require('../lib/config');
-var mongo = require('../lib/mongo');
-var sessionStore = require('../lib/sessionStore');
+var config = require('../../lib/config');
 
 // Modules
-var core = require('../modules/core/core');
+var core = require('../../modules/core/core');
+var search = require('../../modules/search/search');
 
 // Frontend libs
-var sessions = require('./lib/sessions');
-var rest = require('./lib/rest');
-var webapp = require('./lib/webapp');
+var rest = require('../lib/rest');
 
 
 function main() {
-
-    /* ============================== Frontend Setup ========================= */
-
     var app = express();
     var env = process.env;
 
@@ -55,37 +46,21 @@ function main() {
         app.locals.pretty = true;
     }
 
-    app.use(serveStatic(__dirname + config.frontend.static));
-    app.use(serveStatic(__dirname + config.frontend.static_lib));
-
-    app.use(morgan());
+    app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
     app.use(bodyParser.json());
-    app.use(bodyParser());
-    app.use(cookieParser());
-
-    // Templating
-    app.engine('.jade', cons.jade);
-    app.set('view engine', 'jade');
-    app.set('views', __dirname + '/views');
-
+    app.use(bodyParser.urlencoded({extended: false}));
 
     /* ======================= Connect services and start ======================= */
 
     Promise.all([
-        mongo.createConnection(config.auth.db),
-        sessionStore(config.frontend.sessionDB),
-        core.init()])
+        core.init(),
+        search.init()
+    ])
     .spread(
-        function(db, sessionstore, coreOK) {
+        function(coreOK, searchOK) {
             console.log('Services connected... starting server...');
 
-            // Wire up the rest of the app that depended on the
-            // infrastructure being available
-            sessions.init(app, sessionstore, db);
-            webapp.init(app);
-
-            app.use(webapp.router);
-            app.use(rest.router);
+            app.use(rest.readRouter);
 
             app.listen(config.frontend.port);
             console.log('listening on port %s', config.frontend.port);

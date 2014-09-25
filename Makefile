@@ -4,7 +4,10 @@ top := $(CURDIR)
 build = $(top)/build
 
 # List all modules that participate in the build
-modules := . lib frontend apitest
+modules := . lib apitest
+modules += frontend/lib
+modules += frontend/catalog
+modules += frontend/index
 modules += modules/core
 modules += modules/auth
 modules += modules/event

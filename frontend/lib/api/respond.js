@@ -499,6 +499,6 @@ exports.asJSON = function(res, options) {
             res.set('Location', object.href);
         }
 
-        res.json(opts.status || 200, object);
+        res.status(opts.status || 200).json(object);
     };
 };
