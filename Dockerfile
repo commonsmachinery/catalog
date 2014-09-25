@@ -22,5 +22,6 @@ RUN cd /catalog; ./setup_devenv.sh
 # Build what needs to be built
 RUN cd /catalog; make 
 
+USER nobody
 CMD []
 ENTRYPOINT ["/catalog/docker/run.sh"]
