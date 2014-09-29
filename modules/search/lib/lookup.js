@@ -46,20 +46,53 @@ exports.createLookup = function createLookup(src) {
  */
 exports.lookupURI = function lookupURI(uris, context, skip, limit) {
     var conditions;
+    var decoded; // decoded uris
+    var mangled; // uris with http: scheme duplicated as https and vice versa
     var notFound; // local copy of uris for creating notfound events later
     var results;
+    var uri, extraURI, i;
 
     if (typeof uris === 'string') {
-        notFound = [decodeURI(uris)];
+        decoded = [decodeURI(uris)];
+    } else {
+        decoded = uris.map(decodeURI);
+    }
+
+    // duplicate http URLs as https and vice versa
+    // to support sites which treat these URLs identically
+    mangled = [];
+
+    for (i = 0; i < decoded.length; i++) {
+        uri = decoded[i];
+        if (uri.indexOf('http://') === 0) {
+            extraURI = 'https://' + uri.slice(7);
+            if (mangled.indexOf(extraURI) === -1) {
+                mangled.push(extraURI);
+            }
+        }
+        else if (uri.indexOf('https://') === 0) {
+            extraURI = 'http://' + uri.slice(8);
+            if (mangled.indexOf(extraURI) === -1) {
+                mangled.push(extraURI);
+            }
+        }
+        mangled.push(uri);
+    }
+
+    if (mangled.length === 1) {
         conditions = {
-            uri: uris
+            uri: mangled
         };
     } else {
-        notFound = uris.map(decodeURI);
         conditions = {
-            uri: { $in: uris }
+            uri: { $in: mangled }
         };
     }
+
+    // only include original URLs to notFound so
+    // we don't create search.uri.notfound events
+    // for the mangled URLs
+    notFound = decoded.slice();
 
     return db.Lookup.findAsync(
         conditions, null,
