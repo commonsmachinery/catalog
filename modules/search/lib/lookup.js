@@ -183,7 +183,7 @@ exports.lookupHash = function lookupHash(hash, context, skip, limit) {
                 object_id: lookup.object_id,
                 object_type: lookup.object_type,
                 distance: distances[lookup.uri.slice(14)],
-            }
+            };
             return hashLookup;
         });
 };
