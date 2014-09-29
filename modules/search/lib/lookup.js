@@ -165,14 +165,25 @@ exports.lookupURI = function lookupURI(uris, context, skip, limit) {
  */
 exports.lookupHash = function lookupHash(hash, context, skip, limit) {
     var db = hashDb.getDb();
+    var distances = {};
+
     return Promise.all(db.lookupAsync(hash))
         .then(function(hashes) {
             var uris = hashes.map(function(item) {
+                distances[item.hash] = item.distance;
                 return 'urn:blockhash:' + item.hash;
             });
             return uris;
         })
         .then(function(uris) {
             return exports.lookupURI(uris, context, skip, limit);
+        })
+        .map(function(lookup) {
+            var hashLookup = {
+                object_id: lookup.object_id,
+                object_type: lookup.object_type,
+                distance: distances[lookup.uri.slice(14)],
+            }
+            return hashLookup;
         });
 };

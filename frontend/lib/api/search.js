@@ -32,6 +32,7 @@ var transformSearchResult = function(lookup, context) {
             text: lookup.text,
             property: lookup.property_type,
             score: lookup.score,
+            distance: lookup.distance,
         };
 
         return result;
