@@ -6,6 +6,7 @@ FROM commonsmachinery/ubuntu
 RUN apt-get update
 RUN apt-get install --no-install-recommends -y build-essential nodejs npm
 RUN apt-get install --no-install-recommends -y libzmq3-dev
+RUN apt-get install --no-install-recommends -y libkyotocabinet-dev kyotocabinet-utils
 
 # Get symlink from node
 RUN ln -s /usr/bin/nodejs /usr/bin/node

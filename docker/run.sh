@@ -10,6 +10,7 @@ export NODE_ENV="${NODE_ENV:-production}"
 # Fail on missing env vars to ensure we have the necessary infrastructure
 set -u
 export CATALOG_MONGODB_URL="mongodb://$MONGODB_PORT_27017_TCP_ADDR:$MONGODB_PORT_27017_TCP_PORT/"
+export CATALOG_SEARCH_HASH_DB="/hashdb/hashes.kch"
 set +u
 
 case "$1" in
