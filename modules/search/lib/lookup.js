@@ -136,11 +136,10 @@ exports.lookupHash = function lookupHash(hash, context, skip, limit) {
         .then(function(hashes) {
             var uris = hashes.map(function(item) {
                 return 'urn:bmvhash:' + item.hash;
-            })
+            });
             return uris;
         })
         .then(function(uris) {
             return exports.lookupURI(uris, context, skip, limit);
         });
-    throw new Error('Search by hash not implemented');
 };

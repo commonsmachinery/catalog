@@ -30,7 +30,7 @@ exports.connect = function connect() {
             return true;
         })
         .catch(function(err) {
-            console.error('error opening hash database: %s', err)
+            console.error('error opening hash database: %s', err);
             return Promise.reject(err);
         });
 };

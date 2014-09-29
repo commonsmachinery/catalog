@@ -7,7 +7,7 @@
 
 'use strict';
 
-var debug = require('debug')('catalog:core:scripts:load-hash');
+var debug = require('debug')('catalog:core:scripts:load-hash'); // jshint ignore:line
 
 // Core libs
 var config = require('../../../lib/config');
@@ -28,12 +28,11 @@ var argv = require('yargs')
 var processDataPackage = function(fn, db, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
     var count = 0;
-    var i, j;
+    var i;
 
     stream.on('data', function(obj) {
         stream.pause();
 
-        var annotations = obj.annotations;
         var media = obj.media;
 
         if (verbose) {
