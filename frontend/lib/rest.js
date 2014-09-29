@@ -230,4 +230,3 @@ read.route('/lookup/blockhash')
     .all(validateAccept, request.setContext)
     .get(request.validatePaging, validateLookupHash, search.lookupHash)
     .all(handleErrors);
-

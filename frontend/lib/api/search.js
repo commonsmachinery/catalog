@@ -69,7 +69,7 @@ exports.lookupURI = function lookupURI(req, res, next) {
 };
 
 
-exports.lookupHash = function lookupURI(req, res, next) {
+exports.lookupHash = function lookupHash(req, res, next) {
     search.lookupHash(req.query.hash,
                       req.query.context,
                       request.getSkip(req),

@@ -11,6 +11,7 @@ var debug = require('debug')('catalog:search:lookup'); // jshint ignore:line
 
 // Search libs
 var db = require('./db');
+var hashDb = require('./hashDb');
 
 // Common modules
 var command = require('../../../lib/command');
@@ -162,6 +163,16 @@ exports.lookupURI = function lookupURI(uris, context, skip, limit) {
  *
  * Returns a Promise which resolves to an array of Lookup objects.
  */
-exports.lookupHash = function lookupHash(conditions, skip, limit) {
-    throw new Error('Search by hash not implemented');
+exports.lookupHash = function lookupHash(hash, context, skip, limit) {
+    var db = hashDb.getDb();
+    return Promise.all(db.lookupAsync(hash))
+        .then(function(hashes) {
+            var uris = hashes.map(function(item) {
+                return 'urn:blockhash:' + item.hash;
+            });
+            return uris;
+        })
+        .then(function(uris) {
+            return exports.lookupURI(uris, context, skip, limit);
+        });
 };

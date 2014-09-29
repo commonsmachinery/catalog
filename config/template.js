@@ -53,7 +53,9 @@ module.exports = {
         },
 
         search: {
-            db: 'search'
+            db: 'search',
+            // Path to previously initialized hashes database
+            hashDb: 'hashes.kch',
         },
     },
 };

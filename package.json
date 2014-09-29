@@ -30,7 +30,8 @@
     "serve-static": "1.x",
     "zmq": "2.x",
     "ldjson-stream": "*",
-    "yargs": "*"
+    "yargs": "*",
+    "hmsearch": "*"
   },
   "devDependencies": {
     "jshint": "*",
