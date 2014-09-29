@@ -135,7 +135,7 @@ exports.lookupHash = function lookupHash(hash, context, skip, limit) {
     return Promise.all(db.lookupAsync(hash))
         .then(function(hashes) {
             var uris = hashes.map(function(item) {
-                return 'urn:bmvhash:' + item.hash;
+                return 'urn:blockhash:' + item.hash;
             });
             return uris;
         })

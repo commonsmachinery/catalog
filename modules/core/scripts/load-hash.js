@@ -48,11 +48,8 @@ var processDataPackage = function(fn, db, verbose, done) {
 
                 for (var j = 0; j < mediaAnnotations.length; j++) {
                     var ma = mediaAnnotations[j];
-                    if (ma.propertyName === 'identifier' && ma.identifierLink.indexOf('urn:bmvhash') === 0) {
-                        hashes.push(ma.identifierLink.slice(12));
-                    }
-                    else if (ma.propertyName === 'locator' && ma.locatorLink.indexOf('urn:bmvhash') === 0) {
-                        hashes.push(ma.locatorLink.slice(12));
+                    if (ma.propertyName === 'identifier' && ma.identifierLink.indexOf('urn:blockhash:') === 0) {
+                        hashes.push(ma.identifierLink.slice(14));
                     }
                 }
             }
