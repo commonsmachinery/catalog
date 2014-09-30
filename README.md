@@ -1,4 +1,6 @@
-This is very early proof-of-concept work on the Commons Machinery metadata catalog. Nothing interesting here so far.
+This is the Commons Machinery metadata catalog. It stores Media Annotations
+(metadata) for creative works and supports lookup by URI or by perceptual
+hashes (for images).
 
 Requirements
 ============
@@ -15,12 +17,31 @@ On Ubuntu 14.04:
 
     sudo apt-get install build-essential nodejs npm libzmq3-dev libkyotocabinet-dev kyotocabinet-utils
 
-Docker
-------
 
-It is recommended to run at least MongoDB in a Docker image during
+MongoDB
+-------
+
+You need to have a MongoDB for the Catalog to strore its data. It's recommended
+run MongoDB in a Docker image during
 development.  In production all parts should be run in Docker (or on a
 PaaS).  For details, see `doc/docker.html`.
+
+If you're just testing things out, you can simply install MongoDB in your
+regular system. Please do note that MongoDB is limited to 2GB databases on
+32-bit systems. A 64-bit system is highly recommended! To install MongoDB
+on Ubuntu 13.10 and 14.04:
+
+    sudo apt-get install mongodb-server
+
+HmSearch Database
+-----------------
+
+The searches for perceptual hashes uses hmsearch, which is available from
+http://github.com/commonsmachinery/hmsearch and the Catalog expects an
+initialised database in its root folder with the name hashes.kch.
+Follow the installation instructions from hmsearch to create this database
+and place it in the Catalog folder.
+
 
 Configuration
 -------------
