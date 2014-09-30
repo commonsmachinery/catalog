@@ -65,6 +65,41 @@ vars for development like this:
 
     BLUEBIRD_DEBUG=1 DEBUG='catalog:*' NODE_ENV=development nodejs main.js
 
+Installing sample data
+----------------------
+
+`doc/example-works.txt` contain a list of 100 works from Wikimedia Commons
+that can be used as sample data. The list of works is in the Data Package
+specification, which can be found in `doc/datapackage.md`. To load the sample
+data into the database, you need to import the data package, and then 
+populate the search catalog.
+
+To import the data package, you must specify to which user the imported
+works should be assigned. If you're running the Catalog in development
+mode, you can also create a fake test user account. You can get the
+identifier of your account by running the following command. This will
+create a test user if it doesn't already exist:
+
+    curl -u test: -X GET http://localhost:8004/users/current
+
+This command will return something like this:
+
+    Moved Temporarily. Redirecting to http://localhost:8004/users/542af1de876096426387c9a1
+
+Where the hash at the end of the string represents the identifier of the
+user. This is what you'll now use to load the sample works, calling on
+`modules/core/scripts/load.js` to do the job. Replace the user identifier
+below with the identifier from your own installation:
+
+    nodejs modules/core/scripts/load.js --user 542af1de876096426387c9a1 doc/example-works.txt
+
+To populate the search you similarly use
+`modules/core/scripts/populate-search.js`, passing a data as an argument. The
+data represents the first date from which to process Works. You can set this
+to any historical date to process all Works that you just imported:
+
+    nodejs modules/core/scripts/populate-search.js --date "1990-01-01"
+
 
 User accounts
 -------------
