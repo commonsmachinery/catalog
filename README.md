@@ -39,8 +39,16 @@ HmSearch Database
 The searches for perceptual hashes uses hmsearch, which is available from
 http://github.com/commonsmachinery/hmsearch and the Catalog expects an
 initialised database in its root folder with the name hashes.kch.
-Follow the installation instructions from hmsearch to create this database
-and place it in the Catalog folder.
+
+Initialise the hash database by running `hm_initdb` from the
+`hmsearch` library:
+
+  /path/to/hm_initdb hashes.kch 256 10 10000
+
+The second argument must be 256.  The third is the maximum hamming
+distance that should be allowed.  The last argument is an indication
+of the expected number of hashes, and is used to tune the database
+index.
 
 
 Configuration
@@ -59,11 +67,16 @@ Run `make` to build the CSS files necessary for the web interface.
 There are a number of entry points to different parts of the system,
 see `doc/codestructure.md`.
 
-To just run the full catalog frontend and all backend tasks, run
-`main.js` in the top directory.  It can be started with suitable env
-vars for development like this:
+Current development is focused on the frontend index.  It can be
+started with suitable env vars for development like this:
+
+    BLUEBIRD_DEBUG=1 DEBUG='catalog:*' NODE_ENV=development nodejs frontend/index/main.js
+
+To run the full (very much work-in-progress) catalog frontend and all
+backend tasks in a single process, run `main.js` in the top directory.
 
     BLUEBIRD_DEBUG=1 DEBUG='catalog:*' NODE_ENV=development nodejs main.js
+
 
 Installing sample data
 ----------------------
@@ -91,14 +104,24 @@ user. This is what you'll now use to load the sample works, calling on
 `modules/core/scripts/load.js` to do the job. Replace the user identifier
 below with the identifier from your own installation:
 
-    nodejs modules/core/scripts/load.js --user 542af1de876096426387c9a1 doc/example-works.txt
+    nodejs modules/core/scripts/load.js --user 542af1de876096426387c9a1 --verbose true doc/example-works.txt
 
-To populate the search you similarly use
-`modules/core/scripts/populate-search.js`, passing a data as an argument. The
-data represents the first date from which to process Works. You can set this
-to any historical date to process all Works that you just imported:
+The hash database is populated by a separate script.  If the database
+isn't initialised yet, run the `hm_initdb` command above.  Populate
+the hash database from the data package:
 
-    nodejs modules/core/scripts/populate-search.js --date "1990-01-01"
+    nodejs modules/core/scripts/load-hash.js --verbose true doc/example-works.txt
+
+The hash database cannot be updated if a catalog process is already
+running.  Stop it to run the populate script.  As an alternative, you
+can specify a different hash file than the default by providing a
+configuration env var.  E.g.:
+
+    cp hashes.kch new-hashes.kch
+    CATALOG_SEARCH_HASH_DB=new-hashes.kch nodejs modules/core/scripts/load-hash.js --verbose true doc/example-works.txt
+
+Then stop the catalog, replace `hashes.kch` with `new-hashes.kch`, and
+restart.
 
 
 User accounts
@@ -125,9 +148,16 @@ REST API
 
 The API is documented here: http://docs.cmcatalog.apiary.io/
 
+Click on the double downward arrows to expand each call showing
+example usage as plain JSON or in various programming languages.
+
 All `PUT`, `POST` and `DELETE` require a valid user session (see above
 about development accounts).  `GET` will return publically visible
 information without any session.
+
+The web and REST endpoints are overloaded on the same paths, so to get
+a REST response to a `GET` request you must set the `Accept` header to
+`application/json`.
 
 Here are some useful curl commands to poke the API:
 
@@ -144,54 +174,13 @@ Update user profile:
     curl -k -v -u test: -d '{"alias":"new alias"}' -H 'Content-Type: application/json' -X PUT http://localhost:8004/users/53a80969b22cfae451ec8ed4
 
 
-### Old API, move stuff out of here as it is replaced
-
 List works:
 
     curl -H 'Accept: application/json' http://localhost:8004/works
 
-Filter works:
-
-    curl -H http://localhost:8004/works?visible=public
-
-Create a work (the subject in the metadata will be rewritten to the
-generated subject):
-
-    curl --user test: -v -X POST -d '{"visible":"public", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "Example Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' http://localhost:8004/works
 
 Get a work:
 
-    curl --user test: -H 'Accept: application/json' http://localhost:8004/works/1
+    curl --user test: -H 'Accept: application/json' http://localhost:8004/works/542af1de876096426387c9a1
 
-Update a work:
 
-    curl --user test: -X PUT -d '{"state":"published", "metadataGraph": { "about:resource": { "http://purl.org/dc/terms/title": [ { "value": "New Title", "type": "literal" } ] } } }' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1
-
-Delete a work:
-
-    curl --user test: -v -X DELETE http://localhost:8004/works/1
-
-Add a source:
-
-    curl --user test: -v -X POST -d '{"metadataGraph": { "about:resource": { "http://purl.org/dc/terms/provenance":[{"value":"Old Conditions Here","type": "literal"} ] } } }' -H 'Content-type: application/json' http://localhost:8004/works/1/sources
-
-Update a source:
-
-    curl --user test: -X PUT -d '{"metadataGraph": {"about:resource": {"http://purl.org/dc/terms/provenance":[{"value":"New Conditions Here","type": "literal"}]}}}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1/sources/1
-
-Add post:
-
-    curl --user test: -v -X POST -d '{"resource":"http://example.com/post1"}' -H 'Content-type: application/json' http://localhost:8004/works/1/posts
-
-Update post:
-
-    curl --user test: -X PUT -d '{"resource": "http://example.com/other_post"}' -H 'Content-type: application/json' -H 'Accept: application/json' http://localhost:8004/works/1/posts/1
-
-Delete source or post:
-
-     curl --user test: -v -X DELETE http://localhost:8004/works/1/sources/1
-     curl --user test: -v -X DELETE http://localhost:8004/works/1/posts/1
-
-Query SPARQL endpoint:
-
-    curl -g -H 'Accept: application/json' 'http://localhost:8004/sparql?query=SELECT+?s+?p+?o+WHERE+{?s+?p+?o}+LIMIT+50'
