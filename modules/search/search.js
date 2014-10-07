@@ -18,9 +18,18 @@ exports.createLookup = lookup.createLookup;
 exports.lookupURI = lookup.lookupURI;
 exports.lookupHash = lookup.lookupHash;
 
-exports.init = function() {
-    return Promise.all([
-        db.connect(),
-        hashDb.connect(),
-    ]);
+exports.init = function(options) {
+    var opts = options || {};
+
+    var dbs = [];
+
+    if (!opts.skipSearchDB) {
+        dbs.push(db.connect());
+    }
+
+    if (!opts.skipHashDB) {
+        dbs.push(hashDb.connect());
+    }
+
+    return Promise.all(dbs).return(true);
 };

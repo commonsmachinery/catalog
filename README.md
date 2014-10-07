@@ -39,8 +39,16 @@ HmSearch Database
 The searches for perceptual hashes uses hmsearch, which is available from
 http://github.com/commonsmachinery/hmsearch and the Catalog expects an
 initialised database in its root folder with the name hashes.kch.
-Follow the installation instructions from hmsearch to create this database
-and place it in the Catalog folder.
+
+Initialise the hash database by running `hm_initdb` from the
+`hmsearch` library:
+
+  /path/to/hm_initdb hashes.kch 256 10 10000
+
+The second argument must be 256.  The third is the maximum hamming
+distance that should be allowed.  The last argument is an indication
+of the expected number of hashes, and is used to tune the database
+index.
 
 
 Configuration
@@ -96,14 +104,24 @@ user. This is what you'll now use to load the sample works, calling on
 `modules/core/scripts/load.js` to do the job. Replace the user identifier
 below with the identifier from your own installation:
 
-    nodejs modules/core/scripts/load.js --user 542af1de876096426387c9a1 doc/example-works.txt
+    nodejs modules/core/scripts/load.js --user 542af1de876096426387c9a1 --verbose true doc/example-works.txt
 
-To populate the search you similarly use
-`modules/core/scripts/populate-search.js`, passing a data as an argument. The
-data represents the first date from which to process Works. You can set this
-to any historical date to process all Works that you just imported:
+The hash database is populated by a separate script.  If the database
+isn't initialised yet, run the `hm_initdb` command above.  Populate
+the hash database from the data package:
 
-    nodejs modules/core/scripts/populate-search.js --date "1990-01-01"
+    nodejs modules/core/scripts/load-hash.js --verbose true doc/example-works.txt
+
+The hash database cannot be updated if a catalog process is already
+running.  Stop it to run the populate script.  As an alternative, you
+can specify a different hash file than the default by providing a
+configuration env var.  E.g.:
+
+    cp hashes.kch new-hashes.kch
+    CATALOG_SEARCH_HASH_DB=new-hashes.kch nodejs modules/core/scripts/load-hash.js --verbose true doc/example-works.txt
+
+Then stop the catalog, replace `hashes.kch` with `new-hashes.kch`, and
+restart.
 
 
 User accounts
