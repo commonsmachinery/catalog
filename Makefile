@@ -12,6 +12,7 @@ modules += modules/core
 modules += modules/auth
 modules += modules/event
 modules += modules/search
+modules += scripts
 
 # Modules should add files to be checked with jshint
 jshint-files =

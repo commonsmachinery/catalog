@@ -24,7 +24,7 @@ exports.init = function(options) {
     var dbs = [];
 
     if (!opts.skipSearchDB) {
-        dbs.push(db.connect());
+        dbs.push(db.connect(options));
     }
 
     if (!opts.skipHashDB) {
