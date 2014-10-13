@@ -28,6 +28,8 @@ module.exports = {
 
             maxWorksPerPage: 50,
             defaultWorksPerPage: 12,
+
+            testAccounts: false,
         },
 
         auth: {

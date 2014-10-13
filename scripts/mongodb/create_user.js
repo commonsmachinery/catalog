@@ -48,6 +48,14 @@ var users = {
             db: config.event.db,
             role: 'readWrite'
         },
+        {
+            db: config.auth.db,
+            role: 'readWrite'
+        },
+        {
+            db: config.frontend.sessionDB,
+            role: 'readWrite'
+        },
     ]
 };
 

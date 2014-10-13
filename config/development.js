@@ -6,6 +6,7 @@ module.exports = {
 
         frontend: {
             sessionDB: 'frontend-session-dev',
+            testAccounts: true,
         },
 
         auth: {
