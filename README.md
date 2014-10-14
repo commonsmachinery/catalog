@@ -104,13 +104,13 @@ user. This is what you'll now use to load the sample works, calling on
 `modules/core/scripts/load.js` to do the job. Replace the user identifier
 below with the identifier from your own installation:
 
-    nodejs modules/core/scripts/load.js --user 542af1de876096426387c9a1 --verbose true doc/example-works.txt
+    nodejs scripts/load/load-db.js --user 542af1de876096426387c9a1 --verbose true doc/example-works.txt
 
 The hash database is populated by a separate script.  If the database
 isn't initialised yet, run the `hm_initdb` command above.  Populate
 the hash database from the data package:
 
-    nodejs modules/core/scripts/load-hash.js --verbose true doc/example-works.txt
+    nodejs scripts/load/load-hash.js --verbose true doc/example-works.txt
 
 The hash database cannot be updated if a catalog process is already
 running.  Stop it to run the populate script.  As an alternative, you
@@ -118,7 +118,7 @@ can specify a different hash file than the default by providing a
 configuration env var.  E.g.:
 
     cp hashes.kch new-hashes.kch
-    CATALOG_SEARCH_HASH_DB=new-hashes.kch nodejs modules/core/scripts/load-hash.js --verbose true doc/example-works.txt
+    CATALOG_SEARCH_HASH_DB=new-hashes.kch nodejs scripts/load/load-hash.js --verbose true doc/example-works.txt
 
 Then stop the catalog, replace `hashes.kch` with `new-hashes.kch`, and
 restart.

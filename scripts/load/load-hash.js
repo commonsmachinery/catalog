@@ -7,10 +7,10 @@
 
 'use strict';
 
-var debug = require('debug')('catalog:core:scripts:load-hash'); // jshint ignore:line
+var debug = require('debug')('catalog:scripts:load-hash'); // jshint ignore:line
 
 // Core libs
-var config = require('../../../lib/config');
+var config = require('../../lib/config');
 
 // Script libs
 var fs = require('fs');

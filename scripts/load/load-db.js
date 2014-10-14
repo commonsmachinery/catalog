@@ -7,13 +7,13 @@
 
 'use strict';
 
-var debug = require('debug')('catalog:core:scripts:load');
+var debug = require('debug')('catalog:scripts:load');
 var _ = require('underscore');
 var Promise = require('bluebird');
 
 // Core and search libs
-var core = require('../core');
-var search = require('../../search/search.js');
+var core = require('../../modules/core/core');
+var search = require('../../modules/search/search');
 
 // Script libs
 var fs = require('fs');
