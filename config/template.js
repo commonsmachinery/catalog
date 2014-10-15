@@ -10,6 +10,10 @@ module.exports = {
         // module-specific settings specify a full URL.
         mongodbURL: 'mongodb://localhost/',
 
+        // The database to authenticate MongoDB accounts in.
+        // Can be overridden in the mongodbURL.
+        mongodbAuthSource: 'admin',
+
         //
         // Module-specific configuration
         //
@@ -17,6 +21,7 @@ module.exports = {
         frontend: {
             baseURL: 'http://localhost:8004',
             port: '8004',
+            host: 'localhost',
 
             // Either a plain name, or a full mongodb: URL
             sessionDB: 'frontend-session',

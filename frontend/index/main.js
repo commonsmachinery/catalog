@@ -62,13 +62,13 @@ function main() {
 
             app.use(rest.readRouter);
 
-            app.listen(config.frontend.port);
-            console.log('listening on port %s', config.frontend.port);
+            app.listen(config.frontend.port, config.frontend.host);
+            console.log('listening on %s:%s', config.frontend.host, config.frontend.port);
         })
     .catch(
         function(err) {
             console.error('Services connection error: %s', err);
-            return Promise.reject(err);
+            process.exit(1);
         });
 }
 
