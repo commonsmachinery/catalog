@@ -438,6 +438,31 @@ exports.transformOrganisation = function(org, context, options) {
     });
 };
 
+
+/** Transform a single search result.
+ */
+exports.transformSearchResult = function(lookup) {
+    if (lookup.object_type === 'core.Work') {
+        var workId = lookup.object_id;
+        var result;
+
+        result = {
+            href: uris.buildWorkURI(workId),
+            uri: lookup.uri,
+            text: lookup.text,
+            property: lookup.property_type,
+            score: lookup.score,
+            distance: lookup.distance,
+        };
+
+        return result;
+    }
+    else {
+        throw new Error('Unable to transform search result for %s', lookup.object_type);
+    }
+};
+
+
 /* Set all relevant response headers for an object.
  */
 var setObjectHeaders = exports.setObjectHeaders = function(res, object) {

@@ -1,0 +1,63 @@
+//- Catalog web - page displaying a work
+//- 
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+- var a = work.annotations;
+- var workTitle = a.title ? a.title[0].property.value : 'Untitled work';
+
+mixin pageTitle
+    title
+        | #{config.frontend.title}: #{workTitle}
+
+mixin pageContent
+    div.row: div.col-xs-12
+        if a.locator && a.locator[0].property.locatorLink
+            h2: a(href=a.locator[0].property.locatorLink)= workTitle
+        else
+            h2= workTitle
+
+    div.row: div.col-xs-12
+        if a.locator
+            | Known locations:
+            ul
+                each p in a.locator
+                    li: a(href=p.property.locatorLink)= p.property.locatorLink
+
+    if a.policy
+        each p in a.policy
+            div.row: div.col-xs-12
+                if p.property.typeLink == 'http://www.w3.org/1999/xhtml/vocab#license'
+                    | License:&nbsp;
+                if p.property.statementLink
+                    a(href=p.property.statementLink)= p.property.value
+                else
+                    = p.property.value
+    else
+        div.row: div.col-xs-12
+            | No license information known
+
+    if a.copyright
+        each p in a.copyright
+            div.row: div.col-xs-12
+                | Copyright: 
+                if p.property.holderLink
+                    a(href=p.property.holderLink)= p.property.value
+                else
+                    = p.property.value
+
+    if a.creator
+        each p in a.creator
+            div.row: div.col-xs-12
+                | Creator: 
+                if p.property.creatorLink
+                    a(href=p.property.creatorLink)= p.property.value
+                else
+                    = p.property.value
+
+
+    if imageSrc
+        div.row: div.col-xs-12
+            img(src=imageSrc)
+        
+include inc/page
