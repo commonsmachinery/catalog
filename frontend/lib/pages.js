@@ -122,7 +122,7 @@ exports.lookupURI = function(req, res, next) {
                         return respond.transformWork(
                             work, req.context, {
                                 fields: 'annotations',
-                                annotations: 'title',
+                                annotations: 'all',
                             });
                     })
                     .then(function(work) {
@@ -180,8 +180,7 @@ exports.lookupBlockhash = function(req, res, next) {
                     .then(function(work) {
                         return respond.transformWork(
                             work, req.context, {
-                                fields: 'annotations',
-                                annotations: 'title',
+                                annotations: 'all',
                             });
                     })
                     .then(function(work) {
