@@ -12,6 +12,9 @@ var debug = require('debug')('catalog:frontend:pages'); // jshint ignore:line
 // External libs
 var Promise = require('bluebird');
 
+// Catalog libs
+var command = require('../../lib/command');
+
 // Components
 var core = require('../../modules/core/core');
 var search = require('../../modules/search/search');
@@ -96,8 +99,12 @@ exports.work = function(req, res, next) {
 
 
 exports.lookupURI = function(req, res, next) {
+    res.locals.page = req.query.page;
+    res.locals.per_page = req.query.per_page;
+
     if (!req.query.uri) {
         // Just render the page as-is, since it could have a search field
+        res.locals.uri = null;
         res.locals.results = [];
         return res.render('lookupURI');
     }
@@ -106,10 +113,42 @@ exports.lookupURI = function(req, res, next) {
                      req.query.context,
                      request.getSkip(req),
                      request.getLimit(req))
-        .map(exports.transformSearchResult)
+        .map(function(result) {
+            // Return results with work title.  More annotations could
+            // be added here.
+            if (result.object_type === 'core.Work') {
+                return core.getWork(req.context, result.object_id)
+                    .then(function(work) {
+                        return respond.transformWork(
+                            work, req.context, {
+                                fields: 'annotations',
+                                annotations: 'title',
+                            });
+                    })
+                    .then(function(work) {
+                        return {
+                            property: result.property_type,
+                            score: result.score,
+                            work: work
+                        };
+                    })
+                    .catch(function (err) {
+                        if (err instanceof core.WorkNotFoundError ||
+                            err instanceof command.PermissionError) {
+                            debug('error looking up work by URI: %s', err);
+                        }
+                        else {
+                            throw err;
+                        }
+                    });
+            }
+        })
         .then(function(results) {
-            respond.setPagingLinks(req, res, results);
-            res.locals.results = [];
+            res.locals.links = respond.setPagingLinks(req, res, results);
+
+            res.locals.uri = req.query.uri;
+            res.locals.results = results.filter(function(v) { return !!v; });
+
             res.render('lookupURI');
         })
         .catch(function(err) {
@@ -119,20 +158,63 @@ exports.lookupURI = function(req, res, next) {
 
 
 exports.lookupBlockhash = function(req, res, next) {
+    res.locals.page = req.query.page;
+    res.locals.per_page = req.query.per_page;
+
     if (!req.query.hash) {
         // Just render the page as-is, since it could have a search field
+        res.locals.hash = null;
         res.locals.results = [];
         return res.render('lookupBlockhash');
     }
 
-    search.lookupHash(req.query.uri,
+    search.lookupHash(req.query.hash,
                      req.query.context,
                      request.getSkip(req),
                      request.getLimit(req))
-        .map(exports.transformSearchResult)
+        .map(function(result) {
+            // Return results with work title.  More annotations could
+            // be added here.
+            if (result.object_type === 'core.Work') {
+                return core.getWork(req.context, result.object_id)
+                    .then(function(work) {
+                        return respond.transformWork(
+                            work, req.context, {
+                                fields: 'annotations',
+                                annotations: 'title',
+                            });
+                    })
+                    .then(function(work) {
+                        return {
+                            property: result.property_type,
+                            distance: result.distance,
+                            score: result.score,
+                            work: work
+                        };
+                    })
+                    .catch(function (err) {
+                        if (err instanceof core.WorkNotFoundError ||
+                            err instanceof command.PermissionError) {
+                            debug('error looking up work by URI: %s', err);
+                        }
+                        else {
+                            throw err;
+                        }
+                    });
+            }
+        })
         .then(function(results) {
-            respond.setPagingLinks(req, res, results);
-            res.locals.results = [];
+            res.locals.links = respond.setPagingLinks(req, res, results);
+
+            res.locals.hash = req.query.hash;
+            res.locals.results = results.filter(function(v) { return !!v; });
+
+            res.render('lookupBlockhash');
+        })
+        .catch(search.BadHashError, function() {
+            res.locals.hash = req.query.hash;
+            res.locals.error = 'Invalid image blockhash';
+
             res.render('lookupBlockhash');
         })
         .catch(function(err) {

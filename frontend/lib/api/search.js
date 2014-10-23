@@ -45,6 +45,12 @@ exports.lookupHash = function lookupHash(req, res, next) {
             respond.setPagingLinks(req, res, results);
             res.status(200).json(results);
         })
+        .catch(search.BadHashError, function() {
+            res.status(400).json({
+                code: 'bad_hash',
+                message: 'Bad hash format',
+            });
+        })
         .catch(function(err) {
             next(err);
         });

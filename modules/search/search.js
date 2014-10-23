@@ -14,6 +14,7 @@ var lookup = require('./lib/lookup');
 // External libs
 var Promise = require('bluebird');
 
+exports.BadHashError = lookup.BadHashError;
 exports.createLookup = lookup.createLookup;
 exports.lookupURI = lookup.lookupURI;
 exports.lookupHash = lookup.lookupHash;

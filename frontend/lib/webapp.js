@@ -71,10 +71,12 @@ var handleCoreErrors = function(err, req, res, next) {
 var router = exports.router = express.Router();
 
 router.get('/lookup/uri',
-           request.setContext, pages.lookupURI, handleCoreErrors);
+           request.setContext, request.validatePaging,
+           pages.lookupURI, handleCoreErrors);
 
 router.get('/lookup/blockhash',
-           request.setContext, pages.lookupBlockhash, handleCoreErrors);
+           request.setContext, request.validatePaging,
+           pages.lookupBlockhash, handleCoreErrors);
 
 router.get('/works/:workId',
            request.setContext, pages.work, handleCoreErrors);

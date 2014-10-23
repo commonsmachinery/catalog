@@ -1,0 +1,57 @@
+//- Catalog web - page for looking up blockhashes and displaying the results
+//- 
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+include inc/pagination
+
+mixin pageTitle
+    title
+        | #{config.frontend.title}: Search image blockhashes
+
+mixin pageContent
+    div.row: div.col-xs-12
+        div.panel.panel-default: div.panel-body
+            form(role='form')
+                input(type='hidden', name='page', value=page)
+                input(type='hidden', name='per_page', value=per_page)
+                div.form-group(class=(error ? 'has-error' : ''))
+                    label.control-label(for='hash') Look up hash
+                    div.input-group
+                        input#hash.form-control(type='text', name='hash', value=hash || '')
+                        span.input-group-btn
+                            button.btn.btn-default(type='submit') Search
+                        
+    if error
+        div.row: div.col-xs-12
+            div.panel.panel-danger
+                div.panel-heading Error
+                div.panel-body= error
+        
+    else if results.length == 0 && page == 1
+        if hash
+            div.row: div.col-xs-12
+                | No search results.
+    else
+        div.row: div.col-xs-12
+            +pagination
+    
+        if results.length == 0
+            div.row: div.col-xs-12
+                | No more search results.
+        else
+            div.row: div.col-xs-12
+                div.list-group
+                    div.list-group-item: div.row.list-group-item-heading
+                        div.col-xs-10 Title
+                        div.col-xs-1 Distance
+                        div.col-xs-1 Score
+                    each res in results
+                        - var a = res.work.annotations
+                        - var title = a.title && a.title.length && a.title[0].property.value
+                        a.list-group-item(href=res.work.href): div.row
+                            div.col-xs-10= title || 'Untitled'
+                            div.col-xs-1= res.distance
+                            div.col-xs-1= res.score
+
+include inc/page                    

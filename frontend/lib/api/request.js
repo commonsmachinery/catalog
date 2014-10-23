@@ -77,19 +77,16 @@ exports.setContext = function(req, res, next) {
 /* Validate paging parameters
  */
 exports.validatePaging = function(req, res, next) {
-    req.query.page = req.query.page ? parseInt(req.query.page) : 1;
-    req.query.per_page = req.query.per_page ? parseInt(req.query.per_page) : config.frontend.defaultWorksPerPage;
+    req.query.page = req.query.page && parseInt(req.query.page, 10);
+    req.query.per_page = req.query.per_page && parseInt(req.query.per_page, 10);
 
     if (!req.query.page || req.query.page < 1) {
-        return res.status(400).end();
+        req.query.page = 1;
     }
 
-    if (!req.query.per_page  || req.query.per_page  < 1) {
-        return res.status(400).end();
-    }
-
-    if (req.query.per_page  > config.frontend.maxWorksPerPage) {
-        req.query.per_page = config.frontend.maxWorksPerPage;
+    if (!req.query.per_page || req.query.per_page < 1 ||
+        req.query.per_page > config.frontend.maxWorksPerPage) {
+        req.query.per_page = config.frontend.defaultWorksPerPage;
     }
 
     return next();
@@ -226,8 +223,12 @@ exports.getSkip = function(req) {
     return req.query.per_page * (req.query.page - 1);
 };
 
-/* Calculate limit of records from query parameters.
+/** Calculate limit of records from query parameters.
+ *
+ * Always fetch one extra to be able to detect if there might be a
+ * next page.  This is then stripped in respond.setPagingLinks before
+ * the response is sent to the client.
  */
 exports.getLimit = function(req) {
-    return req.query.per_page;
+    return req.query.per_page + 1;
 };
