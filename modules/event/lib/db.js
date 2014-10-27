@@ -96,6 +96,6 @@ exports.SearchEventBatch = conn.model('SearchEventBatch', SearchEventBatch);
 
 // Connect, returning a promise that resolve when connected
 
-exports.connect = function connect() {
-    return mongo.openConnection(conn, config.event.db).return(true);
+exports.connect = function connect(options) {
+    return mongo.openConnection(conn, config.event.db, options).return(true);
 };

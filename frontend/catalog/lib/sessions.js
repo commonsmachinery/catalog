@@ -61,7 +61,7 @@ exports.init = function init(app, sessionstore, db) {
         saveUninitialized: false
     }));
 
-    if (dev) {
+    if (config.frontend.testAccounts) {
         // Allow account creation/login with simple HTTP basic auth
         app.use(useTestAccount);
     }
@@ -85,7 +85,7 @@ exports.init = function init(app, sessionstore, db) {
     // Redirect to help clients know who's logged in
     app.get('/users/current', getCurrentUser);
 
-    if (dev) {
+    if (config.frontend.testAccounts) {
         // Handle test account logins by generating an email from the
         // provided username and then rerunning the normal session
         // code.

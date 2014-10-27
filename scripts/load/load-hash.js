@@ -7,10 +7,10 @@
 
 'use strict';
 
-var debug = require('debug')('catalog:core:scripts:load-hash'); // jshint ignore:line
+var debug = require('debug')('catalog:scripts:load-hash'); // jshint ignore:line
 
 // Core libs
-var config = require('../../../lib/config');
+var config = require('../../lib/config');
 
 // Script libs
 var fs = require('fs');
@@ -27,49 +27,61 @@ var argv = require('yargs')
 
 var processDataPackage = function(fn, db, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
+    var errorFileName = 'errors_load_hash_' + (new Date()).toISOString() + '.json';
     var count = 0;
     var i;
 
+    var logError = function(obj) {
+        fs.appendFile(errorFileName, JSON.stringify(obj) + '\n');
+    };
+
     stream.on('data', function(obj) {
-        stream.pause();
+        ++count;
 
         var media = obj.media;
 
-        if (verbose) {
-            console.log('processing work %s...', count++);
+        if (!media || !media.length) {
+            if (verbose) {
+                console.log('%s: skipping work with no media', count);
+            }
+
+            return;
         }
 
-        Promise.resolve()
-        .then(function() {
-            var hashes = [];
-            // Pick locator and identifier annotations from work media
-            for (i = 0; i < media.length; i++) {
-                var mediaAnnotations = media[i].annotations;
+        if (verbose) {
+            console.log('%s: processing %s media', count, media.length);
+        }
 
-                for (var j = 0; j < mediaAnnotations.length; j++) {
-                    var ma = mediaAnnotations[j];
-                    if (ma.propertyName === 'identifier' && ma.identifierLink.indexOf('urn:blockhash:') === 0) {
-                        hashes.push(ma.identifierLink.slice(14));
-                    }
+        var hashes = [];
+        // Pick locator and identifier annotations from work media
+        for (i = 0; i < media.length; i++) {
+            var mediaAnnotations = media[i].annotations;
+
+            for (var j = 0; j < mediaAnnotations.length; j++) {
+                var ma = mediaAnnotations[j];
+                if (ma.propertyName === 'identifier' && ma.identifierLink.indexOf('urn:blockhash:') === 0) {
+                    hashes.push(ma.identifierLink.slice(14));
                 }
             }
-            return Promise.map(
-                hashes,
-                function(hash) {
-                    return db.insertAsync(hash);
-                },
-                { concurrency: hashes.length }
-            );
-        })
+        }
+
+        stream.pause();
+
+        Promise.map(
+            hashes,
+            function(hash) {
+                return db.insertAsync(hash);
+            },
+            { concurrency: hashes.length }
+        )
         .then(function() {
             // resume stream processing
-            if (verbose) {
-                console.log('done.');
-            }
             stream.resume();
         })
         .catch(function(err) {
-            console.error('error %s: %j', err, obj);
+            console.error('%s: error: %s (json written to error file)', count, err);
+            logError(obj);
+
             if (argv.keepgoing) {
                 stream.resume();
             }

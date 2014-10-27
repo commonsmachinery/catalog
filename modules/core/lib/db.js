@@ -285,6 +285,7 @@ exports.Organisation = conn.model('Organisation', Organisation);
 
 // Connect, returning a promise that resolve when connected
 
-exports.connect = function connect() {
-    return mongo.openConnection(conn, config.core.db).return(true);
+exports.connect = function connect(options) {
+    return mongo.openConnection(conn, config.core.db, options)
+        .return(true);
 };

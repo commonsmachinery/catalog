@@ -19,6 +19,6 @@ exports.Subscriber = subscriber.Subscriber;
 
 exports.getEventStream = process.getEventStream;
 
-exports.init = function() {
-    return db.connect();
+exports.init = function(options) {
+    return db.connect(options);
 };

@@ -3,8 +3,8 @@
 module.exports = {
     catalog: {
         frontend: {
-            baseURL: "http://catalog.elog.io",
-            port: "80",
+            baseURL: "https://catalog.elog.io",
+            port: "8004",
             secret: "can't touch this!",
             static: "/public/build",
         },
