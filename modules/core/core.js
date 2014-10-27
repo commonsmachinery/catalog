@@ -31,8 +31,8 @@ var command = require('../../lib/command'); // jshint ignore:line
 var db = require('./lib/db');
 var common = require('./lib/common');
 
-exports.init = function() {
-    return db.connect();
+exports.init = function(options) {
+    return db.connect(options);
 };
 
 exports.NotFoundError = common.NotFoundError;

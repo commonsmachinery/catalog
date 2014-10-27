@@ -7,10 +7,13 @@
 
 'use strict';
 
-var debug = require('debug')('catalog:core:scripts:load');
+var debug = require('debug')('catalog:scripts:load');
+var _ = require('underscore');
+var Promise = require('bluebird');
 
-// Core libs
-var core = require('../core');
+// Core and search libs
+var core = require('../../modules/core/core');
+var search = require('../../modules/search/search');
 
 // Script libs
 var fs = require('fs');
@@ -42,22 +45,74 @@ var decodeURIProperties = function decodeURIProperties(p) {
     }
 };
 
+// process annotation and return uri/text pairs for every *link *label
+var getPropertyLinkAndLabel = function(property) {
+    var pn = property.propertyName;
+
+    var result = {
+        uri: undefined,
+        text: undefined,
+    };
+
+    if (pn === 'identifier') {
+        result.uri = property.identifierLink;
+    }
+    else if (pn === 'title') {
+        result.text = property.titleLabel;
+    }
+    else if (pn === 'locator') {
+        result.uri = property.locatorLink;
+    }
+    else if (pn === 'creator') {
+        result.uri = property.creatorLink;
+        result.text = property.creatorLabel;
+    }
+    else if (pn === 'copyright') {
+        result.uri = property.holderLink;
+        result.text = property.holderLabel;
+    }
+    return result;
+};
+
+
+// Return the first property with a matching name
+var getProperty = function(propertyName, annotations) {
+    for (var i = 0; i < annotations.length; i++) {
+        var a = annotations[i];
+        if (a.propertyName === propertyName) {
+            return a;
+        }
+    }
+
+    return null;
+};
+
+var getIdentifierLink = function(annotations) {
+    var a = getProperty('identifier', annotations);
+    return a && a.identifierLink;
+};
+
+var getLocatorLink = function(annotations) {
+    var a = getProperty('locator', annotations);
+    return a && a.locatorLink;
+};
+
 var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
+    var errorFileName = 'errors_load_db_' + (new Date()).toISOString() + '.json';
     var count = 0;
 
-    stream.on('data', function(obj) {
-        stream.pause();
+    var logError = function(obj) {
+        fs.appendFile(errorFileName, JSON.stringify(obj) + '\n');
+    };
 
+    var createWork = function(obj) {
         var annotations = obj.annotations;
         var media = obj.media;
         var workId;
+        var createdAnnotations = [];
 
-        if (verbose) {
-            console.log('creating work %s...', count++);
-        }
-
-        core.createWork(context, {
+        return core.createWork(context, {
             public: !priv,
             owner: owner,
         })
@@ -90,7 +145,10 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     ++i;
 
                     return core.createWorkAnnotation(context, workId, annotationObj)
-                        .then(addAnnotation);
+                        .then(function (annotation) {
+                            createdAnnotations.push(annotation);
+                            return addAnnotation();
+                        });
                 }
             };
 
@@ -128,12 +186,37 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     ++i;
 
                     return core.createWorkAnnotation(context, workId, annotationObj)
-                        .then(addResourceAnnotation);
+                        .then(function (annotation) {
+                            createdAnnotations.push(annotation);
+                            return addResourceAnnotation();
+                        });
                 }
             };
 
             return addResourceAnnotation();
         })
+
+        // Populate the search index with all the work annotations
+        .then(function() {
+            return createdAnnotations;
+        })
+        .map(function(annotation) {
+            var lookup = getPropertyLinkAndLabel(annotation.property);
+            if (lookup.uri || lookup.text) {
+                _.extend(lookup, {
+                    object_type: 'core.Work',
+                    object_id: workId,
+                    property_type: annotation.property.propertyName,
+                    property_id: annotation.id,
+                    score: annotation.score,
+                });
+
+                debug('indexing %j', lookup);
+
+                return search.createLookup(lookup);
+            }
+        })
+
         .then(function() {
             // Create media using same kind of recursion as above
             var i = 0;
@@ -163,24 +246,56 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
             };
 
             return addMedia();
-        })
-        .then(function() {
-            // resume stream processing
-            if (verbose) {
-                console.log('done.');
-            }
-            workId = null;
-            stream.resume();
-        })
-        .catch(function(err) {
-            console.error('error %s: %j', err, obj);
-            if (argv.keepgoing) {
-                stream.resume();
-            }
-            else {
-                done(err);
-            }
         });
+    };
+
+    // Process work records
+    stream.on('data', function(obj) {
+        var workURI = getIdentifierLink(obj.annotations) || getLocatorLink(obj.annotations);
+
+        ++count;
+
+        if (!workURI) {
+            // There must be a work URI
+            console.error('%s: error: no identifier or locator link (json written to error file)', count);
+            logError(obj);
+            return;
+        }
+
+        // Don't get more events while we're processing this one
+        stream.pause();
+
+        // Check for duplicates
+        search.lookupURI(workURI, {skip: 0, limit: 1, nolog: true})
+            .then(function(matches) {
+                if (matches.length > 0) {
+                    if (verbose) {
+                        console.log('%s: skipping duplicate: %s', count, workURI);
+                        return;
+                    }
+                }
+
+                if (verbose) {
+                    console.log('%s: creating: %s', count, workURI);
+                }
+
+                return createWork(obj);
+            })
+            .then(function() {
+                // resume stream processing
+                stream.resume();
+            })
+            .catch(function(err) {
+                console.error('%s: error: %s (json written to error file)', count, err);
+                logError(obj);
+
+                if (argv.keepgoing) {
+                    stream.resume();
+                }
+                else {
+                    done(err);
+                }
+            });
     });
 
     stream.on('end', function() {
@@ -208,9 +323,12 @@ var main = function() {
 
     fn = argv._[0];
 
-    core.init()
+    Promise.all([
+        core.init(),
+        search.init({skipHashDB: true})
+    ])
         .then(function() {
-            console.log('core backend started');
+            console.log('connected to databases');
         })
         .then(function() {
             if (! /^[0-9a-fA-F]{24}$/.test(argv.user)) {

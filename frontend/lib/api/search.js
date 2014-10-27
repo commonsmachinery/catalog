@@ -21,9 +21,11 @@ var request = require('./request');
 
 exports.lookupURI = function lookupURI(req, res, next) {
     search.lookupURI(req.query.uri,
-                     req.query.context,
-                     request.getSkip(req),
-                     request.getLimit(req))
+                     {
+                         context: req.query.context,
+                         skip: request.getSkip(req),
+                         limit: request.getLimit(req),
+                     })
         .map(respond.transformSearchResult)
         .then(function(results) {
             respond.setPagingLinks(req, res, results);
@@ -37,9 +39,11 @@ exports.lookupURI = function lookupURI(req, res, next) {
 
 exports.lookupHash = function lookupHash(req, res, next) {
     search.lookupHash(req.query.hash,
-                      req.query.context,
-                      request.getSkip(req),
-                      request.getLimit(req))
+                      {
+                          context: req.query.context,
+                          skip: request.getSkip(req),
+                          limit: request.getLimit(req),
+                      })
         .map(respond.transformSearchResult)
         .then(function(results) {
             respond.setPagingLinks(req, res, results);

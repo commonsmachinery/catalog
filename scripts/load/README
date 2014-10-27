@@ -14,3 +14,4 @@ Available options are:
 * --format: Collection format. The only format supported at the moment is "datapackage",
   described in the [Elog.io documentation](https://github.com/commonsmachinery/catalog/blob/master/doc/datapackage.md);
 * --ownerOrg ID of the organisation who owns the works.
+* --keepgoing: skip bad records without aborting process
