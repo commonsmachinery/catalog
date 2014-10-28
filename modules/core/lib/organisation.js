@@ -81,6 +81,9 @@ exports.getOrganisation = function getOrganisation(context, orgId) {
                 throw new OrganisationNotFoundError(orgId);
             }
 
+            // this enables setting CORS header for organisations
+            context.setCORS = true;
+
             return org;
         })
         .then(setOrganisationPerms(context))

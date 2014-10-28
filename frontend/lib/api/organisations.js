@@ -30,6 +30,7 @@ var transform = function() {
 exports.getOrganisation = function getOrganisation(req, res, next) {
     core.getOrganisation(req.context, req.params.orgId)
         .then(transform())
+        .then(respond.setCORSHeader(req, res))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);

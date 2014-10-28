@@ -127,6 +127,11 @@ exports.getWork = function getWork(context, workId) {
                 throw new command.PermissionError(context.userId, work.id);
             }
 
+            // this enables setting CORS header for public works
+            if (work.public) {
+                context.setCORS = true;
+            }
+
             return work;
         })
         .then(db.Work.objectExporter(context));
@@ -317,6 +322,11 @@ exports.getWorkMedia = function getWorkMedia(context, workId, mediaId) {
 
             if (work.media.indexOf(mediaId) === -1) {
                 throw new MediaNotFoundError(mediaId);
+            }
+
+            // this enables setting CORS header for public works
+            if (work.public) {
+                context.setCORS = true;
             }
 
             return mediaId;
@@ -679,6 +689,11 @@ exports.getWorkAnnotation = function getWorkAnnotation(context, workId, annotati
                 throw new AnnotationNotFoundError(annotationId);
             }
 
+            // this enables setting CORS header for public works
+            if (work.public) {
+                context.setCORS = true;
+            }
+
             return annotation;
         })
         .then(db.WorkAnnotation.objectExporter(context));
@@ -705,6 +720,11 @@ exports.getAllAnnotations = function getAllAnnotations(context, workId) {
             // Check permissions set with setWorkPerms()
             if (!(context.perms[work.id] && context.perms[work.id].read)) {
                 throw new command.PermissionError(context.userId, work.id);
+            }
+
+            // this enables setting CORS header for public works
+            if (work.public) {
+                context.setCORS = true;
             }
 
             return work.annotations;
@@ -966,6 +986,11 @@ exports.getWorkSource = function getWorkSource(context, workId, sourceId) {
                 throw new SourceNotFoundError(sourceId);
             }
 
+            // this enables setting CORS header for public works
+            if (work.public) {
+                context.setCORS = true;
+            }
+
             return source;
         })
         .then(db.Source.objectExporter(context));
@@ -992,6 +1017,11 @@ exports.getAllSources = function getAllSources(context, workId) {
             // Check permissions set with setWorkPerms()
             if (!(context.perms[work.id] && context.perms[work.id].read)) {
                 throw new command.PermissionError(context.userId, work.id);
+            }
+
+            // this enables setting CORS header for public works
+            if (work.public) {
+                context.setCORS = true;
             }
 
             return work.sources;

@@ -58,6 +58,7 @@ exports.createWork = function createWork(req, res, next) {
 exports.getWork = function getWork(req, res, next) {
     core.getWork(req.context, req.params.workId)
         .then(transform(req))
+        .then(respond.setCORSHeader(req, res))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
