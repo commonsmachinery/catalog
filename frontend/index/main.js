@@ -26,6 +26,7 @@ var search = require('../../modules/search/search');
 
 // Frontend libs
 var rest = require('../lib/rest');
+var webapp = require('../lib/webapp');
 
 
 function main() {
@@ -44,7 +45,20 @@ function main() {
     if (process.env.NODE_ENV === 'development'){
         app.use(errorhandler());
         app.locals.pretty = true;
+        app.set('json spaces', 4);
     }
+
+    var node_modules = __dirname + '/../../node_modules';
+
+    app.use('/lib/js',
+            express.static(node_modules + '/jquery/dist', { index: false }),
+            express.static(node_modules + '/bootstrap/dist/js', { index: false }));
+
+    app.use('/lib/css',
+            express.static(node_modules + '/bootstrap/dist/css', { index: false }));
+
+    app.use('/lib/fonts',
+            express.static(node_modules + '/bootstrap/dist/fonts', { index: false }));
 
     app.use(morgan(env.NODE_ENV === 'development' ? 'dev' : 'combined'));
     app.use(bodyParser.json());
@@ -60,7 +74,9 @@ function main() {
         function(coreOK, searchOK) {
             console.log('Services connected... starting server...');
 
+            webapp.init(app);
             app.use(rest.readRouter);
+            app.use(webapp.router);
 
             app.listen(config.frontend.port, config.frontend.host);
             console.log('listening on %s:%s', config.frontend.host, config.frontend.port);

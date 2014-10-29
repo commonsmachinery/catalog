@@ -11,7 +11,6 @@
 var debug = require('debug')('catalog:frontend:api:search'); // jshint ignore:line
 
 // External libs
-var Promise = require('bluebird');
 
 // Components
 var search = require('../../../modules/search/search');
@@ -19,40 +18,6 @@ var search = require('../../../modules/search/search');
 // Frontend libs
 var respond = require('./respond');
 var request = require('./request');
-var uris = require('../uris');
-
-var transformSearchResult = function(lookup, context) {
-    if (lookup.object_type === 'core.Work') {
-        var workId = lookup.object_id;
-        var result;
-
-        result = {
-            href: uris.buildWorkURI(workId),
-            uri: lookup.uri,
-            text: lookup.text,
-            property: lookup.property_type,
-            score: lookup.score,
-            distance: lookup.distance,
-        };
-
-        return result;
-    }
-    else {
-        throw new Error('Unable to transform search result for %s', lookup.object_type);
-    }
-};
-
-/* Return promise handler to transform search results for JSON responses.
- */
-var transformResults = function(req) {
-    return function(results) {
-        var promiseStack = [];
-        for (var i = 0; i < results.length; i++) {
-            promiseStack.push(transformSearchResult(results[i], req.context));
-        }
-        return Promise.all(promiseStack);
-    };
-};
 
 exports.lookupURI = function lookupURI(req, res, next) {
     search.lookupURI(req.query.uri,
@@ -61,7 +26,7 @@ exports.lookupURI = function lookupURI(req, res, next) {
                          skip: request.getSkip(req),
                          limit: request.getLimit(req),
                      })
-        .then(transformResults(req))
+        .map(respond.transformSearchResult)
         .then(function(results) {
             respond.setPagingLinks(req, res, results);
             res.status(200).json(results);
@@ -79,10 +44,16 @@ exports.lookupHash = function lookupHash(req, res, next) {
                           skip: request.getSkip(req),
                           limit: request.getLimit(req),
                       })
-        .then(transformResults(req))
+        .map(respond.transformSearchResult)
         .then(function(results) {
             respond.setPagingLinks(req, res, results);
             res.status(200).json(results);
+        })
+        .catch(search.BadHashError, function() {
+            res.status(400).json({
+                code: 'bad_hash',
+                message: 'Bad hash format',
+            });
         })
         .catch(function(err) {
             next(err);

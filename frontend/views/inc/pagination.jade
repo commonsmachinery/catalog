@@ -1,0 +1,29 @@
+
+//- We don't know exactly how many pages there might be if there's a
+//- next link, so show two before and after the current page.
+//- Also always include the first page.
+
+mixin pagination
+    ul.pagination
+        li(class=(page == 1 ? 'disabled' : '')): a(href=links.first)
+            | &laquo;
+            span.sr-only First
+        li(class=(page == 1 ? 'disabled' : '')): a(href=links.previous)
+            | &lt;
+            span.sr-only Previous
+
+        each val in [-2, -1, 0, 1, 2]
+            if val == 0
+                li.active: a(href=links[0])
+                    = page
+                    span.sr-only (current)
+                    
+            else if links[page + val]
+                li: a(href=links[page + val])
+                    = page + val
+                    
+        li(class=(links.next ? '' : 'disabled')): a(href=links.next)
+            | &gt;
+            span.sr-only Next
+            
+            

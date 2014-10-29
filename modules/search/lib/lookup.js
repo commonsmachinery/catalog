@@ -8,6 +8,7 @@
 'use strict';
 
 var debug = require('debug')('catalog:search:lookup'); // jshint ignore:line
+var util = require('util');
 
 // Search libs
 var db = require('./db');
@@ -18,6 +19,18 @@ var command = require('../../../lib/command');
 
 // External libs
 var Promise = require('bluebird');
+
+
+/* BadHashError: thrown on invalid hashes.
+ */
+var BadHashError = exports.BadHashError = function(message) {
+    this.message = message;
+    this.name = "BadHashError";
+    Error.captureStackTrace(this, BadHashError);
+};
+
+util.inherits(BadHashError, Error);
+
 
 /* Create a new Lookup object and return a Promise
  * which resolves to the new Lookup object
@@ -167,6 +180,15 @@ exports.lookupHash = function lookupHash(hash, options) {
     var distances = {};
 
     return Promise.all(db.lookupAsync(hash))
+        .error(function(err) {
+            // TODO: improve lookupAsync rejection to tell us
+            // when this fails due to a bad hash input.  Other
+            // lookup errors are unlikely, but if they happen they
+            // will give a confusing error.
+
+            debug('bad hash: %s: %j', err, hash);
+            throw new BadHashError(hash);
+        })
         .then(function(hashes) {
             var uris = hashes.map(function(item) {
                 distances[item.hash] = item.distance;

@@ -438,6 +438,31 @@ exports.transformOrganisation = function(org, context, options) {
     });
 };
 
+
+/** Transform a single search result.
+ */
+exports.transformSearchResult = function(lookup) {
+    if (lookup.object_type === 'core.Work') {
+        var workId = lookup.object_id;
+        var result;
+
+        result = {
+            href: uris.buildWorkURI(workId),
+            uri: lookup.uri,
+            text: lookup.text,
+            property: lookup.property_type,
+            score: lookup.score,
+            distance: lookup.distance,
+        };
+
+        return result;
+    }
+    else {
+        throw new Error('Unable to transform search result for %s', lookup.object_type);
+    }
+};
+
+
 /* Set all relevant response headers for an object.
  */
 var setObjectHeaders = exports.setObjectHeaders = function(res, object) {
@@ -466,13 +491,15 @@ exports.setPagingLinks = function(req, res, objs) {
     linkUrl.query.page = 1;
     linkMap.first = url.format(linkUrl);
 
-    // If no works are found, there's no next page.  Ideally we'd
-    // detect this already on the last actual page, but that can
-    // be improved later (and preferably then also getting a last
-    // page link)
-    if (objs.length > 0) {
+    // More than a full page of results mean there is another page.
+    if (objs.length > req.query.per_page) {
         linkUrl.query.page = req.query.page + 1;
         linkMap.next = url.format(linkUrl);
+
+        // Drop the extra item
+        while (objs.length > req.query.per_page) {
+            objs.pop();
+        }
     }
 
     if (req.query.page > 1) {
@@ -481,6 +508,16 @@ exports.setPagingLinks = function(req, res, objs) {
     }
 
     uris.setLinks(res, linkMap);
+
+    // Now that the Link header is set, we can enrich this with number-based
+    // links.  Do everything +-5 and let the GUI choose what to show
+    for (var i = req.query.page - 5; i <= req.query.page + 5; i++) {
+        if (i > 0 && (i <= req.query.page || linkMap.next)) {
+            linkUrl.query.page = i;
+            linkMap[i] = url.format(linkUrl);
+        }
+    }
+
     return linkMap;
 };
 
