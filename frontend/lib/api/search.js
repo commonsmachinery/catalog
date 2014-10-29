@@ -64,6 +64,9 @@ exports.lookupURI = function lookupURI(req, res, next) {
         .then(transformResults(req))
         .then(function(results) {
             respond.setPagingLinks(req, res, results);
+            // TODO: should we do this?
+            // always allow CORS for search results
+            res.set('Access-Control-Allow-Origin', '*');
             res.status(200).json(results);
         })
         .catch(function(err) {
@@ -82,6 +85,9 @@ exports.lookupHash = function lookupHash(req, res, next) {
         .then(transformResults(req))
         .then(function(results) {
             respond.setPagingLinks(req, res, results);
+            // TODO: should we do this?
+            // always allow CORS for search results
+            res.set('Access-Control-Allow-Origin', '*');
             res.status(200).json(results);
         })
         .catch(function(err) {
