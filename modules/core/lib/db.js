@@ -97,8 +97,8 @@ var setExportMethods = function(schema, transform) {
 var entry = {
     added_by: { type: ObjectId, required: true, ref: 'User' },
     added_at: { type: Date, default: Date.now },
-    updated_by: { type: ObjectId, required: true, ref: 'User' },
-    updated_at: { type: Date, default: Date.now },
+    updated_by: { type: ObjectId, required: false, ref: 'User' },
+    updated_at: { type: Date, required: false },
 };
 
 
@@ -147,15 +147,12 @@ setExportMethods(MediaAnnotation);
 var WorkAnnotation = mongo.schema(_.extend({}, mediaAnnotationProps, {
     updated_by: {
         type: ObjectId,
-        // TODO: sync with documentation (field is optional in doc)
-        required: true,
+        required: false,
         ref: 'User'
     },
     updated_at: {
         type: Date,
-        // TODO: sync with documentation (field is optional in doc)
-        required: true,
-        default: Date.now
+        required: false,
     },
     score: { type: Number, required: true, default: 0 },
 }));
