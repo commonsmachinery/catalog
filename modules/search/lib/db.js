@@ -30,7 +30,7 @@ var Lookup = mongo.schema(
     }
 );
 
-Lookup.index('text', { sparse: true });
+Lookup.index({ text: 'text' });
 Lookup.index('uri', { sparse: true });
 Lookup.index({ 'object_id': 1, 'property_id': 1 }); // TODO: unique?
 
