@@ -139,6 +139,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     debug('creating annotation %s for work %s', i, workId);
 
                     decodeURIProperties(annotations[i]);
+                    knownProperties.unsetValue(annotations[i]);
 
                     // Assume work annotations are very good
                     var annotationObj = { property: annotations[i], score: 99 };
@@ -178,6 +179,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     debug('creating resource annotation %s for work %s', i, workId);
 
                     decodeURIProperties(resourceAnnotations[i]);
+                    knownProperties.unsetValue(resourceAnnotations[i]);
 
                     // Annotations copied from media get a lower score, since
                     // they just identify an instance of the work, not the work
@@ -229,6 +231,8 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
 
                     for (var j = 0; j < origAnnotations.length; j++) {
                         decodeURIProperties(origAnnotations[j]);
+                        knownProperties.unsetValue(origAnnotations[j]);
+
                         createAnnotations.push({
                             property: origAnnotations[j]
                         });

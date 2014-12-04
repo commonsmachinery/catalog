@@ -12,6 +12,7 @@ var _ = require('underscore');
 var Promise = require('bluebird');
 
 // Core and search libs
+var knownProperties = require('../../lib/knownProperties');
 var core = require('../../modules/core/core');
 var search = require('../../modules/search/search');
 var coreDb = require('../../modules/core/lib/db');
@@ -139,6 +140,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
 
                 for (var j = 0; j < media[i].annotations.length; j++) {
                     decodeURIProperties(media[i].annotations[j]);
+                    knownProperties.unsetValue(media[i].annotations[j]);
 
                     mediaAnnotations.push({
                         property: media[i].annotations[j]
@@ -179,6 +181,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                 debug('creating annotation %s for new work', i);
 
                 decodeURIProperties(annotations[i]);
+                knownProperties.unsetValue(annotations[i]);
 
                 // Assume work annotations are very good
                 workAnnotations.push({

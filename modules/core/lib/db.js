@@ -129,15 +129,11 @@ var mediaAnnotationProps = {
     property: {
         type: mongo.Schema.Types.Mixed,
         required: true,
-        validate: [{
+        validate: {
             validator: function(property) {
                 return property.hasOwnProperty('propertyName');
             }, msg: 'property.propertyName is required.',
-        }, {
-            validator: function(property) {
-                return property.hasOwnProperty('value');
-            }, msg: 'property.value is required.'
-        }]
+        }
     },
 };
 
