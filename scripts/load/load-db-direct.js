@@ -112,7 +112,7 @@ var saveDocument = function(doc) {
             resolve(savedDoc);
         });
     });
-}
+};
 
 var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
@@ -166,7 +166,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                 });
 
                 promises.push(saveDocument(mediaDoc));
-            };
+            }
 
             return Promise.all(promises);
         })
@@ -188,7 +188,7 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     property: annotations[i],
                     score: 99
                 });
-            };
+            }
 
             var workDoc = new coreDb.Work({
                 added_by: context.userId,

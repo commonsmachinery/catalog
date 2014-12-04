@@ -12,6 +12,7 @@ var _ = require('underscore');
 var Promise = require('bluebird');
 
 // Core and search libs
+var knownProperties = require('../../lib/knownProperties');
 var core = require('../../modules/core/core');
 var search = require('../../modules/search/search');
 

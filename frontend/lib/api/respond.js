@@ -171,7 +171,7 @@ var setPropertyValues = function(object) {
         knownProperties.setValue(object.annotations[i]);
     }
     return object;
-}
+};
 
 /* Populate referenced objects if requested by the caller.  Returns a
  * promise that resolved to the populated object.  Any errors while
