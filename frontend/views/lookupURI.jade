@@ -1,0 +1,51 @@
+//- Catalog web - page for looking up URIs and displaying results
+//- 
+//- Copyright 2014 Commons Machinery http://commonsmachinery.se/
+//- Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+include inc/pagination
+
+mixin pageTitle
+    title
+        | #{config.frontend.title}: Search URIs
+
+mixin pageContent
+    div.row: div.col-xs-12
+        div.panel.panel-default: div.panel-body
+            form(role='form')
+                input(type='hidden', name='page', value=page)
+                input(type='hidden', name='per_page', value=per_page)
+                div.form-group
+                    label.control-label(for='uri') Look up URI
+                    div.input-group
+                        input#uri.form-control(type='text', name='uri', value=uri || '')
+                        span.input-group-btn
+                            button.btn.btn-default(type='submit') Search
+                        
+    if results.length == 0 && page == 1
+        if uri
+            div.row: div.col-xs-12
+                | No search results.
+    else
+        div.row: div.col-xs-12
+            +pagination
+    
+        if results.length == 0
+            div.row: div.col-xs-12
+                | No more search results.
+        else
+            div.row: div.col-xs-12
+                div.list-group
+                    div.list-group-item: div.row.list-group-item-heading
+                        div.col-xs-8 Title
+                        div.col-xs-1 Score
+                        div.col-xs-3 URI type
+                    each res in results
+                        - var a = res.work.annotations
+                        - var title = a.title && a.title.length && a.title[0].property.value
+                        a.list-group-item(href=res.work.href): div.row
+                            div.col-xs-8= title || 'Untitled'
+                            div.col-xs-1= res.score
+                            div.col-xs-3= res.property
+
+include inc/page                    

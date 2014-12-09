@@ -21,6 +21,7 @@ var core = require('../../../modules/core/core');
 // Frontend libs
 var uris = require('../uris');
 var etag = require('../etag');
+var knownProperties = require('../../../lib/knownProperties');
 
 
 /* Change an ID property into a { id: x, href: y } object in place.
@@ -160,6 +161,16 @@ var filterAnnotations = function(object, annotations) {
     }
 
     return annotationMap;
+};
+
+/* Set property.value attributes for work or media annotations.
+ *
+ */
+var setPropertyValues = function(object) {
+    for (var i=0; i < object.annotations.length; i++) {
+        knownProperties.setValue(object.annotations[i]);
+    }
+    return object;
 };
 
 /* Populate referenced objects if requested by the caller.  Returns a
@@ -323,6 +334,7 @@ exports.transformWork = function(work, context, options) {
             });
         }
     })
+    .then(setPropertyValues)
     // Transform annotations to map, if requested.
     .then(function(work) {
         if (options && options.annotations && work.annotations) {
@@ -345,6 +357,8 @@ exports.transformMedia = function(workId, media, context, options) {
     idToObject(media, 'replaces', function(mediaId) {
         return uris.buildWorkMediaURI(workId, mediaId);
     });
+
+    setPropertyValues(media);
 
     // Transform annotations
     if (options && options.annotations && media.annotations) {
@@ -449,6 +463,29 @@ var setCORSHeader = exports.setCORSHeader = function(req, res) {
     };
 };
 
+/** Transform a single search result.
+ */
+exports.transformSearchResult = function(lookup) {
+    if (lookup.object_type === 'core.Work') {
+        var workId = lookup.object_id;
+        var result;
+
+        result = {
+            href: uris.buildWorkURI(workId),
+            uri: lookup.uri,
+            text: lookup.text,
+            property: lookup.property_type,
+            score: lookup.score,
+            distance: lookup.distance,
+        };
+
+        return result;
+    }
+    else {
+        throw new Error('Unable to transform search result for %s', lookup.object_type);
+    }
+};
+
 /* Set all relevant response headers for an object.
  */
 var setObjectHeaders = exports.setObjectHeaders = function(res, object) {
@@ -478,13 +515,15 @@ exports.setPagingLinks = function(req, res, objs) {
     linkUrl.query.page = 1;
     linkMap.first = url.format(linkUrl);
 
-    // If no works are found, there's no next page.  Ideally we'd
-    // detect this already on the last actual page, but that can
-    // be improved later (and preferably then also getting a last
-    // page link)
-    if (objs.length > 0) {
+    // More than a full page of results mean there is another page.
+    if (objs.length > req.query.per_page) {
         linkUrl.query.page = req.query.page + 1;
         linkMap.next = url.format(linkUrl);
+
+        // Drop the extra item
+        while (objs.length > req.query.per_page) {
+            objs.pop();
+        }
     }
 
     if (req.query.page > 1) {
@@ -493,6 +532,16 @@ exports.setPagingLinks = function(req, res, objs) {
     }
 
     uris.setLinks(res, linkMap);
+
+    // Now that the Link header is set, we can enrich this with number-based
+    // links.  Do everything +-5 and let the GUI choose what to show
+    for (var i = req.query.page - 5; i <= req.query.page + 5; i++) {
+        if (i > 0 && (i <= req.query.page || linkMap.next)) {
+            linkUrl.query.page = i;
+            linkMap[i] = url.format(linkUrl);
+        }
+    }
+
     return linkMap;
 };
 

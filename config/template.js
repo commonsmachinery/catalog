@@ -19,6 +19,7 @@ module.exports = {
         //
 
         frontend: {
+            title: 'Elog.io',
             baseURL: 'http://localhost:8004',
             port: '8004',
             host: 'localhost',

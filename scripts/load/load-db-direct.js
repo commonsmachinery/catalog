@@ -15,6 +15,8 @@ var Promise = require('bluebird');
 var knownProperties = require('../../lib/knownProperties');
 var core = require('../../modules/core/core');
 var search = require('../../modules/search/search');
+var coreDb = require('../../modules/core/lib/db');
+var searchDb = require('../../modules/search/lib/db');
 
 // Script libs
 var fs = require('fs');
@@ -98,6 +100,20 @@ var getLocatorLink = function(annotations) {
     return a && a.locatorLink;
 };
 
+var saveDocument = function(doc) {
+    return new Promise(function(resolve, reject) {
+        doc.save(function(err, savedDoc, numberAffected) {
+            if (err) {
+                debug('saving work failed: %j', err);
+                reject(err);
+                return;
+            }
+
+            resolve(savedDoc);
+        });
+    });
+};
+
 var processDataPackage = function(fn, context, owner, priv, verbose, done) {
     var stream = fs.createReadStream(fn).pipe(ldj.parse());
     var errorFileName = 'errors_load_db_' + (new Date()).toISOString() + '.json';
@@ -111,97 +127,84 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
         var annotations = obj.annotations;
         var media = obj.media;
         var workId;
-        var createdAnnotations = [];
+        var workAnnotations = [];
 
-        return core.createWork(context, {
-            public: !priv,
-            owner: owner,
-        })
-        .then(function(work) {
-            // get work details
-            debug('work %s created', work.id);
-            workId = work.id;
-        })
+        return Promise.resolve(true)
+        // Create media
         .then(function() {
-            // Create work annotations
+            var promises = [];
 
-            // Process one annotation at a time, since
-            // core doesn't (currently) allow concurrent
-            // modifications to a Work.
+            for (var i = 0; i < media.length; i++) {
+                debug('creating media %s for new work', i);
+                var mediaAnnotations = [];
 
-            // This is done by recursing via promises, so that the
-            // function isn't called for the next annotation until the
-            // database operation for the previous one has been
-            // completed.
+                for (var j = 0; j < media[i].annotations.length; j++) {
+                    decodeURIProperties(media[i].annotations[j]);
+                    knownProperties.unsetValue(media[i].annotations[j]);
 
-            var i = 0;
-            var addAnnotation = function() {
-                if (i < annotations.length) {
-                    debug('creating annotation %s for work %s', i, workId);
+                    mediaAnnotations.push({
+                        property: media[i].annotations[j]
+                    });
 
-                    decodeURIProperties(annotations[i]);
-                    knownProperties.unsetValue(annotations[i]);
+                    // Add identifier and locator media annotations to work for better search
+                    if (media[i].annotations[j].propertyName === 'identifier' ||
+                        media[i].annotations[j].propertyName === 'locator') {
 
-                    // Assume work annotations are very good
-                    var annotationObj = { property: annotations[i], score: 99 };
-                    ++i;
-
-                    return core.createWorkAnnotation(context, workId, annotationObj)
-                        .then(function (annotation) {
-                            createdAnnotations.push(annotation);
-                            return addAnnotation();
+                        // Annotations copied from media get a lower score, since
+                        // they just identify an instance of the work, not the work
+                        // as a whole
+                        workAnnotations.push({
+                            property: media[i].annotations[j],
+                            score: 90
                         });
-                }
-            };
-
-            return addAnnotation();
-        })
-        .then(function() {
-            // Add identifier and locator media annotations to work for simple search
-            var resourceAnnotations = [];
-            var i;
-
-            // Pick locator and identifier annotations from work media
-            for (i = 0; i < media.length; i++) {
-                var mediaAnnotations = media[i].annotations;
-
-                for (var j = 0; j < mediaAnnotations.length; j++) {
-                    if (mediaAnnotations[j].propertyName === 'identifier' ||
-                        mediaAnnotations[j].propertyName === 'locator') {
-                        resourceAnnotations.push(mediaAnnotations[j]);
                     }
                 }
+
+                var mediaDoc = new coreDb.Media({
+                    added_by: context.userId,
+                    annotations: mediaAnnotations
+                });
+
+                promises.push(saveDocument(mediaDoc));
             }
 
-            // Same kind of recursion as above
-            i = 0;
-            var addResourceAnnotation = function() {
-                if (i < resourceAnnotations.length) {
-                    debug('creating resource annotation %s for work %s', i, workId);
-
-                    decodeURIProperties(resourceAnnotations[i]);
-                    knownProperties.unsetValue(resourceAnnotations[i]);
-
-                    // Annotations copied from media get a lower score, since
-                    // they just identify an instance of the work, not the work
-                    // as a whole
-                    var annotationObj = { property: resourceAnnotations[i], score: 90 };
-                    ++i;
-
-                    return core.createWorkAnnotation(context, workId, annotationObj)
-                        .then(function (annotation) {
-                            createdAnnotations.push(annotation);
-                            return addResourceAnnotation();
-                        });
-                }
-            };
-
-            return addResourceAnnotation();
+            return Promise.all(promises);
         })
+        // Create work
+        .then(function(mediaObjs) {
+            var mediaIds = mediaObjs.map(function(m) {
+                return m._id;
+            });
 
+            // Create annotations
+            for (var i = 0; i < annotations.length; i++) {
+                debug('creating annotation %s for new work', i);
+
+                decodeURIProperties(annotations[i]);
+                knownProperties.unsetValue(annotations[i]);
+
+                // Assume work annotations are very good
+                workAnnotations.push({
+                    property: annotations[i],
+                    score: 99
+                });
+            }
+
+            var workDoc = new coreDb.Work({
+                added_by: context.userId,
+                public: !priv,
+                owner: owner,
+                annotations: workAnnotations,
+                media: mediaIds
+            });
+
+            return saveDocument(workDoc);
+        })
         // Populate the search index with all the work annotations
-        .then(function() {
-            return createdAnnotations;
+        .then(function(work) {
+            workId = work._id;
+            debug('work %s created', workId);
+            return workAnnotations;
         })
         .map(function(annotation) {
             var lookup = getPropertyLinkAndLabel(annotation.property);
@@ -216,41 +219,9 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
 
                 debug('indexing %j', lookup);
 
-                return search.createLookup(lookup);
+                var lookupDoc = searchDb.Lookup(lookup);
+                return saveDocument(lookupDoc);
             }
-        })
-
-        .then(function() {
-            // Create media using same kind of recursion as above
-            var i = 0;
-            var addMedia = function() {
-                if (i < media.length) {
-                    debug('creating media %s for work %s', i, workId);
-
-                    var origAnnotations = media[i].annotations;
-                    var createAnnotations = [];
-
-                    for (var j = 0; j < origAnnotations.length; j++) {
-                        decodeURIProperties(origAnnotations[j]);
-                        knownProperties.unsetValue(origAnnotations[j]);
-
-                        createAnnotations.push({
-                            property: origAnnotations[j]
-                        });
-                    }
-
-                    var mediaObj = {
-                        annotations: createAnnotations
-                    };
-
-                    ++i;
-
-                    return core.createWorkMedia(context, workId, mediaObj)
-                        .then(addMedia);
-                }
-            };
-
-            return addMedia();
         });
     };
 
@@ -270,16 +241,9 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
         // Don't get more events while we're processing this one
         stream.pause();
 
-        // Check for duplicates
-        search.lookupURI(workURI, {skip: 0, limit: 1, nolog: true})
-            .then(function(matches) {
-                if (matches.length > 0) {
-                    if (verbose) {
-                        console.log('%s: skipping duplicate: %s', count, workURI);
-                        return;
-                    }
-                }
-
+        // Don't check for duplicates for initial seeding
+        Promise.resolve(true)
+            .then(function() {
                 if (verbose) {
                     console.log('%s: creating: %s', count, workURI);
                 }

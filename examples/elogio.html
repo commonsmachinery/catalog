@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <script src="png.js/zlib.js"></script>
+  <script src="png.js/png.js"></script>
+  <script src="jpgjs/jpg.js"></script>
+
+  <script src="blockhash.js"></script>
+  <script>
+    var baseURL = "http://catalog.elog.io";
+
+    var loadImage = function() {
+        var xhr;
+        var src = document.getElementById('urlinput').value;
+        var canvas = document.getElementById('canvas');
+        var ctx = canvas.getContext("2d");
+
+        xhr = new XMLHttpRequest();
+        xhr.open('GET', src, true);
+        xhr.responseType = "arraybuffer";
+
+        xhr.onload = function() {
+            var data, contentType, imgData, jpg, png, hash;
+
+            data = new Uint8Array(xhr.response || xhr.mozResponseArrayBuffer);
+            contentType = xhr.getResponseHeader('content-type');
+
+            try {
+                if (contentType === 'image/png') {
+                    console.log('png')
+                    png = new PNG(data);
+
+                    canvas.width = png.width;
+                    canvas.height = png.height;
+                    imgData = ctx.getImageData(0, 0, png.width, png.height);
+                    png.copyToImageData(imgData, png.decodePixels());
+                    ctx.putImageData(imgData, 0, 0);
+                }
+                else if (contentType === 'image/jpeg') {
+                    jpg = new JpegImage();
+                    jpg.parse(data);
+
+                    canvas.width = jpg.width;
+                    canvas.height = jpg.height;
+                    imgData = ctx.getImageData(0, 0, jpg.width, jpg.height);
+                    jpg.copyToImageData(imgData);
+                    ctx.putImageData(imgData, 0, 0);
+                }
+
+                if (!imgData) {
+                    throw new Error("Couldn't decode image");
+                }
+            } catch (err) {
+                resultsDiv = "Error: " + err;
+            }
+        };
+
+        xhr.onerror = function(err) {
+            resultsDiv = "Error: " + err;
+        };
+
+        xhr.send();
+    };
+
+    var queryByURI = function() {
+        var xhr;
+        var src = document.getElementById('urlinput').value;
+        var queryURL = baseURL + "/lookup/uri?uri=" + decodeURIComponent(src);
+
+        var resultsDiv = document.getElementById('results');
+
+        xhr = new XMLHttpRequest();
+        xhr.open('GET', queryURL, true);
+        xhr.setRequestHeader('Accept', 'application/json');
+
+        xhr.onload = function() {
+            try {
+                results = JSON.parse(xhr.responseText);
+
+                for (var i = 0; i < results.length; i++) {
+                    var r = results[i];
+                    var href = r.href;
+
+                    xhr = new XMLHttpRequest();
+                    xhr.open('GET', href, true);
+                    xhr.setRequestHeader('Accept', 'application/json');
+
+                    xhr.onload = function() {
+                        try {
+                            work = JSON.parse(xhr.responseText);
+                            annotations = work.annotations;
+
+                            for (var j = 0; j < annotations.length; j++) {
+                                var a = annotations[j];
+
+                                resultsDiv.innerHTML += "Property: " + a.property.propertyName;
+                                resultsDiv.innerHTML += ". ";
+                                resultsDiv.innerHTML += "Value: " + a.property.value;
+                                resultsDiv.innerHTML += "<br/>";
+                            }
+                        } catch(err) {
+                            resultsDiv.innerHTML = "Error: " + err;
+                        }
+                    }
+
+                    xhr.onerror = function(err) {
+                        resultsDiv.innerHTML = "Error: " + err;
+                    };
+
+                    xhr.send();
+                }
+            } catch(err) {
+                resultsDiv.innerHTML = "Error: " + err;
+            }
+        };
+
+        xhr.onerror = function(err) {
+            resultsDiv.innerHTML = "Error: " + err;
+        };
+
+        xhr.send();
+    };
+
+    var queryByHash = function() {
+        var xhr;
+        var src = document.getElementById('urlinput').value;
+
+        var resultsDiv = document.getElementById('results');
+        var hash;
+
+        try {
+            var canvas = document.getElementById('canvas');
+            var ctx = canvas.getContext("2d");
+            var imgData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+
+            hash = blockhashData(imgData, 16, 2);
+        } catch(err) {
+            resultsDiv.innerHTML = "Error: " + err;
+            return;
+        }
+
+        var queryURL = baseURL + "/lookup/blockhash?hash=" + hash;
+
+        xhr = new XMLHttpRequest();
+        xhr.open('GET', queryURL, true);
+        xhr.setRequestHeader('Accept', 'application/json');
+
+        xhr.onload = function() {
+            try {
+                results = JSON.parse(xhr.responseText);
+
+                for (var i = 0; i < results.length; i++) {
+                    var r = results[i];
+                    var href = r.href;
+
+                    xhr = new XMLHttpRequest();
+                    xhr.open('GET', href, true);
+                    xhr.setRequestHeader('Accept', 'application/json');
+
+                    xhr.onload = function() {
+                        try {
+                            work = JSON.parse(xhr.responseText);
+                            annotations = work.annotations;
+
+                            for (var j = 0; j < annotations.length; j++) {
+                                var a = annotations[j];
+
+                                resultsDiv.innerHTML += "Property: " + a.property.propertyName;
+                                resultsDiv.innerHTML += ". ";
+                                resultsDiv.innerHTML += "Value: " + a.property.value;
+                                resultsDiv.innerHTML += "<br/>";
+                            }
+                        } catch(err) {
+                            resultsDiv.innerHTML = "Error: " + err;
+                        }
+                    }
+
+                    xhr.onerror = function(err) {
+                        resultsDiv.innerHTML = "Error: " + err;
+                    };
+
+                    xhr.send();
+                }
+            } catch(err) {
+                resultsDiv.innerHTML = "Error: " + err;
+            }
+        };
+
+        xhr.onerror = function(err) {
+            resultsDiv.innerHTML = "Error: " + err;
+        };
+
+        xhr.send();
+    };
+  </script>
+</head>
+<body>
+  <div>
+    <p>Enter image URL in the box below and click "Query by URI" to look for image URL in elog.io catalog. Or click "Load image" and then "Query by hash" to look for the image by perceptual hash.</p>
+    <p>Make sure that blockhash, png.js and jpgjs are available to run this example.</p>
+  </div>
+  <div>
+    <span>Image URL:</span>
+    <input type="text" id="urlinput" value="http://upload.wikimedia.org/wikipedia/commons/9/97/Ciuffenna02.jpg"/>
+    <button onclick="loadImage()">Load image</button>
+  </div>
+  <div>
+    <button onclick="queryByURI()">Query by URI</button>
+    <button onclick="queryByHash()">Query by hash</button>
+  </div>
+  <div>
+    <p>Result:</p>
+    <p id="results"></p>
+  </div>
+  <div>
+    <canvas id="canvas"></canvas>
+  </div>
+</body>
+</html>

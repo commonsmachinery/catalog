@@ -1,0 +1,37 @@
+//- This header goes into every page, so tell people what they're using:
+//
+    Metadata catalog - code and more info:
+    https://github.com/commonsmachinery/catalog/
+    
+    Copyright 2014 Commons Machinery http://commonsmachinery.se/
+    Distributed under an AGPL_v3 license, please see LICENSE in the top dir.
+
+//- Pages must define the following mixins:
+//- pageTitle: generate a title element for the page
+//- pageContent: generate the page contents
+
+doctype html
+html(lang="en")
+    head
+        meta(charset="utf-8")
+
+        +pageTitle
+
+        meta(name="viewport", content="width=device-width, initial-scale=1")
+        link(rel="stylesheet", href="/lib/css/bootstrap.min.css")
+        link(rel="stylesheet", href="/lib/css/bootstrap-theme.min.css")
+
+        //- This should later be replaced with require.js when adding actual
+        //- page logic.
+        script(src="/lib/js/jquery.min.js")
+        script(src="/lib/js/bootstrap.min.js")
+        
+    body
+        header
+            | TODO: header
+
+        div#content
+            +pageContent
+
+        footer
+            | TODO: footer
