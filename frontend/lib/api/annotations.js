@@ -48,6 +48,7 @@ var transformMany = function(req) {
 exports.getWorkAnnotation = function getWorkAnnotation(req, res, next) {
     core.getWorkAnnotation(req.context, req.params.workId, req.params.annotationId)
         .then(transform(req))
+        .then(respond.setCORSHeader(req, res))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
@@ -57,6 +58,7 @@ exports.getWorkAnnotation = function getWorkAnnotation(req, res, next) {
 exports.getAllAnnotations = function getAllAnnotations(req, res, next) {
     core.getAllAnnotations(req.context, req.params.workId)
         .then(transformMany(req))
+        .then(respond.setCORSHeader(req, res))
         .then(function(annotations) {
             return res.status(200).json(annotations);
         })

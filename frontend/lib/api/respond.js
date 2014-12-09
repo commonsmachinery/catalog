@@ -452,6 +452,16 @@ exports.transformOrganisation = function(org, context, options) {
     });
 };
 
+/* Add a CORS header for public objects to allow access from third-party web pages
+ */
+var setCORSHeader = exports.setCORSHeader = function(req, res) {
+    return function(object) {
+        if (req.context.setCORS) {
+            res.set('Access-Control-Allow-Origin', '*');
+        }
+        return object;
+    };
+};
 
 /** Transform a single search result.
  */
@@ -476,12 +486,12 @@ exports.transformSearchResult = function(lookup) {
     }
 };
 
-
 /* Set all relevant response headers for an object.
  */
 var setObjectHeaders = exports.setObjectHeaders = function(res, object) {
     etag.set(res, object);
     uris.setLinks(res, { self: object.href });
+    setCORSHeader(res, object);
 
     if (object.updated_at) {
         res.set('Last-Modified', object.updated_at.toUTCString());

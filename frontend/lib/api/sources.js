@@ -48,6 +48,7 @@ var transformMany = function(req) {
 exports.getWorkSource = function getWorkSource(req, res, next) {
     core.getWorkSource(req.context, req.params.workId, req.params.sourceId)
         .then(transform(req))
+        .then(respond.setCORSHeader(req, res))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
@@ -57,6 +58,7 @@ exports.getWorkSource = function getWorkSource(req, res, next) {
 exports.getAllSources = function getAllSources(req, res, next) {
     core.getAllSources(req.context, req.params.workId)
         .then(transformMany(req))
+        .then(respond.setCORSHeader(req, res))
         .then(function(sources) {
             return res.status(200).json(sources);
         })

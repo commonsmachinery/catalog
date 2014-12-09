@@ -81,6 +81,9 @@ exports.getUser = function getUser(context, userId) {
                 throw new UserNotFoundError(userId);
             }
 
+            // this enables setting CORS header for users
+            context.setCORS = true;
+
             return user;
         })
         .then(setUserPerms(context))

@@ -66,6 +66,7 @@ exports.createWorkMedia = function createWorkMedia(req, res, next) {
 exports.getWorkMedia = function getWorkMedia(req, res, next) {
     core.getWorkMedia(req.context, req.params.workId, req.params.mediaId)
         .then(transform(req))
+        .then(respond.setCORSHeader(req, res))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);

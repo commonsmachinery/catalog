@@ -39,6 +39,7 @@ var updateGravatarHash = function updateGravatarHash(req){
 exports.getUser = function getUser(req, res, next) {
     core.getUser(req.context, req.params.userId)
         .then(transform())
+        .then(respond.setCORSHeader(req, res))
         .then(respond.asJSON(res))
         .catch(function(err) {
             next(err);
