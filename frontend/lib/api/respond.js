@@ -21,6 +21,7 @@ var core = require('../../../modules/core/core');
 // Frontend libs
 var uris = require('../uris');
 var etag = require('../etag');
+var knownProperties = require('../../../lib/knownProperties');
 
 
 /* Change an ID property into a { id: x, href: y } object in place.
@@ -160,6 +161,16 @@ var filterAnnotations = function(object, annotations) {
     }
 
     return annotationMap;
+};
+
+/* Set property.value attributes for work or media annotations.
+ *
+ */
+var setPropertyValues = function(object) {
+    for (var i=0; i < object.annotations.length; i++) {
+        knownProperties.setValue(object.annotations[i]);
+    }
+    return object;
 };
 
 /* Populate referenced objects if requested by the caller.  Returns a
@@ -323,6 +334,7 @@ exports.transformWork = function(work, context, options) {
             });
         }
     })
+    .then(setPropertyValues)
     // Transform annotations to map, if requested.
     .then(function(work) {
         if (options && options.annotations && work.annotations) {
@@ -345,6 +357,8 @@ exports.transformMedia = function(workId, media, context, options) {
     idToObject(media, 'replaces', function(mediaId) {
         return uris.buildWorkMediaURI(workId, mediaId);
     });
+
+    setPropertyValues(media);
 
     // Transform annotations
     if (options && options.annotations && media.annotations) {
