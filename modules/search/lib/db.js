@@ -22,6 +22,7 @@ var Lookup = mongo.schema(
     {
         text: 'string',
         uri: 'string',
+        uri_hash: 'string',
         object_type: 'string',
         object_id: ObjectId,
         property_type: 'string',
@@ -32,6 +33,7 @@ var Lookup = mongo.schema(
 
 Lookup.index({ text: 'text' });
 Lookup.index('uri', { sparse: true });
+Lookup.index('uri_hash', { sparse: true });
 Lookup.index({ 'object_id': 1, 'property_id': 1 }); // TODO: unique?
 
 
