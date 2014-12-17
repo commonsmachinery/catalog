@@ -9,6 +9,7 @@
 
 var debug = require('debug')('catalog:search:lookup'); // jshint ignore:line
 var util = require('util');
+var crypto = require('crypto');
 
 // Search libs
 var db = require('./db');
@@ -67,7 +68,8 @@ exports.lookupURI = function lookupURI(uris, options) {
     var opts = options || {};
     var conditions;
     var decoded; // decoded uris
-    var mangled; // uris with http: scheme duplicated as https and vice versa
+    var mangled = []; // uris with http: scheme duplicated as https and vice versa
+    var hashes = []; // we actually lookup urls by md5 hashes
     var uri, extraURI, i;
 
     if (typeof uris === 'string') {
@@ -78,8 +80,6 @@ exports.lookupURI = function lookupURI(uris, options) {
 
     // duplicate http URLs as https and vice versa
     // to support sites which treat these URLs identically
-    mangled = [];
-
     for (i = 0; i < decoded.length; i++) {
         uri = decoded[i];
         if (uri.indexOf('http://') === 0) {
@@ -97,13 +97,19 @@ exports.lookupURI = function lookupURI(uris, options) {
         mangled.push(uri);
     }
 
+    for (i = 0; i < mangled.length; i++) {
+        var md5sum = crypto.createHash('md5');
+        md5sum.update(mangled[i]);
+        hashes.push(md5sum.digest('hex'));
+    }
+
     if (mangled.length === 1) {
         conditions = {
-            uri: mangled
+            uri_hash: hashes
         };
     } else {
         conditions = {
-            uri: { $in: mangled }
+            uri_hash: { $in: hashes }
         };
     }
 
