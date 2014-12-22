@@ -68,6 +68,12 @@ The most important work properties are:
 * `policy`: Provide the license information about the work if known.
   This would typically indicate public domain, CC0 or a CC license.
 
+* `collection`: Collection from which the work originates.
+  Elog.io browser extension currently supports the following collectionLink URLs:
+
+    * `http://commons.wikimedia.org`
+    * `http://commonsmachinery.se/`
+
 Other properties from the Media Ontology can be used too.
 
 
@@ -119,6 +125,12 @@ such as frame size etc.
                 "typeLabel": "license",
                 "typeLink": "http://www.w3.org/1999/xhtml/vocab#license",
                 "value": "CC BY-SA 4.0"
+            },
+            {
+                "propertyName" : "collection",
+                "collectionLink" : "http://some.institute/some/collection",
+                "collectionLabel" : "Example Collection",
+                "value" : "Example Collection"
             }
         ],
     
