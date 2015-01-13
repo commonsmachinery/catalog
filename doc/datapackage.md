@@ -139,8 +139,8 @@ such as frame size etc.
                 "annotations": [
                     {
                         "propertyName": "identifier",
-                        "identifierLink": "urn:bmvhash:34ac907fb1...",
-                        "value": "urn:bmvhash:34ac907fb1..."
+                        "identifierLink": "urn:blockhash:34ac907fb1...",
+                        "value": "urn:blockhash:34ac907fb1..."
                     },
                     {
                         "propertyName": "locator",
@@ -159,8 +159,8 @@ such as frame size etc.
                 "annotations": [
                     {
                         "propertyName": "identifier",
-                        "identifierLink": "urn:bmvhash:2310cda2190...",
-                        "value": "urn:bmvhash:2310cda2190..."
+                        "identifierLink": "urn:blockhash:2310cda2190...",
+                        "value": "urn:blockhash:2310cda2190..."
                     },
                     {
                         "propertyName": "locator",
