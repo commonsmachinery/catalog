@@ -59,7 +59,8 @@ The most important work properties are:
   a DOI, or some URN identifier.  A work can have multiple
   identifiers. The identifiers are unique to that work. The catalog
   import scripts will treat any works with the same identifier as the
-  same work, and update the record instead of adding a new.
+  same work, and update the record instead of adding a new. the identifier
+  should be unique globally to avoid collisions.
 
 * `locator`: A URL to a web page where the work or information about
   it can be found.  The URL should not point to an image file itself.
