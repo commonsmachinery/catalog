@@ -57,7 +57,10 @@ The most important work properties are:
 
 * `identifier`: Abstract identifier for a work, e.g. a canonical URL,
   a DOI, or some URN identifier.  A work can have multiple
-  identifiers.
+  identifiers. The identifiers are unique to that work. The catalog
+  import scripts will treat any works with the same identifier as the
+  same work, and update the record instead of adding a new. the identifier
+  should be unique globally to avoid collisions.
 
 * `locator`: A URL to a web page where the work or information about
   it can be found.  The URL should not point to an image file itself.
@@ -66,7 +69,9 @@ The most important work properties are:
   details in this annotation.
 
 * `policy`: Provide the license information about the work if known.
-  This would typically indicate public domain, CC0 or a CC license.
+  This would typically indicate public domain, CC0 or a CC license. The
+  Elog.io browser extension support all Creative Commons URIs as well
+  as Europeana rights statements that you can see on http://pro.europeana.eu/web/guest/available-rights-statements
 
 * `collection`: Collection from which the work originates.
   Elog.io browser extension currently supports the following collectionLink URLs:
@@ -74,8 +79,11 @@ The most important work properties are:
     * `http://commons.wikimedia.org`
     * `http://commonsmachinery.se/`
 
-Other properties from the Media Ontology can be used too.
+Other properties from the Media Ontology can be used too. Please note that
+for known properties, it's optional to specify a `value'. The known properties
+are defined at https://github.com/commonsmachinery/catalog/blob/master/lib/knownProperties.js
 
+Any property which is not a known property must specify a `value'.
 
 ### Media properties
 
@@ -125,6 +133,12 @@ such as frame size etc.
                 "typeLabel": "license",
                 "typeLink": "http://www.w3.org/1999/xhtml/vocab#license",
                 "value": "CC BY-SA 4.0"
+            },
+            {
+                "propertyName": "copyright",
+                "holderLabel": "Jane Doe",
+                "holderLink": "http://some.copyright.holder/",
+                "value": "Jane Doe"
             },
             {
                 "propertyName" : "collection",
