@@ -69,7 +69,9 @@ The most important work properties are:
   details in this annotation.
 
 * `policy`: Provide the license information about the work if known.
-  This would typically indicate public domain, CC0 or a CC license.
+  This would typically indicate public domain, CC0 or a CC license. The
+  Elog.io browser extension support all Creative Commons URIs as well
+  as Europeana rights statements that you can see on http://pro.europeana.eu/web/guest/available-rights-statements
 
 * `collection`: Collection from which the work originates.
   Elog.io browser extension currently supports the following collectionLink URLs:
