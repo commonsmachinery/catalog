@@ -57,7 +57,9 @@ The most important work properties are:
 
 * `identifier`: Abstract identifier for a work, e.g. a canonical URL,
   a DOI, or some URN identifier.  A work can have multiple
-  identifiers.
+  identifiers. The identifiers are unique to that work. The catalog
+  import scripts will treat any works with the same identifier as the
+  same work, and update the record instead of adding a new.
 
 * `locator`: A URL to a web page where the work or information about
   it can be found.  The URL should not point to an image file itself.
@@ -74,8 +76,11 @@ The most important work properties are:
     * `http://commons.wikimedia.org`
     * `http://commonsmachinery.se/`
 
-Other properties from the Media Ontology can be used too.
+Other properties from the Media Ontology can be used too. Please note that
+for known properties, it's optional to specify a `value'. The known properties
+are defined at https://github.com/commonsmachinery/catalog/blob/master/lib/knownProperties.js
 
+Any property which is not a known property must specify a `value'.
 
 ### Media properties
 
@@ -127,6 +132,12 @@ such as frame size etc.
                 "value": "CC BY-SA 4.0"
             },
             {
+                "propertyName": "copyright",
+                "holderLabel": "Jane Doe",
+                "holderLink": "http://some.copyright.holder/",
+                "value": "Jane Doe"
+            },
+            {
                 "propertyName" : "collection",
                 "collectionLink" : "http://some.institute/some/collection",
                 "collectionLabel" : "Example Collection",
@@ -139,8 +150,8 @@ such as frame size etc.
                 "annotations": [
                     {
                         "propertyName": "identifier",
-                        "identifierLink": "urn:bmvhash:34ac907fb1...",
-                        "value": "urn:bmvhash:34ac907fb1..."
+                        "identifierLink": "urn:blockhash:34ac907fb1...",
+                        "value": "urn:blockhash:34ac907fb1..."
                     },
                     {
                         "propertyName": "locator",
@@ -159,8 +170,8 @@ such as frame size etc.
                 "annotations": [
                     {
                         "propertyName": "identifier",
-                        "identifierLink": "urn:bmvhash:2310cda2190...",
-                        "value": "urn:bmvhash:2310cda2190..."
+                        "identifierLink": "urn:blockhash:2310cda2190...",
+                        "value": "urn:blockhash:2310cda2190..."
                     },
                     {
                         "propertyName": "locator",
