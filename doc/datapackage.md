@@ -78,6 +78,7 @@ The most important work properties are:
 
     * `http://commons.wikimedia.org`
     * `http://commonsmachinery.se/`
+    * `http://safecreative.org`
 
 Other properties from the Media Ontology can be used too. Please note that
 for known properties, it's optional to specify a `value'. The known properties
