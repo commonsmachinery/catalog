@@ -10,6 +10,7 @@
 var debug = require('debug')('catalog:scripts:load');
 var _ = require('underscore');
 var Promise = require('bluebird');
+var crypto = require('crypto');
 
 // Core and search libs
 var knownProperties = require('../../lib/knownProperties');
@@ -216,6 +217,13 @@ var processDataPackage = function(fn, context, owner, priv, verbose, done) {
                     property_id: annotation.id,
                     score: annotation.score,
                 });
+
+                if (lookup.uri) {
+                    debug('creating md5 hash for uri %s', lookup.uri);
+                    var md5sum = crypto.createHash('md5');
+                    md5sum.update(lookup.uri);
+                    lookup.uri_hash = md5sum.digest('hex');
+                }
 
                 debug('indexing %j', lookup);
 
